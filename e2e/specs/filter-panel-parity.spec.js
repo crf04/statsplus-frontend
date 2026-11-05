@@ -28,7 +28,7 @@ const open = async (page, { width, height }, path = PARITY_PATH) => {
   await page.goto(PROTOTYPE ? `${path}#proto=filters&v=${VARIANT}` : path);
   const panel = page.getByTestId('filter-panel');
   await expect(panel).toBeVisible();
-  await expect(panel.getByText(/of 72 games match/i)).toBeVisible();
+  await expect(panel.getByText(/^Next:/)).toBeVisible();
   // The prototype's variant switcher is not part of the design.
   await page.addStyleTag({
     content: '.proto-switcher, vercel-live-feedback { display: none !important; }',
@@ -63,7 +63,7 @@ test.describe('filter panel matches the design reference', () => {
 
   test('panel with the opponent list expanded', async ({ page }) => {
     const panel = await open(page, DESKTOP[1920]);
-    await panel.getByRole('button', { name: '+ 15 more' }).click();
+    await panel.getByRole('button', { name: '+ 12 more' }).click();
     await expect(panel.getByRole('button', { name: 'Show fewer' })).toBeVisible();
     await expect(panel).toHaveScreenshot('panel-1920-opponent-expanded.png', SHOT);
   });
@@ -93,12 +93,12 @@ test.describe('filter panel behaves like the design reference', () => {
     await expect(
       panel.getByRole('button', { name: /without\s*Trae Young off court/i }),
     ).toBeVisible();
-    await expect(panel.getByText(/10 of 72 games match/i)).toBeVisible();
+    await expect(page.getByText('10 of 72 games', { exact: true })).toBeVisible();
 
     await panel.getByRole('button', { name: 'Remove last' }).click();
     await panel.getByRole('button', { name: 'Apply 1 change' }).click();
     await expect.poll(() => search(page).get('game_filter')).toBeNull();
-    await expect(panel.getByText(/63 of 72 games match/i)).toBeVisible();
+    await expect(page.getByText('63 of 72 games', { exact: true })).toBeVisible();
   });
 
   test('adding Last N from its quick pick applies it', async ({ page }) => {
@@ -109,7 +109,7 @@ test.describe('filter panel behaves like the design reference', () => {
     await panel.getByRole('button', { name: 'Done' }).click();
     await panel.getByRole('button', { name: /^Apply \d+ change/ }).click();
     await expect.poll(() => search(page).get('game_filter')).toBe('5');
-    await expect(panel.getByText(/5 of 72 games match/i)).toBeVisible();
+    await expect(page.getByText('5 of 72 games', { exact: true })).toBeVisible();
   });
 
   test('Own stat line offers its stats without waiting for a click elsewhere', async ({ page }) => {

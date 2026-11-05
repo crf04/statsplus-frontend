@@ -77,7 +77,7 @@ const ROUTES = {
       await installParityApi(page);
       await open(page, `${origin}${PARITY_PATH}`);
       const panel = page.getByTestId('filter-panel');
-      await expect(panel.getByText(/of 72 games match/i)).toBeVisible();
+      await expect(panel.getByText(/^Next:/)).toBeVisible();
       await panel.getByRole('button', { name: '+ Opp. defense' }).click();
     },
   },

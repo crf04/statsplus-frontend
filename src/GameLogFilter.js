@@ -332,7 +332,7 @@ const GameLogFilter = ({ notice = null }) => {
   // Nothing in flight outlives the workspace.
   useEffect(() => clearSeasonGameLogs, [clearSeasonGameLogs]);
 
-  // The strip and Own stat line share one unfiltered-season read per player.
+  // Own stat line reads the unfiltered season once per player.
   const loadSeasonGameLogs = useCallback(() => {
     const player = requestFilters.player_name;
     const season = requestFilters.season_filter;
@@ -794,7 +794,7 @@ const GameLogFilter = ({ notice = null }) => {
     (access.openReads &&
       (profileSettledFor !== `${selectedPlayer}|${selectedTeam}` ||
         opponentSettledFor !== selectedTeam));
-  // The season range is left out on purpose: it is only the panel's strip,
+  // The season range is left out on purpose: only Own stat line reads it,
   // which says it is loading in place, and the page stays usable meanwhile.
   // Once a load has been revealed, a section re-reading because the user
   // changed it (another opponent, another profile tab) shows its own progress
@@ -1017,12 +1017,7 @@ const GameLogFilter = ({ notice = null }) => {
                 seasonGameLogsFailed={seasonGameLogsFailed}
                 onOpenSelfFilters={loadSeasonGameLogs}
                 appliedFilters={appliedFilters}
-                gameLogs={gameLogs}
-                gameLogsLoading={isGameLogsLoading}
-                gameLogsError={gameLogsError}
-                averages={averages}
                 lineType={lineType}
-                lineValue={line.lineValue}
                 onContextSettled={setPanelSettledFor}
                 nextOpponent={
                   nextOpponentRead.player === selectedPlayer ? nextOpponentRead.data : null

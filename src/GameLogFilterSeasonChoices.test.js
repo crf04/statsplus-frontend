@@ -115,7 +115,7 @@ const refusal = () =>
     },
   });
 
-// The panel's unfiltered season read, then the Workspace's own read.
+// The Workspace's game-log reads.
 const requests = () => fetchGameLogsData.mock.calls.map(([params]) => params);
 const seasonSelect = () => screen.findByRole('combobox', { name: 'Season' });
 
@@ -142,10 +142,7 @@ test('with 2026-27 offered and no season_filter, the first read and the Season c
     ]),
   );
   await waitFor(() => expect(select).toHaveValue('2026-27'));
-  expect(requests()).toEqual([
-    { player_name: 'LeBron James', season_filter: '2026-27' },
-    { player_name: 'LeBron James', season_filter: '2026-27' },
-  ]);
+  expect(requests()).toEqual([{ player_name: 'LeBron James', season_filter: '2026-27' }]);
   expect(url()).toBe('/?player_name=LeBron+James');
   expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
   expect(screen.getByRole('combobox', { name: 'Season' })).toHaveDisplayValue(
@@ -172,17 +169,14 @@ test('an unchanged apply while /seasons is pending waits for the season', async 
 
   await act(async () => answerSeasons(withChoices));
   await screen.findByText('Game list of 1');
-  expect(requests()).toEqual([
-    { player_name: 'LeBron James', season_filter: '2026-27' },
-    { player_name: 'LeBron James', season_filter: '2026-27' },
-  ]);
+  expect(requests()).toEqual([{ player_name: 'LeBron James', season_filter: '2026-27' }]);
 });
 
 test('on a 2025-26 Slate date, 2026-27 offered is not the default', async () => {
   jest.setSystemTime(new Date('2026-09-12T16:00:00Z'));
   renderAt('/?player_name=LeBron+James');
   await screen.findByText('Game list of 1');
-  expect(requests()).toEqual([{ player_name: 'LeBron James' }, { player_name: 'LeBron James' }]);
+  expect(requests()).toEqual([{ player_name: 'LeBron James' }]);
   expect(await seasonSelect()).toHaveValue('2025-26');
 });
 
@@ -193,7 +187,7 @@ test.each([
   arrange();
   renderAt('/?player_name=LeBron+James');
   await screen.findByText('Game list of 1');
-  expect(requests()).toEqual([{ player_name: 'LeBron James' }, { player_name: 'LeBron James' }]);
+  expect(requests()).toEqual([{ player_name: 'LeBron James' }]);
   expect(screen.queryByTestId('evidence-season-chip')).toBeNull();
 });
 
@@ -201,7 +195,6 @@ test('a link naming season_filter=2025-26 keeps it and reads it at once', async 
   renderAt('/?player_name=LeBron+James&season_filter=2025-26&game_filter=5');
   await screen.findByText('Game list of 1');
   expect(requests()).toEqual([
-    { player_name: 'LeBron James', season_filter: '2025-26' },
     { player_name: 'LeBron James', season_filter: '2025-26', game_filter: 5 },
   ]);
   expect(await seasonSelect()).toHaveValue('2025-26');
@@ -217,7 +210,6 @@ test('with no season_filter nothing is read until /seasons answers; a linked sea
   renderAt('/?player_name=LeBron+James&season_filter=2025-26&game_filter=5');
   await waitFor(() =>
     expect(requests()).toEqual([
-      { player_name: 'LeBron James', season_filter: '2025-26' },
       { player_name: 'LeBron James', season_filter: '2025-26', game_filter: 5 },
     ]),
   );
@@ -274,10 +266,7 @@ test('choosing 2025-26 writes season_filter and survives a reload; choosing 2026
   fetchGameLogsData.mockClear();
   renderAt('/?player_name=LeBron+James&season_filter=2025-26');
   await screen.findByText('Game list of 1');
-  expect(requests()).toEqual([
-    { player_name: 'LeBron James', season_filter: '2025-26' },
-    { player_name: 'LeBron James', season_filter: '2025-26' },
-  ]);
+  expect(requests()).toEqual([{ player_name: 'LeBron James', season_filter: '2025-26' }]);
   expect(await seasonSelect()).toHaveValue('2025-26');
 
   fireEvent.change(await seasonSelect(), { target: { value: '2026-27' } });

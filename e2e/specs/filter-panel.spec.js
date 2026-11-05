@@ -76,14 +76,14 @@ test('next opponent tiers follow their own ranked population and omit middle/con
 
 test('no scheduled game hides opponent context and saved sets still navigate', async ({ page }) => {
   const panel = await open(page, { next_game: null, opponent_ranks: [] });
-  await expect(panel.getByText(/of 72 games match/)).toBeVisible();
+  await expect(panel.getByRole('button', { name: '+ Own stat line' })).toBeVisible();
   await expect(panel.getByText(/^Next:/)).toHaveCount(0);
   await panel.getByRole('tab', { name: /^Saved/ }).click();
   await panel.getByRole('button', { name: 'Open saved Filter Set JJ last 10 at home' }).click();
   await expect.poll(() => new URL(page.url()).searchParams.get('location_filter')).toBe('Home');
 });
 
-test('a historical Filter Set shares its season with the strip read', async ({ page }) => {
+test('a historical Filter Set shares its season with the Own stat line read', async ({ page }) => {
   await page.addInitScript((key) => localStorage.setItem(key, 'true'), E2E_AUTH_STORAGE_KEY);
   await installParityApi(page);
   const requests = [];
@@ -92,7 +92,10 @@ test('a historical Filter Set shares its season with the strip read', async ({ p
     if (url.pathname === '/api/games/game_logs') requests.push(url);
   });
   await page.goto(`${PARITY_PATH}&season_filter=2023-24`);
-  await expect(page.getByTestId('filter-panel').getByText(/of 72 games match/)).toBeVisible();
+  const panel = page.getByTestId('filter-panel');
+  await panel.getByRole('button', { name: '+ Own stat line' }).click();
+  await panel.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect(panel.getByRole('slider', { name: 'Minimum PTS' })).toBeVisible();
   await expect.poll(() => requests.length).toBe(2);
   expect(requests.map((url) => url.searchParams.get('season_filter'))).toEqual([
     '2023-24',
@@ -288,12 +291,18 @@ test('switching seasons for one player reloads bounds and withholds the previous
   });
   await page.goto('/?player_name=Jalen+Johnson&game_filter=10&season_filter=2023-24');
   const panel = page.getByTestId('filter-panel');
-  await expect(panel.getByText(/of 1 games match/)).toBeVisible();
-  await panel.getByRole('tab', { name: /^Saved/ }).click();
-  await panel.getByRole('button', { name: 'Open saved Filter Set Season B' }).click();
-  await expect.poll(() => seasonRequests).toEqual(['2023-24', '2024-25']);
   await panel.getByRole('button', { name: '+ Own stat line' }).click();
   await panel.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect(panel.getByRole('slider', { name: 'Minimum PTS' })).toHaveAttribute(
+    'aria-valuenow',
+    '15',
+  );
+  await panel.getByRole('button', { name: 'Done', exact: true }).click();
+  await panel.getByRole('tab', { name: /^Saved/ }).click();
+  await panel.getByRole('button', { name: 'Open saved Filter Set Season B' }).click();
+  await panel.getByRole('button', { name: '+ Own stat line' }).click();
+  await panel.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect.poll(() => seasonRequests).toEqual(['2023-24', '2024-25']);
   await expect(panel.getByRole('slider', { name: 'Minimum PTS' })).toHaveCount(0);
   await expect(panel.getByText('Loading the season range…').first()).toBeVisible();
   release();
@@ -301,7 +310,6 @@ test('switching seasons for one player reloads bounds and withholds the previous
     'aria-valuenow',
     '35',
   );
-  await expect(panel.getByRole('button', { name: /2025-01-01 ATL @ CHA/ })).toBeVisible();
 });
 
 test('the Saved tab lists the player on screen first, then the others', async ({ page }) => {

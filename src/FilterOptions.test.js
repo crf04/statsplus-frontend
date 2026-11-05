@@ -24,7 +24,6 @@ const renderPanel = (appliedFilters = {}, seasonGameLogs = [], extra = {}) => {
   const Panel = () => {
     const [result, setResult] = useState(null);
     const [seasonChoice, setSeasonChoice] = useState(null);
-    const [line, setLine] = useState(20);
     const [applied, setApplied] = useState(appliedFilters);
     return (
       <MemoryRouter>
@@ -34,15 +33,11 @@ const renderPanel = (appliedFilters = {}, seasonGameLogs = [], extra = {}) => {
           onSeasonChange={setSeasonChoice}
           selectedPlayer="LeBron James"
           seasonGameLogs={seasonGameLogs}
-          gameLogs={seasonGameLogs.slice(0, 1)}
           lineType="PTS"
-          lineValue={line}
-          averages={[{ PTS: 30 }]}
           onOpenSelfFilters={() => {}}
           appliedFilters={applied}
           {...extra}
         />
-        <button onClick={() => setLine(30)}>Set chart line to 30</button>
         <button onClick={() => setApplied({ date_filter: '2026-03-01' })}>
           Open a link without an end date
         </button>
@@ -146,23 +141,6 @@ test('a linked versus rule opens the Opponent editor on its team', () => {
   fireEvent.click(screen.getByRole('button', { name: 'BOS' }));
   apply();
   expect(patch()).toEqual({ player_name: 'LeBron James', opponent_tricode: 'BOS' });
-});
-
-test('season strip uses actual rows and the selected line', () => {
-  renderPanel({}, [
-    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25 },
-    { GAME_DATE: '2026-01-02', MATCHUP: 'LAL @ OKC', PTS: 10 },
-  ]);
-  expect(screen.getByText(/of 2 games match/)).toBeVisible();
-  expect(
-    screen.getByRole('button', { name: '2026-01-01 LAL @ BOS · PTS 25 (over)' }),
-  ).toBeVisible();
-  fireEvent.click(
-    screen.getByRole('button', { name: '2026-01-02 LAL @ OKC · PTS 10 (filtered out)' }),
-  );
-  expect(screen.getByRole('status', { name: 'Game details' })).toHaveTextContent(
-    '2026-01-02 LAL @ OKC · PTS 10 (filtered out)',
-  );
 });
 
 test('a linked Team Filter remains encoded and Clear all clears every applied field', () => {
@@ -330,17 +308,6 @@ test('signed-out panel exposes no account saved sets or next opponent block', ()
   expect(screen.queryByText('Saved Filter Sets')).toBeNull();
   expect(screen.queryByText(/^Next:/)).toBeNull();
   expect(screen.getByRole('button', { name: 'last 10 games' })).toBeVisible();
-});
-
-test('season cells follow the explicit chart line rather than the filtered average', () => {
-  renderPanel({}, [{ GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', PTS: 25 }]);
-  expect(
-    screen.getByRole('button', { name: '2026-01-01 LAL @ BOS · PTS 25 (over)' }),
-  ).toBeVisible();
-  fireEvent.click(screen.getByRole('button', { name: 'Set chart line to 30' }));
-  expect(
-    screen.getByRole('button', { name: '2026-01-01 LAL @ BOS · PTS 25 (under)' }),
-  ).toBeVisible();
 });
 
 test('picking a teammate suggestion directly adds its row and on-court patch', () => {

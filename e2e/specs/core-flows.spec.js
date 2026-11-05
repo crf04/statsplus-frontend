@@ -403,8 +403,8 @@ test('a season the panel cannot express survives an unrelated apply', async ({
   if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
     await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
   await page.getByLabel('Last N games', { exact: true }).fill('5');
-  // Observe both initial game-log reads before Apply.
-  await expect.poll(() => gameLogRequests.length).toBe(2);
+  // Observe the initial game-log read before Apply.
+  await expect.poll(() => gameLogRequests.length).toBe(1);
   const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
@@ -569,7 +569,7 @@ test('@critical structured filters serialize through the game-log request seam',
   await page.getByLabel('Last N games', { exact: true }).fill('5');
   await page.getByRole('button', { name: /^Apply/ }).click();
 
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(2);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
   const latestRequest = new URL(gameLogRequests.at(-1));
   expect(latestRequest.searchParams.get('game_filter')).toBe('5');
 });
@@ -614,7 +614,7 @@ test('@critical a manual defensive filter reaches the game-log request seam', as
 
   await page.getByRole('button', { name: /^Apply/ }).click();
 
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(2);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
   const latestRequest = new URL(gameLogRequests.at(-1));
   expect(latestRequest.searchParams.getAll('teams_against[]')).toEqual([
     'sheet:play_types:Isolation:PTS',
@@ -750,7 +750,7 @@ test('@critical applying an untouched panel emits only the controls the user mov
   await page.getByLabel('Last N games', { exact: true }).fill('5');
   await page.getByRole('button', { name: /^Apply/ }).click();
 
-  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(2);
+  await expect.poll(() => gameLogRequests.length).toBeGreaterThan(1);
   const latestRequest = new URL(gameLogRequests.at(-1));
 
   // The one moved control and the player travel; every untouched control stays
@@ -993,16 +993,8 @@ test('@critical clearing a control clears its parameter', async ({ authenticated
   if (!(await page.getByLabel('Last N games', { exact: true }).isVisible()))
     await page.getByTestId('filter-panel').getByRole('button', { name: '+ Last N' }).click();
   await page.getByLabel('Last N games', { exact: true }).fill('');
-  // Observe the identical initial season query before recording Apply traffic.
-  await expect
-    .poll(() =>
-      gameLogRequests.some(
-        (url) =>
-          url.searchParams.get('player_name') === 'LeBron James' &&
-          !url.searchParams.has('game_filter'),
-      ),
-    )
-    .toBe(true);
+  // Observe the initial read before recording Apply traffic.
+  await expect.poll(() => gameLogRequests.length).toBe(1);
   const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
@@ -1127,17 +1119,6 @@ test('@critical removing every self filter clears its parameter', async ({
     .getByTestId('filter-panel')
     .getByRole('button', { name: /^Remove own/ })
     .click();
-  // The initial season read has the same query as the cleared workspace.
-  // Observe it before Apply so it cannot satisfy the post-Apply assertion.
-  await expect
-    .poll(() =>
-      gameLogRequests.some(
-        (url) =>
-          url.searchParams.get('player_name') === 'LeBron James' &&
-          !url.searchParams.has('self_filters[PTS]'),
-      ),
-    )
-    .toBe(true);
   const requestsBeforeApply = gameLogRequests.length;
   await page.getByRole('button', { name: /^Apply/ }).click();
 
@@ -1167,7 +1148,7 @@ test('@critical Self Filters ranges are the player unfiltered season', async ({
   await expect(page.getByRole('heading', { name: 'Game Logs', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: '31', exact: true })).toBeVisible();
   await expect(page.getByRole('cell', { name: '27', exact: true })).toHaveCount(0);
-  await expect.poll(() => gameLogRequests.length).toBe(2);
+  await expect.poll(() => gameLogRequests.length).toBe(1);
 
   await page.getByTestId('filter-panel').getByRole('button', { name: '+ Own stat line' }).click();
 
@@ -1464,7 +1445,7 @@ test('a season that fails to load says so, and loads on re-opening', async ({
   await expect(page.getByText('27.0–31.0', { exact: true })).toBeVisible();
 });
 
-test('the season strip reads the unfiltered season once without opening Own stat line', async ({
+test('the unfiltered season is read only once Own stat line opens', async ({
   authenticatedPage: page,
 }) => {
   const gameLogRequests = [];
@@ -1484,10 +1465,15 @@ test('the season strip reads the unfiltered season once without opening Own stat
   await page.getByLabel('Last N games', { exact: true }).fill('5');
   await page.getByRole('button', { name: /^Apply/ }).click();
 
-  await expect.poll(() => gameLogRequests.length).toBe(3);
+  await expect.poll(() => gameLogRequests.length).toBe(2);
   // The slowest endpoint in the application is only asked for the season when
   // the control that needs it is opened.
-  expect(gameLogRequests.filter((url) => !url.searchParams.has('game_filter'))).toHaveLength(1);
+  const seasonReads = () => gameLogRequests.filter((url) => !url.searchParams.has('game_filter'));
+  expect(seasonReads()).toHaveLength(0);
+  await page.getByRole('button', { name: 'Done', exact: true }).click();
+  await page.getByTestId('filter-panel').getByRole('button', { name: '+ Own stat line' }).click();
+  await page.getByRole('combobox', { name: 'Stat', exact: true }).selectOption('PTS');
+  await expect.poll(() => seasonReads().length).toBe(1);
 });
 
 test('@critical the escape hatch reaches a result with no language model', async ({
@@ -1785,9 +1771,9 @@ test('reopening the Log Workspace waits for every section again', async ({
   await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
 
   holdProfile = true;
-  const logsAnswered = page.waitForResponse('**/api/games/game_logs**');
+  const profileAsked = page.waitForRequest('**/api/players/profile**');
   await page.goBack();
-  await logsAnswered;
+  await profileAsked;
   await expect(page.getByText('Loading game logs…')).toBeVisible();
   await expect(page.getByRole('cell', { name: '31', exact: true })).toBeHidden();
 
@@ -1816,12 +1802,11 @@ test('returning to a player waits for that player again', async ({ authenticated
   await expect(page).toHaveURL(/player_name=Stephen\+Curry/);
   await expect(page.getByText('Loading game logs…')).toBeVisible();
 
-  const logsAnswered = page.waitForResponse(
-    (response) =>
-      response.url().includes('/api/games/game_logs') && response.url().includes('LeBron'),
+  const profileAsked = page.waitForRequest(
+    (request) => request.url().includes('/api/players/profile') && request.url().includes('LeBron'),
   );
   await page.goBack();
-  await logsAnswered;
+  await profileAsked;
   await expect(page.getByText('Loading game logs…')).toBeVisible();
   await expect(page.getByRole('cell', { name: '31', exact: true })).toBeHidden();
 
@@ -2149,8 +2134,8 @@ test('a rate-limited game-logs read shows the backend message and is not retried
   await expect(page.getByText('(ref')).toHaveCount(0);
   // Well past the 3 s Retry-After: still nothing repeated.
   await page.clock.fastForward(10000);
-  // The page asks twice, for the season and for the filter; neither is repeated.
-  expect(reads).toEqual(['?player_name=LeBron+James', '?player_name=LeBron+James&game_filter=10']);
+  // The page asks once, for the filter, and does not repeat it.
+  expect(reads).toEqual(['?player_name=LeBron+James&game_filter=10']);
 });
 
 test('the line defaults to his next game posted line, else the season average', async ({

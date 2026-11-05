@@ -21,6 +21,11 @@ export const formatDate = (iso) => {
   });
 };
 
+// PROTOTYPE (throwaway, branch prototype/add-filter-look): Add a filter variants.
+import { isPrototypeActive, useVariant } from '../addFilterPrototype/mode';
+import { AddFilterVariant } from '../addFilterPrototype/variants';
+import AddFilterSwitcher from '../addFilterPrototype/Switcher';
+
 const TILES = [
   { key: 'teammate', title: 'Teammate', sub: 'on / off court' },
   { key: 'games', title: 'Last N', sub: 'most recent games' },
@@ -228,6 +233,7 @@ const FilterPanelView = ({
 }) => {
   const [editing, setEditing] = useState(null);
   const [adding, setAdding] = useState(false);
+  const protoState = useVariant(); // PROTOTYPE (throwaway)
   const s = panel.summary;
   const rules = [];
   panel.activePlayers.forEach((player) =>
@@ -446,22 +452,27 @@ const FilterPanelView = ({
           ) : (
             <>
               <div className="fpb-addlabel">Add a filter</div>
-              <div className={`fpb-tiles${compactTiles ? ' is-compact' : ''}`}>
-                {TILES.filter((tile) => !tile.hidden).map((tile) => (
-                  <button
-                    key={tile.key}
-                    type="button"
-                    className="fpb-tile"
-                    onClick={() => startEditing(tile.key)}
-                  >
-                    <b>+ {tile.title}</b>
-                    <span>{tile.sub}</span>
-                  </button>
-                ))}
-              </div>
+              {protoState.variant !== 'O' ? (
+                <AddFilterVariant variant={protoState.variant} start={startEditing} panel={panel} />
+              ) : (
+                <div className={`fpb-tiles${compactTiles ? ' is-compact' : ''}`}>
+                  {TILES.filter((tile) => !tile.hidden).map((tile) => (
+                    <button
+                      key={tile.key}
+                      type="button"
+                      className="fpb-tile"
+                      onClick={() => startEditing(tile.key)}
+                    >
+                      <b>+ {tile.title}</b>
+                      <span>{tile.sub}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </>
           )}
           {filler}
+          {isPrototypeActive() && <AddFilterSwitcher {...protoState} />}
         </div>
       </div>
 

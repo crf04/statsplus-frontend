@@ -24,6 +24,14 @@ export const lineTypeOptions = [
   'FGA',
   'TOV',
 ];
+/* The Line Types in the groups both the game-log Line Type select and the Player Profile's
+   market picker show. `None` stands first, outside any group; every value is unchanged. */
+export const LINE_TYPE_GROUPS = [
+  { label: 'Main', options: ['PTS', 'REB', 'AST', 'FG3M'] },
+  { label: 'Combos', options: ['PRA', 'PA', 'PR', 'RA', 'STKS'] },
+  { label: 'Shooting', options: ['FGM', 'FGA', 'FG2M', 'FG2A', 'FG3A', 'FTM', 'FTA'] },
+  { label: 'Other', options: ['STL', 'BLK', 'TOV', 'FD_PTS'] },
+];
 /**
  * Shared filter translation and cleaning.
  *

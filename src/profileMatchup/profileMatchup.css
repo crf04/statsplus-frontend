@@ -1,0 +1,419 @@
+/* The Player Profile's matchup card: the MCP get_matchup card (S4 for single markets, W3 for
+   combos). It sizes to the card (container queries), never to the viewport, so nothing in it
+   scrolls sideways. */
+
+/* Sized to its content: the card no longer stretches to the Opposing Team Profile's height. */
+.dark-card.pmc-card {
+  height: auto;
+}
+
+.pmc {
+  --pmc-untinted: var(--ct-overlay-bg-5);
+  --pmc-tint: var(--ct-overlay-bg-7);
+  container-type: inline-size;
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  color: var(--ct-text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.pmc-up {
+  color: var(--ct-hit);
+}
+.pmc-down {
+  color: var(--ct-miss);
+}
+
+/* Header: who, season and data date; the score pill; the market picker. */
+.pmc-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+.pmc-who {
+  min-width: 0;
+  font-size: 13.5px;
+  color: var(--ct-dim);
+  line-height: 1.3;
+}
+.pmc-who b {
+  color: var(--ct-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+.pmc-score {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pmc-pill {
+  font-family: var(--ct-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 30px;
+  padding: 0 11px;
+  border-radius: 6px;
+  background: var(--pmc-tint);
+}
+.pmc-pill.pmc-up {
+  background: var(--ct-hit-bg-15);
+}
+.pmc-pill.pmc-down {
+  background: var(--ct-miss-bg-15);
+}
+.pmc-market {
+  appearance: none;
+  font: 600 12px var(--ct-mono);
+  letter-spacing: 0.03em;
+  color: var(--ct-text);
+  background: var(--pmc-tint) var(--ct-select-chevron) no-repeat right 6px center / 9px 6px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 6px;
+  padding: 4px 22px 4px 8px;
+  cursor: pointer;
+}
+.pmc-market:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  outline-offset: 1px;
+}
+.pmc-note {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  color: var(--ct-dim);
+}
+.pmc-title {
+  margin: 14px 0 4px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ct-text);
+}
+.pmc-empty {
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--ct-dim);
+}
+
+/* S4: the coloured court beside compact lists. */
+.pmc-s4 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.pmc-s4.pmc-solo {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+.pmc-s4.pmc-solo .pmc-court-col {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+@container (max-width: 520px) {
+  .pmc-s4 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+.pmc-base {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ct-dim);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+.pmc-base i {
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.pmc-group + .pmc-group {
+  margin-top: 8px;
+}
+.pmc-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pmc-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px 44px 44px;
+  gap: 6px;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--ct-line);
+  font-size: 13px;
+}
+.pmc-row-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pmc-row-share {
+  font-family: var(--ct-mono);
+  font-size: 12.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.pmc-row-vs {
+  font-family: var(--ct-mono);
+  font-size: 11px;
+  color: var(--ct-dim);
+  text-align: right;
+}
+/* Green toward 30th (allows the most), red toward 1st. */
+.pmc-rank {
+  justify-self: center;
+  min-width: 40px;
+  text-align: center;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: hsl(calc((var(--rank) - 1) * 4.1) 55% 40%);
+  color: var(--ct-on-ffffff);
+  font: 600 11px var(--ct-mono);
+}
+.pmc-rank.pmc-rank-none {
+  background: var(--pmc-tint);
+  color: var(--ct-dim);
+}
+.pmc-toggle {
+  all: unset;
+  display: block;
+  margin: 8px auto 0;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ct-gold);
+  text-align: center;
+}
+.pmc-toggle:focus-visible,
+.pmc-w3-more:focus-visible,
+.pmc-w3-toggle:focus-visible {
+  outline: 2px solid var(--ct-gold);
+  border-radius: 4px;
+}
+
+/* The half court. */
+.pmc-court-wrap {
+  min-width: 0;
+}
+.pmc-court {
+  position: relative;
+  container-type: inline-size;
+}
+.pmc-court svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+.pmc-hoop {
+  stroke: var(--ct-text);
+  stroke-opacity: 0.5;
+}
+.pmc-region {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  line-height: 1.15;
+  white-space: nowrap;
+  color: var(--ct-text);
+}
+.pmc-region b,
+.pmc-region small {
+  display: block;
+  font-family: var(--ct-mono);
+}
+.pmc-region b {
+  font-size: clamp(12px, 4.4cqw, 16px);
+  font-weight: 700;
+}
+.pmc-region small {
+  font-size: clamp(9px, 3cqw, 11px);
+  opacity: 0.85;
+}
+.pmc-region.pmc-corner {
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+.pmc-region.pmc-corner b,
+.pmc-region.pmc-corner small {
+  display: inline;
+  font-size: clamp(8px, 2.4cqw, 11px);
+}
+.pmc-region.pmc-corner small {
+  margin-left: 3px;
+}
+.pmc-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--ct-dim);
+}
+.pmc-legend b {
+  font-weight: 600;
+}
+.pmc-legend-scale {
+  width: 90px;
+  height: 8px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--ct-miss-fill-70),
+    var(--ct-overlay-bg-6),
+    var(--ct-hit-fill-75)
+  );
+}
+
+/* W3: each Base's contribution to the combo score, grouped by the stat it feeds. */
+.pmc-w3-group {
+  margin-top: 6px;
+}
+.pmc-w3-head,
+.pmc-w3-total {
+  box-sizing: border-box;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 14px minmax(96px, 170px) minmax(0, 1fr) 54px;
+  gap: 8px;
+  align-items: center;
+  font-size: 13.5px;
+}
+.pmc-w3-head {
+  padding: 8px 2px 4px;
+  border-bottom: 1px solid var(--ct-line-strong);
+}
+.pmc-w3-name {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pmc-w3-name i {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--ct-dim);
+}
+.pmc-w3-head .pmc-val {
+  font-weight: 650;
+}
+.pmc-w3-base {
+  border-bottom: 1px solid var(--ct-line);
+}
+.pmc-w3-toggle {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 14px minmax(96px, 170px) minmax(0, 1fr) 54px;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 2px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.pmc-w3-toggle .pmc-w3-name {
+  padding-left: 10px;
+  color: var(--ct-dim);
+}
+.pmc-w3-base.pmc-open .pmc-w3-name {
+  color: var(--ct-text);
+  font-weight: 600;
+}
+.pmc-caret {
+  color: var(--ct-dim);
+  font-size: 11px;
+}
+.pmc-bar {
+  position: relative;
+  height: 14px;
+}
+.pmc-bar::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--ct-line-strong);
+}
+.pmc-bar > i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 2px;
+}
+.pmc-w3-toggle .pmc-bar > i {
+  top: 3px;
+  bottom: 3px;
+}
+.pmc-bar > i.pmc-bar-up {
+  left: 50%;
+  background: var(--ct-hit-fill-75);
+}
+.pmc-bar > i.pmc-bar-down {
+  right: 50%;
+  background: var(--ct-miss-fill-75);
+}
+.pmc-val {
+  font-family: var(--ct-mono);
+  font-size: 12.5px;
+  text-align: right;
+}
+.pmc-w3-body {
+  padding: 0 0 8px 22px;
+}
+.pmc-w3-body .pmc-row:last-child {
+  border-bottom: 0;
+}
+.pmc-w3-body .pmc-toggle {
+  margin: 4px 0 0;
+  text-align: left;
+}
+.pmc-w3-sub {
+  font-size: 11.5px;
+  color: var(--ct-dim);
+  margin: 2px 0 4px;
+}
+.pmc-w3-more {
+  all: unset;
+  display: block;
+  cursor: pointer;
+  padding: 4px 2px 4px 34px;
+  font-size: 12px;
+  color: var(--ct-gold);
+}
+.pmc-w3-total {
+  margin-top: 4px;
+  padding: 8px 2px;
+  border-top: 2px solid var(--ct-line-strong);
+  font-weight: 650;
+}
+.pmc-foot {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--ct-dim);
+}
+@container (max-width: 520px) {
+  .pmc-w3-head,
+  .pmc-w3-toggle,
+  .pmc-w3-total {
+    grid-template-columns: 12px minmax(108px, 150px) minmax(0, 1fr) 50px;
+    gap: 6px;
+    font-size: 13px;
+  }
+  .pmc-w3-head .pmc-w3-name i {
+    display: block;
+    font-size: 10.5px;
+  }
+  .pmc-w3-body {
+    padding-left: 10px;
+  }
+}

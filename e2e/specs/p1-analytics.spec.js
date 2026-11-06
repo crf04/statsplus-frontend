@@ -32,7 +32,6 @@ const p1AnalyticsOverrides = {
       next_game: 'Atlanta Hawks',
     },
   },
-  '/api/players/profile': { body: { Transition: 1.2, Isolation: 0.9 } },
 };
 
 const setupP1AnalyticsPage = async (page) => {

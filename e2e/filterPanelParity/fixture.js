@@ -15,8 +15,7 @@ import players from './data/players.json';
 import teams from './data/teams.json';
 import logsSeason from './data/logs-season.json';
 import logsOff from './data/logs-off.json';
-import profile from './data/profile.json';
-import teamPlaytypes from './data/team-playtypes.json';
+import unscheduledMatchup from '../fixtures/unscheduled-matchup.json';
 import teamTraditional from './data/team-traditional.json';
 import teamChaTraditional from './data/team-cha-traditional.json';
 import savedFilterSets from './data/saved-filter-sets.json';
@@ -73,6 +72,16 @@ const gameLogs = (params) => {
   return { ...base, game_logs: rows, averages: mean(rows) };
 };
 
+// The Player Profile's Unscheduled Matchup, answered for the player and opponent asked.
+const unscheduledMatchupFor = (params) => ({
+  ...unscheduledMatchup,
+  players: unscheduledMatchup.players.map((player) => ({
+    ...player,
+    name: params.get('player_name'),
+  })),
+  teams: unscheduledMatchup.teams.map((team) => ({ ...team, tricode: params.get('opponent') })),
+});
+
 export const installParityApi = async (page) => {
   await page.route('**/api/**', async (route) => {
     const request = route.request();
@@ -82,17 +91,11 @@ export const installParityApi = async (page) => {
     if (path === '/api/players') json = players;
     else if (path === '/api/teams') json = teams;
     else if (path === '/api/games/game_logs') json = gameLogs(url.searchParams);
-    else if (path === '/api/players/profile') json = profile;
+    else if (path === '/api/matchups/unscheduled') json = unscheduledMatchupFor(url.searchParams);
     else if (path === '/api/players/next-opponent') json = nextOpponent;
     else if (path === '/api/teams/stats') {
-      const category = url.searchParams.get('category');
       const team = url.searchParams.get('team');
-      json =
-        category === 'Playtype Points'
-          ? teamPlaytypes
-          : team === 'Charlotte Hornets'
-            ? teamChaTraditional
-            : teamTraditional;
+      json = team === 'Charlotte Hornets' ? teamChaTraditional : teamTraditional;
     } else if (path === '/api/user/saved-filter-sets' && request.method() === 'GET') {
       json = savedFilterSets;
     }

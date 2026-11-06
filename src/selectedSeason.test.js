@@ -7,7 +7,6 @@ import {
   fetchMatchupSelection,
 } from './matchups/matchupApi';
 import { payload as matchupPayload } from './matchups/matchupPayloadFixture';
-import { fetchPlayerProfile } from './playerProfileApi';
 import { decodeSeasons } from './seasonsApi';
 import { SeasonAfterGameError, SeasonUnavailableError } from './servingSeason';
 import { decodeSlate, fetchSlate } from './slateApi';
@@ -228,10 +227,6 @@ describe('503 season_unavailable', () => {
     ['Slate edges', () => fetchSlateEdges({ date: '2026-10-24' })],
     ['Diet baselines', () => fetchDietBaselines()],
     ['game logs', () => fetchGameLogsData({ season_filter: '2026-27' })],
-    [
-      'Player Profile',
-      () => fetchPlayerProfile({ player_name: 'LeBron James', season: '2026-27' }),
-    ],
   ])('%s refuses with the typed error naming both seasons', async (_name, read) => {
     apiClient.get.mockRejectedValue(backendRefusal);
     const error = await read().catch((failure) => failure);
@@ -281,69 +276,6 @@ describe('503 season_unavailable', () => {
     const outage = refusal({ code: 'provider_unavailable', message: 'down' });
     apiClient.get.mockRejectedValue(outage);
     await expect(fetchSlate('2026-10-24')).rejects.toBe(outage);
-  });
-});
-
-describe('/api/players/profile', () => {
-  const rows = [{ SHOT_TYPE: 'Catch and Shoot', FGA: 4.2 }];
-  const summary = { PTS: 25.1, GP: 3 };
-  const read = (body) => {
-    apiClient.get.mockResolvedValue({ data: body });
-    return fetchPlayerProfile({ player_name: 'LeBron James', category: 'Shooting Type' });
-  };
-
-  test.each([
-    ['an array body', rows],
-    ['an object body', summary],
-  ])('reads %s with no season as today', async (_name, body) => {
-    await expect(read(body)).resolves.toEqual({ data: body, seasonContext: undefined });
-  });
-
-  test.each([
-    ['an array body', rows],
-    ['an object body', summary],
-  ])('unwraps %s under an explicit selection', async (_name, body) => {
-    await expect(read({ data: body, season_context: seasonContext })).resolves.toEqual({
-      data: body,
-      seasonContext: decodedContext,
-    });
-  });
-
-  test('keeps the families its facts trail on, each with its season and sample', async () => {
-    await expect(
-      read({
-        data: rows,
-        season_context: seasonContext,
-        trailing: [
-          {
-            family: 'synergy',
-            serving_season: '2025-26',
-            rule: 'NBA has published the season and every team has played 10 games',
-            team_games: { min: 82, max: 82 },
-          },
-        ],
-      }),
-    ).resolves.toEqual({
-      data: rows,
-      seasonContext: decodedContext,
-      trailing: [
-        {
-          family: 'synergy',
-          servingSeason: '2025-26',
-          rule: 'NBA has published the season and every team has played 10 games',
-          teamGames: { min: 82, max: 82 },
-        },
-      ],
-    });
-  });
-
-  test.each([
-    ['an envelope without data', { season_context: seasonContext }],
-    ['a malformed season_context', { data: rows, season_context: { selected_season: '2026' } }],
-  ])('refuses %s', async (_name, body) => {
-    await expect(read(body)).rejects.toThrow(
-      'The player profile endpoint returned an invalid response.',
-    );
   });
 });
 

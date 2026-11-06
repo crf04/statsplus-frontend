@@ -1,674 +1,274 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import PlayerProfile from './PlayerProfile';
 import { apiClient } from './config';
-import { publishedOnlySeasons, unpublishedSeasons } from './seasonChoicesFixture';
+// Toumani Camara vs DEN as production served it on 2026-11-06 (trimmed to what the card reads).
+import camaraVsDen from '../e2e/fixtures/unscheduled-matchup.json';
 
 jest.mock('./config', () => ({ apiClient: { get: jest.fn() }, getApiUrl: (key) => key }));
-jest.mock('./PlaystyleComparisonChart', () => ({ teamData }) => (
-  <>
-    <p>Playtype chart</p>
-    {teamData?.[0]?.TEAM_NAME && <p>Compared with {teamData[0].TEAM_NAME}</p>}
-  </>
-));
-jest.mock('./AssistProfileChart', () => () => <p>Assist chart</p>);
-jest.mock('./TwoThreeAssistChart', () => () => null);
+
+const matchupFor = (opponent) => ({
+  ...camaraVsDen,
+  teams: camaraVsDen.teams.map((team) => ({ ...team, tricode: opponent })),
+});
 
 beforeEach(() => {
   jest.clearAllMocks();
-  apiClient.get.mockResolvedValue({ data: [{ SHOT_TYPE: 'Jump Shot' }] });
-});
-
-test.each(['Playtypes', 'Assists', 'Shooting Type'])(
-  '%s keeps the player read when the opponent changes',
-  async (category) => {
-    const { rerender } = render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
-    await act(async () => {});
-    fireEvent.click(screen.getByLabelText(category));
-    await act(async () => {});
-    apiClient.get.mockClear();
-    rerender(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="NYK" />);
-    await act(async () => {});
-    expect(apiClient.get.mock.calls.filter(([url]) => url === 'PLAYER_PROFILE')).toHaveLength(0);
-    if (category === 'Playtypes' || category === 'Assists') {
-      expect(apiClient.get).toHaveBeenCalledWith(
-        'TEAM_STATS',
-        expect.objectContaining({ params: expect.objectContaining({ team: 'NYK' }) }),
-      );
-    } else {
-      expect(apiClient.get).not.toHaveBeenCalled();
-    }
-  },
-);
-
-test('late comparison results are ignored while the pending player read stays usable', async () => {
-  let resolvePlayer;
-  let resolveOldTeam;
-  apiClient.get.mockImplementation((url, { params }) => {
-    if (url === 'PLAYER_PROFILE')
-      return new Promise((resolve) => {
-        resolvePlayer = resolve;
-      });
-    if (params.team === 'BOS')
-      return new Promise((resolve) => {
-        resolveOldTeam = resolve;
-      });
-    return Promise.resolve({ data: [{ value: 2 }] });
-  });
-  const { rerender } = render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
-  const oldTeamSignal = apiClient.get.mock.calls.find(([url]) => url === 'TEAM_STATS')[1].signal;
-  rerender(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="NYK" />);
-  await act(async () => {});
-  expect(screen.getByText('Loading data...')).toBeVisible();
-  await act(async () => resolvePlayer({ data: [{ value: 1 }] }));
-  expect(screen.getByText('Playtype chart')).toBeVisible();
-  expect(oldTeamSignal.aborted).toBe(true);
-  await act(async () => resolveOldTeam({ data: null }));
-  expect(screen.getByText('Playtype chart')).toBeVisible();
-  expect(screen.queryByText(/No data available for this team/)).not.toBeInTheDocument();
-});
-
-test('changing comparison cannot clear a player failure', async () => {
-  apiClient.get.mockImplementation((url) =>
-    url === 'PLAYER_PROFILE'
-      ? Promise.reject(new Error('Failed player'))
-      : Promise.resolve({ data: [{ value: 1 }] }),
+  apiClient.get.mockImplementation((url, { params }) =>
+    url === 'MATCHUP_UNSCHEDULED'
+      ? Promise.resolve({ data: matchupFor(params.opponent) })
+      : Promise.reject(new Error(`unexpected ${url}`)),
   );
-  const { rerender } = render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
-  await act(async () => {});
-  expect(screen.getByText('Failed to fetch data. Please try again.')).toBeVisible();
-  rerender(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="NYK" />);
-  await act(async () => {});
-  expect(screen.getByText('Failed to fetch data. Please try again.')).toBeVisible();
 });
 
-test.each([
-  ['rejected', 'Failed to fetch data. Please try again.'],
-  ['empty', 'Failed to fetch data. Please try again. No data available for this team'],
-])('player failure and %s comparison show clear failure messages', async (comparison, message) => {
-  apiClient.get.mockImplementation((url) =>
-    url === 'TEAM_STATS' && comparison === 'empty'
-      ? Promise.resolve({ data: null })
-      : Promise.reject(new Error('Offline')),
+const renderProfile = async (props = {}) => {
+  const setLineType = jest.fn();
+  const view = (more) => (
+    <PlayerProfile
+      selectedPlayer="Toumani Camara"
+      selectedTeam="Denver Nuggets"
+      lineType="PTS"
+      setLineType={setLineType}
+      {...props}
+      {...more}
+    />
   );
-  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
+  const utils = render(view());
   await act(async () => {});
-  expect(screen.getByText(message, { exact: true })).toBeVisible();
-});
-
-test('Shooting Type renders without unused comparison requests or failures', async () => {
-  apiClient.get.mockImplementation((url) =>
-    url === 'TEAM_STATS'
-      ? Promise.reject(new Error('Comparison unavailable'))
-      : Promise.resolve({ data: [{ SHOT_TYPE: 'Jump Shot' }] }),
-  );
-  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
-  await act(async () => {});
-  apiClient.get.mockClear();
-  fireEvent.click(screen.getByLabelText('Shooting Type'));
-  await act(async () => {});
-  expect(apiClient.get.mock.calls.filter(([url]) => url === 'TEAM_STATS')).toHaveLength(0);
-  expect(screen.getByText('Jump Shot')).toBeVisible();
-  expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
-});
+  return { ...utils, setLineType, rerenderWith: (more) => utils.rerender(view(more)) };
+};
 
 const failedRequest = (status) =>
   Object.assign(new Error(`Request failed with status code ${status}`), {
     response: { status, headers: { 'x-request-id': '77070cec-3f5e-4b7a-9d0e-5a1c2b3d4e5f' } },
   });
 
-test.each([
-  ['PLAYER_PROFILE', 500, 'Failed to fetch data. Please try again. (ref 77070cec)'],
-  ['TEAM_STATS', 500, 'Failed to fetch data. Please try again. (ref 77070cec)'],
-  ['PLAYER_PROFILE', 400, 'Failed to fetch data. Please try again.'],
-])('a %s read refused with %i shows %j', async (failing, status, text) => {
-  apiClient.get.mockImplementation((url) =>
-    url === failing
-      ? Promise.reject(failedRequest(status))
-      : Promise.resolve({ data: [{ value: 1 }] }),
+// The cells of a slice row: name, his share, the opponent's rank, % vs league.
+const cells = (row) =>
+  [...row.querySelectorAll('.pmc-row-name, .pmc-row-share, .pmc-rank, .pmc-row-vs')].map(
+    (cell) => cell.textContent,
   );
-  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
-  await act(async () => {});
+const rowsOf = (listName) =>
+  within(screen.getByRole('list', { name: listName }))
+    .getAllByRole('listitem')
+    .map(cells);
+const courtAgainst = (opponent) =>
+  screen.queryByRole('img', { name: `Shot zones half court against ${opponent}` });
+const group = (name) => screen.getByRole('region', { name });
+const groupHead = (name) => group(name).querySelector('.pmc-w3-head .pmc-val').textContent;
+const baseBars = (name) =>
+  [...group(name).querySelectorAll('.pmc-w3-toggle')].map((button) => button.textContent);
+
+test('one read of the unscheduled Matchup against the page opponent, no season and no legacy reads', async () => {
+  await renderProfile();
+  expect(apiClient.get.mock.calls.map(([url, { params }]) => [url, params])).toEqual([
+    ['MATCHUP_UNSCHEDULED', { player_name: 'Toumani Camara', opponent: 'DEN' }],
+  ]);
+  expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+  expect(screen.getByText(/2025-26 · data as of Aug 24/)).toBeVisible();
+});
+
+test('PTS reads S4: the Spot up row is 41% · 27th · +10% and the pill is the PTS score', async () => {
+  await renderProfile();
+  expect(screen.getByText('Where his PTS come from')).toBeVisible();
+  expect(screen.getByTitle('PTS Season Matchup Score')).toHaveTextContent('+2.0%');
+  expect(rowsOf('Play types')).toEqual([
+    ['Spot up', '41%', '27th', '+10%'],
+    ['Transition', '22%', '18th', '+1%'],
+    ['Cut', '8%', '29th', '+16%'],
+  ]);
+  // Shot types are scored on his own mix of 2s and 3s, so they have no opponent rank.
+  expect(screen.getByText('· for his mix of 2s and 3s')).toBeVisible();
+  expect(rowsOf('Shot types')).toEqual([
+    ['Catch & shoot', '52%', '–', '+3%'],
+    ['Less Than 10 ft', '32%', '–', '−1%'],
+    ['Pull-ups', '14%', '–', '+2%'],
+  ]);
+  expect(rowsOf('Traditional')).toEqual([['DEN: points allowed per 48', '', '18th', '+0.4%']]);
+  expect(
+    screen.getByRole('img', { name: 'Shot zones half court against DEN' }),
+  ).toBeInTheDocument();
+  expect(screen.getByText('DEN allows vs league')).toBeVisible();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+  expect(rowsOf('Play types')).toHaveLength(9);
+});
+
+test('slice rows show no league share', async () => {
+  const { container } = await renderProfile();
+  expect(container.textContent).not.toMatch(/\blg\b/);
+  await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Show all' })));
+  expect(container.textContent).not.toMatch(/\blg\b/);
+});
+
+test('PRA reads W3: subtotals by stat that add up to the PRA score, and no court', async () => {
+  await renderProfile({ lineType: 'PRA' });
+  expect(screen.getByTitle('PRA Season Matchup Score')).toHaveTextContent('+0.9%');
+  expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  // Groups run largest contribution first.
+  expect(
+    screen.getAllByRole('region').map((section) => section.getAttribute('aria-label')),
+  ).toEqual(['Points', 'Rebounds', 'Assists']);
+  expect(groupHead('Points')).toBe('+1.3%');
+  expect(group('Points')).toHaveTextContent('Points · 64% of his PRA');
+  expect(groupHead('Rebounds')).toBe('−0.6%');
+  expect(group('Rebounds')).toHaveTextContent('Rebounds · 24% of his PRA');
+  expect(groupHead('Assists')).toBe('+0.2%');
+  expect(group('Assists')).toHaveTextContent('Assists · 12% of his PRA');
+  expect(screen.getByText('PRA score').parentElement).toHaveTextContent('PRA score+0.9%');
+  expect(screen.getByText("Bars are each Base's share of the PRA score.")).toBeVisible();
+});
+
+test('each stat lists the Bases the response says feed it, Traditional under every one', async () => {
+  await renderProfile({ lineType: 'PRA' });
+  // Compact (nothing measured in jsdom): each group shows its largest Base and "+N more".
+  expect(baseBars('Points')).toEqual(['▸Play types+0.8%']);
+  fireEvent.click(within(group('Points')).getByRole('button', { name: '+3 more' }));
+  fireEvent.click(within(group('Rebounds')).getByRole('button', { name: '+1 more' }));
+  fireEvent.click(within(group('Assists')).getByRole('button', { name: '+1 more' }));
+  expect(baseBars('Points')).toEqual([
+    '▸Play types+0.8%',
+    '▸Shot zones+0.2%',
+    '▸Shot types+0.2%',
+    '▸Traditional+0.1%',
+  ]);
+  expect(baseBars('Rebounds')).toEqual(['▸Traditional−0.4%', '▸Rebound types−0.3%']);
+  expect(baseBars('Assists')).toEqual(['▸Assist locations+0.1%', '▸Traditional+0.1%']);
+});
+
+test("opening Traditional under Rebounds shows that stat's Defense Sheet row", async () => {
+  await renderProfile({ lineType: 'PRA' });
+  fireEvent.click(within(group('Rebounds')).getByRole('button', { name: /Traditional/ }));
+  expect(within(group('Rebounds')).getAllByRole('listitem').map(cells)).toEqual([
+    ['DEN: rebounds allowed per 48', '', '8th', '−3%'],
+  ]);
+});
+
+test.each([
+  ['PA', ['Points', 'Assists'], '+2.0%'],
+  ['RA', ['Rebounds', 'Assists'], '−1.1%'],
+])('%s groups only its own stats and totals the MCP score', async (lineType, groups, total) => {
+  await renderProfile({ lineType });
+  expect(
+    screen.getAllByRole('region').map((section) => section.getAttribute('aria-label')),
+  ).toEqual(groups);
+  expect(screen.getByText(`${lineType} score`).parentElement).toHaveTextContent(
+    `${lineType} score${total}`,
+  );
+});
+
+test('the picker lists scored markets in the Line Type groups and writes the Line Type', async () => {
+  const { setLineType } = await renderProfile();
+  const picker = screen.getByRole('combobox', { name: 'Market' });
+  expect(picker).toHaveValue('PTS');
+  expect([...picker.querySelectorAll('optgroup')].map((g) => g.label)).toEqual([
+    'Main',
+    'Combos',
+    'Shooting',
+    'Other',
+  ]);
+  expect([...picker.querySelectorAll('optgroup')].map((g) => g.textContent)).toEqual([
+    'PTSREBAST3PM',
+    'PRAPAPRRASTKS',
+    'FGMFGAFG2MFG2AFG3AFTMFTA',
+    'STLBLKTOV',
+  ]);
+  expect(within(picker).getByRole('option', { name: '3PM' })).toHaveValue('FG3M');
+
+  fireEvent.change(picker, { target: { value: 'PRA' } });
+  expect(setLineType).toHaveBeenCalledWith('PRA');
+});
+
+test('a new Line Type switches the card; AST shows its court without a duplicate list', async () => {
+  const { rerenderWith } = await renderProfile();
+  rerenderWith({ lineType: 'AST' });
+  expect(screen.getByRole('combobox', { name: 'Market' })).toHaveValue('AST');
+  expect(screen.getByText('Where his AST come from')).toBeVisible();
+  expect(screen.getByTitle('AST Season Matchup Score')).toHaveTextContent('+2.0%');
+  expect(
+    screen.getByRole('img', { name: 'Assist locations half court against DEN' }),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole('list', { name: 'Assist locations' })).not.toBeInTheDocument();
+  expect(rowsOf('Traditional')).toEqual([['DEN: assists allowed per 48', '', '18th', '+2%']]);
+
+  rerenderWith({ lineType: 'FG3M' });
+  expect(screen.getByRole('combobox', { name: 'Market' })).toHaveValue('FG3M');
+  expect(screen.getByText('Where his 3PM come from')).toBeVisible();
+});
+
+test.each(['FD_PTS', 'None'])(
+  'with Line Type %s the card shows PTS with a note, and picking RA sets the Line Type',
+  async (lineType) => {
+    const { setLineType } = await renderProfile({ lineType });
+    expect(screen.getByText(`PTS shown; ${lineType} has no Matchup Score`)).toBeVisible();
+    expect(screen.getByRole('combobox', { name: 'Market' })).toHaveValue('PTS');
+    expect(screen.getByText('Where his PTS come from')).toBeVisible();
+    fireEvent.change(screen.getByRole('combobox', { name: 'Market' }), {
+      target: { value: 'RA' },
+    });
+    expect(setLineType).toHaveBeenCalledWith('RA');
+  },
+);
+
+test.each([
+  [500, 'Failed to fetch data. Please try again. (ref 77070cec)'],
+  [400, 'Failed to fetch data. Please try again.'],
+])('a matchup read refused with %i shows %j', async (status, text) => {
+  apiClient.get.mockRejectedValue(failedRequest(status));
+  await renderProfile();
   expect(screen.getByText(text)).toBeVisible();
 });
 
-const zoneMatchup = (opponent) => ({
-  players: [
-    {
-      diet_shares: {
-        shot_zones: [
-          { key: 'Restricted Area', season: { share: 0.313, league_average_share: 0.276 } },
-        ],
+test('a player the backend cannot score reads as missing data, not a failure', async () => {
+  apiClient.get.mockRejectedValue(
+    Object.assign(new Error('Request failed with status code 404'), {
+      response: {
+        status: 404,
+        data: { error: { code: 'resource_not_found', details: { reason: 'no_player_diet' } } },
       },
-    },
-  ],
-  teams: [
-    {
-      tricode: opponent,
-      defense_sheet: {
-        shot_zones: [
-          { key: 'Restricted Area:FGM', season: { rank: 18, percent_vs_league_average: -0.3 } },
-        ],
-      },
-    },
-  ],
+    }),
+  );
+  await renderProfile({ selectedPlayer: 'Cooper Flagg' });
+  expect(screen.getByText('No matchup read for Cooper Flagg this season.')).toBeVisible();
 });
 
-test('Zone Shooting reads the Matchup court against the page opponent and follows it', async () => {
-  apiClient.get.mockImplementation((url, { params }) =>
-    url === 'MATCHUP_UNSCHEDULED'
-      ? Promise.resolve({ data: zoneMatchup(params.opponent) })
-      : Promise.resolve({ data: [{ value: 1 }] }),
-  );
-  const { rerender } = render(
-    <PlayerProfile selectedPlayer="LeBron James" selectedTeam="Boston Celtics" />,
-  );
-  await act(async () => {});
-  apiClient.get.mockClear();
-  fireEvent.click(screen.getByLabelText('Zone Shooting'));
-  await act(async () => {});
-  expect(apiClient.get.mock.calls.map(([url, { params }]) => [url, params])).toEqual([
-    ['MATCHUP_UNSCHEDULED', { player_name: 'LeBron James', opponent: 'BOS' }],
-  ]);
-  expect(screen.getByText('Shot zones · vs BOS')).toBeVisible();
-  expect(screen.getAllByText('31%')[0]).toBeVisible();
-
-  apiClient.get.mockClear();
-  rerender(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="New York Knicks" />);
-  await act(async () => {});
-  expect(apiClient.get.mock.calls.map(([url, { params }]) => [url, params])).toEqual([
-    ['MATCHUP_UNSCHEDULED', { player_name: 'LeBron James', opponent: 'NYK' }],
-  ]);
-  expect(screen.getByText('Shot zones · vs NYK')).toBeVisible();
-});
-
-test('Zone Shooting without an opponent asks for one and reads nothing', async () => {
-  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="" />);
-  await act(async () => {});
-  apiClient.get.mockClear();
-  fireEvent.click(screen.getByLabelText('Zone Shooting'));
-  await act(async () => {});
+test('without an opponent it asks for one, reads nothing and is settled', async () => {
+  const onSettled = jest.fn();
+  await renderProfile({ selectedTeam: '', onSettled });
   expect(apiClient.get).not.toHaveBeenCalled();
   expect(
-    screen.getByText('Pick an opponent in the Opposing Team card to see his zones against them.'),
+    screen.getByText('Pick an opponent in the Opposing Team card to see his matchup against them.'),
   ).toBeVisible();
+  expect(onSettled).toHaveBeenLastCalledWith('Toumani Camara', '');
 });
 
-test('a refused Zone Shooting read shows the failure with its reference', async () => {
-  apiClient.get.mockImplementation((url) =>
-    url === 'MATCHUP_UNSCHEDULED'
-      ? Promise.reject(failedRequest(500))
-      : Promise.resolve({ data: [{ value: 1 }] }),
-  );
-  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="Boston Celtics" />);
-  await act(async () => {});
-  fireEvent.click(screen.getByLabelText('Zone Shooting'));
-  await act(async () => {});
-  expect(screen.getByText('Failed to fetch data. Please try again. (ref 77070cec)')).toBeVisible();
-});
-
-test('Shooting Type reads the league baselines beside the profile', async () => {
-  apiClient.get.mockImplementation((url) =>
-    url === 'DIET_BASELINES'
-      ? Promise.resolve({ data: { shares: { shot_types: { 'Catch and Shoot': 0.324 } } } })
-      : Promise.resolve({ data: [{ SHOT_TYPE: 'C&S', FGA_FREQUENCY: 0.203 }] }),
-  );
-  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="Boston Celtics" />);
-  await act(async () => {});
-  fireEvent.click(screen.getByLabelText('Shooting Type'));
-  await act(async () => {});
-  expect(screen.getByText('Catch & shoot')).toBeVisible();
-  expect(screen.getByText('lg 32%')).toBeVisible();
-});
-
-test('a late answer for an earlier opponent cannot replace the current court or its readiness', async () => {
+test('a late answer for an earlier opponent cannot replace the current card or its readiness', async () => {
   const pending = {};
-  apiClient.get.mockImplementation((url, { params }) =>
-    url === 'MATCHUP_UNSCHEDULED'
-      ? new Promise((resolve, reject) => {
-          pending[params.opponent] = { resolve, reject };
-        })
-      : Promise.resolve({ data: [{ value: 1 }] }),
+  apiClient.get.mockImplementation(
+    (url, { params }) =>
+      new Promise((resolve, reject) => {
+        pending[params.opponent] = { resolve, reject };
+      }),
   );
   const onSettled = jest.fn();
-  const view = (team) => (
-    <PlayerProfile selectedPlayer="LeBron James" selectedTeam={team} onSettled={onSettled} />
-  );
-  const { rerender } = render(view('Boston Celtics'));
-  await act(async () => {});
-  fireEvent.click(screen.getByLabelText('Zone Shooting'));
-  await act(async () => pending.BOS.resolve({ data: zoneMatchup('BOS') }));
-  expect(screen.getByText('Shot zones · vs BOS')).toBeVisible();
+  const { rerenderWith } = await renderProfile({ onSettled });
+  await act(async () => pending.DEN.resolve({ data: matchupFor('DEN') }));
+  expect(courtAgainst('DEN')).toBeInTheDocument();
 
-  // A new opponent: the Boston court is not shown for it and it is not ready.
-  rerender(view('New York Knicks'));
+  rerenderWith({ selectedTeam: 'New York Knicks' });
   await act(async () => {});
-  expect(screen.queryByText('Shot zones · vs BOS')).not.toBeInTheDocument();
+  expect(courtAgainst('DEN')).not.toBeInTheDocument();
   expect(screen.getByText('Loading data...')).toBeVisible();
-  expect(onSettled).not.toHaveBeenCalledWith('LeBron James', 'New York Knicks');
-  await act(async () => pending.NYK.resolve({ data: zoneMatchup('NYK') }));
-  expect(screen.getByText('Shot zones · vs NYK')).toBeVisible();
-  expect(onSettled).toHaveBeenLastCalledWith('LeBron James', 'New York Knicks');
+  expect(onSettled).not.toHaveBeenCalledWith('Toumani Camara', 'New York Knicks');
+  await act(async () => pending.NYK.resolve({ data: matchupFor('NYK') }));
+  expect(courtAgainst('NYK')).toBeInTheDocument();
+  expect(onSettled).toHaveBeenLastCalledWith('Toumani Camara', 'New York Knicks');
 
-  // An answer for an abandoned opponent landing after the current one changes nothing.
-  rerender(view('Los Angeles Lakers'));
+  rerenderWith({ selectedTeam: 'Los Angeles Lakers' });
   await act(async () => {});
-  rerender(view('Miami Heat'));
-  await act(async () => pending.MIA.resolve({ data: zoneMatchup('MIA') }));
-  await act(async () => pending.LAL.resolve({ data: zoneMatchup('LAL') }));
-  expect(screen.getByText('Shot zones · vs MIA')).toBeVisible();
-  expect(screen.queryByText('Loading data...')).not.toBeInTheDocument();
-
-  rerender(view('Dallas Mavericks'));
-  await act(async () => {});
-  rerender(view('Denver Nuggets'));
-  await act(async () => pending.DEN.resolve({ data: zoneMatchup('DEN') }));
-  await act(async () => pending.DAL.reject(failedRequest(500)));
-  expect(screen.getByText('Shot zones · vs DEN')).toBeVisible();
+  rerenderWith({ selectedTeam: 'Miami Heat' });
+  await act(async () => pending.MIA.resolve({ data: matchupFor('MIA') }));
+  await act(async () => pending.LAL.reject(failedRequest(500)));
+  expect(courtAgainst('MIA')).toBeInTheDocument();
   expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
-  expect(onSettled).toHaveBeenLastCalledWith('LeBron James', 'Denver Nuggets');
-});
-
-test('a player the backend cannot score reads as missing data, not a failure', async () => {
-  apiClient.get.mockImplementation((url) =>
-    url === 'MATCHUP_UNSCHEDULED'
-      ? Promise.reject(
-          Object.assign(new Error('Request failed with status code 404'), {
-            response: {
-              status: 404,
-              data: {
-                error: { code: 'resource_not_found', details: { reason: 'no_player_diet' } },
-              },
-            },
-          }),
-        )
-      : Promise.resolve({ data: [{ value: 1 }] }),
-  );
-  render(<PlayerProfile selectedPlayer="Cooper Flagg" selectedTeam="Boston Celtics" />);
-  await act(async () => {});
-  fireEvent.click(screen.getByLabelText('Zone Shooting'));
-  await act(async () => {});
-  expect(screen.getByText('No shot zone matchup for Cooper Flagg this season.')).toBeVisible();
-});
-
-// An explicit Evidence season (crf04/statsplus#330) is named on the profile
-// and its league baselines; the default never is.
-test('an Evidence season is named on the profile and baselines reads, the default never', async () => {
-  apiClient.get.mockImplementation((url) =>
-    url === 'DIET_BASELINES'
-      ? Promise.resolve({ data: { shares: { shot_types: {} } } })
-      : Promise.resolve({ data: [{ SHOT_TYPE: 'C&S', FGA_FREQUENCY: 0.2 }] }),
-  );
-  const { rerender } = render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
-  await act(async () => {});
-  fireEvent.click(screen.getByLabelText('Shooting Type'));
-  await act(async () => {});
-  const reads = () =>
-    apiClient.get.mock.calls
-      .filter(([url]) => url !== 'TEAM_STATS')
-      .map(([url, { params }]) => [url, params]);
-  expect(reads()).toEqual([
-    ['PLAYER_PROFILE', { player_name: 'LeBron James', category: 'Playtypes' }],
-    ['PLAYER_PROFILE', { player_name: 'LeBron James', category: 'Shooting Type' }],
-    ['DIET_BASELINES', undefined],
-  ]);
-
-  apiClient.get.mockClear();
-  rerender(
-    <PlayerProfile
-      selectedPlayer="LeBron James"
-      selectedTeam="BOS"
-      seasonChoice={unpublishedSeasons.choices[0]}
-    />,
-  );
-  await act(async () => {});
-  expect(reads()).toEqual([
-    [
-      'PLAYER_PROFILE',
-      { player_name: 'LeBron James', category: 'Shooting Type', season: '2026-27' },
-    ],
-    ['DIET_BASELINES', { season: '2026-27' }],
-  ]);
-});
-
-test('a refused Evidence season says it is not available yet', async () => {
-  const refusal = Object.assign(new Error('Request failed with status code 503'), {
-    response: {
-      status: 503,
-      headers: {},
-      data: {
-        error: {
-          code: 'season_unavailable',
-          message: 'Refused.',
-          details: { selected_season: '2026-27', published_season: '2025-26' },
-        },
-      },
-    },
-  });
-  apiClient.get.mockImplementation((url) =>
-    url === 'PLAYER_PROFILE' ? Promise.reject(refusal) : Promise.resolve({ data: [{}] }),
-  );
-  render(
-    <PlayerProfile
-      selectedPlayer="LeBron James"
-      selectedTeam="BOS"
-      seasonChoice={unpublishedSeasons.choices[0]}
-    />,
-  );
-  await act(async () => {});
-  expect(screen.getByText("2026-27 isn't available yet.")).toBeVisible();
-});
-
-// The opponent comparison reads the same Evidence season as the player chart.
-test('the comparison read names the Evidence season, the default never', async () => {
-  const { rerender } = render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
-  await act(async () => {});
-  const comparisonReads = () =>
-    apiClient.get.mock.calls
-      .filter(([url]) => url === 'TEAM_STATS')
-      .map(([, { params }]) => params);
-  expect(comparisonReads()).toEqual([{ category: 'Playtype Points', team: 'BOS' }]);
-
-  apiClient.get.mockClear();
-  rerender(
-    <PlayerProfile
-      selectedPlayer="LeBron James"
-      selectedTeam="BOS"
-      seasonChoice={unpublishedSeasons.choices[0]}
-    />,
-  );
-  await act(async () => {});
-  expect(comparisonReads()).toEqual([
-    { category: 'Playtype Points', team: 'BOS', season: '2026-27' },
-  ]);
-});
-
-test('a comparison answered for an Evidence season renders its data', async () => {
-  apiClient.get.mockImplementation((url) =>
-    url === 'TEAM_STATS'
-      ? Promise.resolve({
-          data: {
-            data: [{ TEAM_NAME: 'Boston Celtics' }],
-            season_context: { selected_season: '2026-27', published_season: '2025-26' },
-          },
-        })
-      : Promise.resolve({ data: [{ PLAY_TYPE: 'Isolation' }] }),
-  );
-  render(
-    <PlayerProfile
-      selectedPlayer="LeBron James"
-      selectedTeam="BOS"
-      seasonChoice={unpublishedSeasons.choices[0]}
-    />,
-  );
-  await act(async () => {});
-  expect(screen.getByText('Compared with Boston Celtics')).toBeVisible();
-});
-
-test('a refused comparison season says it is not available yet', async () => {
-  const refusal = Object.assign(new Error('Request failed with status code 503'), {
-    response: {
-      status: 503,
-      headers: {},
-      data: {
-        error: {
-          code: 'season_unavailable',
-          message: 'Refused.',
-          details: { selected_season: '2026-27', published_season: '2025-26' },
-        },
-      },
-    },
-  });
-  apiClient.get.mockImplementation((url) =>
-    url === 'TEAM_STATS'
-      ? Promise.reject(refusal)
-      : Promise.resolve({ data: [{ PLAY_TYPE: 'Isolation' }] }),
-  );
-  render(
-    <PlayerProfile
-      selectedPlayer="LeBron James"
-      selectedTeam="BOS"
-      seasonChoice={unpublishedSeasons.choices[0]}
-    />,
-  );
-  await act(async () => {});
-  expect(screen.getByText("2026-27 isn't available yet.", { exact: true })).toBeVisible();
-});
-
-// Zone Shooting reads the Unscheduled Matchup for the Evidence season and
-// labels the court with that season and its sample.
-const early = unpublishedSeasons.choices[0];
-const selectedZones = (opponent) => {
-  const body = zoneMatchup(opponent);
-  body.players[0].diet_shares.shot_zones[0].season.share = 0.12;
-  return {
-    ...body,
-    season_context: { selected_season: '2026-27', published_season: '2025-26' },
-    trailing: [
-      {
-        family: 'team_defense',
-        serving_season: '2025-26',
-        rule: 'every team has played 10 games',
-        team_games: { min: 82, max: 82 },
-      },
-    ],
-  };
-};
-
-test('Zone Shooting reads the Evidence season and names its season and sample', async () => {
-  apiClient.get.mockImplementation((url, { params }) =>
-    url === 'MATCHUP_UNSCHEDULED'
-      ? Promise.resolve({
-          data: params.season ? selectedZones(params.opponent) : zoneMatchup(params.opponent),
-        })
-      : Promise.resolve({ data: [{ value: 1 }] }),
-  );
-  render(
-    <PlayerProfile
-      selectedPlayer="LeBron James"
-      selectedTeam="Boston Celtics"
-      seasonChoice={early}
-    />,
-  );
-  await act(async () => {});
-  apiClient.get.mockClear();
-  fireEvent.click(screen.getByLabelText('Zone Shooting'));
-  await act(async () => {});
-  expect(apiClient.get.mock.calls.map(([url, { params }]) => [url, params])).toEqual([
-    ['MATCHUP_UNSCHEDULED', { player_name: 'LeBron James', opponent: 'BOS', season: '2026-27' }],
-  ]);
-  expect(screen.getAllByText('12%')[0]).toBeVisible();
-  expect(screen.queryByText('31%')).not.toBeInTheDocument();
-  expect(screen.getByText('Evidence season 2026-27 · early, 2–4 games per team')).toBeVisible();
-  expect(
-    screen.getByText(
-      'Zones use 2025-26 team defense (82 games per team) until every team has played 10 games.',
-    ),
-  ).toBeVisible();
-});
-
-test('Zone Shooting on the default season names no season and adds no label', async () => {
-  apiClient.get.mockImplementation((url, { params }) =>
-    url === 'MATCHUP_UNSCHEDULED'
-      ? Promise.resolve({ data: zoneMatchup(params.opponent) })
-      : Promise.resolve({ data: [{ value: 1 }] }),
-  );
-  render(
-    <PlayerProfile
-      selectedPlayer="LeBron James"
-      selectedTeam="Boston Celtics"
-      seasonChoice={null}
-    />,
-  );
-  await act(async () => {});
-  fireEvent.click(screen.getByLabelText('Zone Shooting'));
-  await act(async () => {});
-  expect(apiClient.get).toHaveBeenLastCalledWith('MATCHUP_UNSCHEDULED', {
-    params: { player_name: 'LeBron James', opponent: 'BOS' },
-    signal: expect.anything(),
-  });
-  expect(screen.getAllByText('31%')[0]).toBeVisible();
-  expect(screen.queryByText(/Evidence season|Zones use/)).not.toBeInTheDocument();
-});
-
-const refused = (status, error) =>
-  Object.assign(new Error(`Request failed with status code ${status}`), {
-    response: { status, headers: {}, data: { error } },
-  });
-
-test.each([
-  [
-    'a backend that does not take season there',
-    () =>
-      Promise.reject(
-        refused(400, {
-          code: 'invalid_input',
-          message: 'Unknown parameter: season.',
-          details: { parameters: ['season'] },
-        }),
-      ),
-    "Zone Shooting can't read 2026-27 evidence yet.",
-  ],
-  [
-    'a backend that ignores it',
-    () => Promise.resolve({ data: zoneMatchup('BOS') }),
-    "Zone Shooting can't read 2026-27 evidence yet.",
-  ],
-  [
-    'a season not offered',
-    () =>
-      Promise.reject(
-        refused(503, {
-          code: 'season_unavailable',
-          message: 'Refused.',
-          details: { selected_season: '2026-27', published_season: '2025-26' },
-        }),
-      ),
-    "2026-27 isn't available yet.",
-  ],
-])(
-  'Zone Shooting under 2026-27 from %s refuses, never the default numbers',
-  async (_, answer, text) => {
-    apiClient.get.mockImplementation((url) =>
-      url === 'MATCHUP_UNSCHEDULED' ? answer() : Promise.resolve({ data: [{ value: 1 }] }),
-    );
-    render(
-      <PlayerProfile
-        selectedPlayer="LeBron James"
-        selectedTeam="Boston Celtics"
-        seasonChoice={early}
-      />,
-    );
-    await act(async () => {});
-    fireEvent.click(screen.getByLabelText('Zone Shooting'));
-    await act(async () => {});
-    expect(screen.getByText(text)).toBeVisible();
-    expect(screen.queryByText('31%')).not.toBeInTheDocument();
-  },
-);
-
-test('a retained Evidence season is named on the Zone Shooting read', async () => {
-  apiClient.get.mockImplementation((url, { params }) =>
-    url === 'MATCHUP_UNSCHEDULED'
-      ? Promise.resolve({
-          data: {
-            ...zoneMatchup(params.opponent),
-            season_context: { selected_season: '2024-25', published_season: '2025-26' },
-            trailing: [],
-          },
-        })
-      : Promise.resolve({ data: [{ value: 1 }] }),
-  );
-  render(
-    <PlayerProfile
-      selectedPlayer="LeBron James"
-      selectedTeam="Boston Celtics"
-      seasonChoice={publishedOnlySeasons.choices[1]}
-    />,
-  );
-  await act(async () => {});
-  fireEvent.click(screen.getByLabelText('Zone Shooting'));
-  await act(async () => {});
-  expect(apiClient.get).toHaveBeenLastCalledWith('MATCHUP_UNSCHEDULED', {
-    params: { player_name: 'LeBron James', opponent: 'BOS', season: '2024-25' },
-    signal: expect.anything(),
-  });
-  expect(screen.getByText('Evidence season 2024-25')).toBeVisible();
-});
-
-// Under a selection the league tick names the season its own base serves, and
-// the profile names each family it trails on.
-const synergyTrailing = {
-  family: 'synergy',
-  serving_season: '2025-26',
-  rule: 'NBA has published the season and every team has played 10 games',
-  team_games: { min: 82, max: 82 },
-};
-const dietsTrailing = {
-  family: 'player_diets',
-  serving_season: '2025-26',
-  rule: 'every team has played 10 games',
-  team_games: { min: 80, max: 82 },
-};
-const selectedBaselines = (shotTypesSeason, trailing) => ({
-  season_context: { selected_season: '2026-27', published_season: '2025-26' },
-  season: '2026-27',
-  bases: {
-    shot_types: { family: 'player_diets', season: shotTypesSeason },
-    play_types: { family: 'synergy', season: '2026-27' },
-  },
-  trailing,
-  shares: { shot_types: { 'Catch and Shoot': 0.32 } },
-});
-
-test.each([
-  ['trails', '2025-26', [dietsTrailing], 'League averages from 2025-26 (80–82 games per team)'],
-  ['serves the selection', '2026-27', [], 'League averages from 2026-27 (2–4 games per team)'],
-])(
-  'the Shooting Type league tick names the season its base %s',
-  async (_, shotTypesSeason, trailing, label) => {
-    apiClient.get.mockImplementation((url) =>
-      url === 'DIET_BASELINES'
-        ? Promise.resolve({ data: selectedBaselines(shotTypesSeason, trailing) })
-        : Promise.resolve({
-            data: {
-              data: [{ SHOT_TYPE: 'C&S', FGA_FREQUENCY: 0.2 }],
-              season_context: { selected_season: '2026-27', published_season: '2025-26' },
-              trailing: [],
-            },
-          }),
-    );
-    render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" seasonChoice={early} />);
-    await act(async () => {});
-    fireEvent.click(screen.getByLabelText('Shooting Type'));
-    await act(async () => {});
-    expect(screen.getByText(label)).toBeVisible();
-    expect(screen.queryAllByText(/League averages from/)).toHaveLength(1);
-  },
-);
-
-test('the profile names each family it trails on with its season and sample', async () => {
-  apiClient.get.mockImplementation((url) =>
-    url === 'PLAYER_PROFILE'
-      ? Promise.resolve({
-          data: {
-            data: [{ PLAY_TYPE: 'Isolation', FREQ: 0.2 }],
-            season_context: { selected_season: '2026-27', published_season: '2025-26' },
-            trailing: [synergyTrailing],
-          },
-        })
-      : Promise.resolve({ data: [{ value: 1 }] }),
-  );
-  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" seasonChoice={early} />);
-  await act(async () => {});
-  expect(
-    screen.getByText(
-      'Profile numbers use 2025-26 play types (82 games per team) until NBA has published the season and every team has played 10 games.',
-    ),
-  ).toBeVisible();
-});
-
-test('the default profile names no trailing family', async () => {
-  render(<PlayerProfile selectedPlayer="LeBron James" selectedTeam="BOS" />);
-  await act(async () => {});
-  expect(screen.queryByText(/Profile numbers use|League averages from/)).not.toBeInTheDocument();
+  expect(onSettled).toHaveBeenLastCalledWith('Toumani Camara', 'Miami Heat');
 });

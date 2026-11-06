@@ -30,21 +30,6 @@
       "reason": "Google mark: brand colours Google's sign-in guidelines fix."
     },
     {
-      "path": "src/AssistChart.js",
-      "match": "hsl(",
-      "reason": "Continuous red-to-green scale computed from the defense ratio, not a palette colour. Light mode decides its lightness."
-    },
-    {
-      "path": "src/PlaystyleComparisonChart.js",
-      "match": "hsl(",
-      "reason": "Continuous red-to-green scale computed from the defense ratio, not a palette colour."
-    },
-    {
-      "path": "src/matchupRating.js",
-      "match": "hsl(",
-      "reason": "Continuous red-to-green scale for the Total Matchup Rating, not a palette colour."
-    },
-    {
       "path": "src/utils.js",
       "match": "rgb(",
       "reason": "RankCube encodes the rank as red and green channels computed per rank."
@@ -56,6 +41,11 @@
     },
     {
       "path": "src/readings.css",
+      "match": "hsl(calc",
+      "reason": "Rank hue computed from --rank, not a palette colour."
+    },
+    {
+      "path": "src/profileMatchup/profileMatchup.css",
       "match": "hsl(calc",
       "reason": "Rank hue computed from --rank, not a palette colour."
     },

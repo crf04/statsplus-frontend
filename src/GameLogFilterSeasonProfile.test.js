@@ -30,9 +30,6 @@ jest.mock('./savedFilterSetsApi', () => ({
 }));
 jest.mock('./NaturalLanguageQuery', () => ({ __esModule: true, default: () => null }));
 jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }));
-jest.mock('./PlaystyleComparisonChart', () => () => null);
-jest.mock('./AssistProfileChart', () => () => null);
-jest.mock('./TwoThreeAssistChart', () => () => null);
 jest.mock('./ChartComponent', () => ({ __esModule: true, default: () => null }));
 jest.mock('./PerformanceAverages', () => ({ __esModule: true, default: () => null }));
 jest.mock('./GameLogsTable', () => ({ __esModule: true, default: () => null }));
@@ -63,7 +60,7 @@ const withChoices = {
     },
   ],
 };
-// The Opposing Team Profile's read; the Player Profile's comparison read is Playtypes.
+// The Opposing Team Profile's read.
 const opponentRequests = () =>
   apiClient.get.mock.calls
     .filter(
@@ -72,9 +69,10 @@ const opponentRequests = () =>
     .map(([, options]) => options.params);
 const teamStatsPaths = () =>
   apiClient.get.mock.calls.filter(([path]) => path === '/api/team_stats');
+// The Player Profile's one read: the unscheduled Matchup against the page opponent.
 const profileRequests = () =>
   apiClient.get.mock.calls
-    .filter(([path]) => path === '/api/player_profile')
+    .filter(([path]) => path === '/api/matchup_unscheduled')
     .map(([, options]) => options.params);
 
 beforeEach(() => {
@@ -86,9 +84,7 @@ beforeEach(() => {
           ? ['LeBron James']
           : path === '/api/next_opponent'
             ? { next_game: null, opponent_ranks: [] }
-            : path === '/api/player_profile'
-              ? [{ PLAY_TYPE: 'Isolation' }]
-              : [],
+            : [],
     }),
   );
   fetchGameLogsData.mockResolvedValue({
@@ -103,7 +99,7 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-test('while /seasons is pending the Player Profile neither reads nor shows, then reads 2026-27 once', async () => {
+test('while /seasons is pending the Player Profile neither reads nor shows, then reads its default season once', async () => {
   let answerSeasons;
   fetchSeasons.mockReturnValue(new Promise((resolve) => (answerSeasons = resolve)));
   render(
@@ -120,10 +116,10 @@ test('while /seasons is pending the Player Profile neither reads nor shows, then
 
   await act(async () => answerSeasons(withChoices));
   await screen.findByText('Player Profile');
+  await waitFor(() => expect(profileRequests()).not.toEqual([]));
   await act(async () => {});
-  expect(profileRequests()).toEqual([
-    { player_name: 'LeBron James', category: 'Playtypes', season: '2026-27' },
-  ]);
+  // The card reads CourtAI's default season, as MCP get_matchup does: it names none.
+  expect(profileRequests()).toEqual([{ player_name: 'LeBron James', opponent: 'ATL' }]);
 });
 
 test('a signed-out reader, who never reads /seasons, still sees the Player Profile', async () => {
@@ -179,7 +175,7 @@ test('a signed-out reader, who never reads /seasons, still sees the Opposing Tea
   ]);
 });
 
-test('a link that names its season still waits for /seasons, then each profile reads that season once', async () => {
+test('a link that names its season still waits for /seasons, then each profile reads once', async () => {
   let answerSeasons;
   fetchSeasons.mockReturnValue(new Promise((resolve) => (answerSeasons = resolve)));
   render(
@@ -198,9 +194,7 @@ test('a link that names its season still waits for /seasons, then each profile r
   await screen.findByText('Opposing Team Profile');
   await waitFor(() => expect(opponentRequests()).not.toEqual([]));
   await act(async () => {});
-  expect(profileRequests()).toEqual([
-    { player_name: 'LeBron James', category: 'Playtypes', season: '2026-27' },
-  ]);
+  expect(profileRequests()).toEqual([{ player_name: 'LeBron James', opponent: 'ATL' }]);
   expect(opponentRequests()).toEqual([
     { category: 'Traditional', team: 'Atlanta Hawks', date: null, season: '2026-27' },
   ]);
@@ -226,7 +220,7 @@ test('after signing out no profile read carries the signed-in Evidence season', 
   await act(async () => {});
   const signedOutReads = apiClient.get.mock.calls
     .slice(signedInReads)
-    .filter(([path]) => path === '/api/team_stats' || path === '/api/player_profile')
+    .filter(([path]) => path === '/api/team_stats' || path === '/api/matchup_unscheduled')
     .map(([, options]) => options.params);
   expect(signedOutReads).toContainEqual(expect.objectContaining({ category: 'Assists' }));
   expect(signedOutReads.filter((params) => 'season' in params)).toEqual([]);

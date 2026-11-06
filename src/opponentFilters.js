@@ -16,6 +16,7 @@ export const OPPONENT_FILTERS = [
     category: 'General defense',
     items: [
       { token: 'OPP_PTS', label: 'Points Allowed', means: 'Overall defense' },
+      { token: 'DRTG', label: 'Defensive Rating', means: 'Points allowed per 100 possessions' },
       { token: 'OPP_REB', label: 'Rebounds Allowed', means: 'Rebounds allowed' },
       { token: 'OPP_AST', label: 'Assists Allowed', means: 'Assists allowed' },
       { token: 'OPP_STOCKS', label: 'Steals + Blocks', means: 'Steals + blocks allowed' },

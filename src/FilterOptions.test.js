@@ -293,6 +293,20 @@ test('opening a different Filter Set clears an end date the old one left behind'
   expect(patch()).toEqual({ player_name: 'LeBron James', date_filter: '2026-03-01' });
 });
 
+test('Defensive Rating is offered under General defense and applies as DRTG', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Defense rank/ }));
+  expect(screen.getByRole('option', { name: 'Defensive Rating' })).toBeVisible();
+  fireEvent.change(screen.getByLabelText('Defensive metric'), { target: { value: 'DRTG' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Add: Defensive Rating, ranks 21–30' }));
+  apply();
+  expect(patch()).toEqual({
+    player_name: 'LeBron James',
+    'teams_against[]': ['DRTG'],
+    'rank_filter[]': [10],
+  });
+});
+
 test('Team Filter categories scope metrics and switching drops a stale selection', () => {
   renderPanel();
   fireEvent.click(screen.getByRole('button', { name: /\+ Defense rank/ }));

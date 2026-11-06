@@ -23,7 +23,11 @@ import './profileMatchup.css';
 export const marketFor = (lineType) =>
   lineType === 'FG3M' ? '3PM' : lineType === 'FD_PTS' || lineType === 'None' ? null : lineType;
 
-const tone = (value) => (value > 0 ? 'pmc-up' : value < 0 ? 'pmc-down' : '');
+/* Green or red by sign, as the value reads: one that rounds to 0.0% is neither. */
+const tone = (value) => {
+  const text = scoreText(value);
+  return text === '0.0%' ? '' : text.startsWith('+') ? 'pmc-up' : 'pmc-down';
+};
 
 const RankPill = ({ rank, vsLeague, hisMix = false }) =>
   rank === null ? (

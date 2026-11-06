@@ -272,3 +272,23 @@ test('a late answer for an earlier opponent cannot replace the current card or i
   expect(screen.queryByText(/Failed to fetch/)).not.toBeInTheDocument();
   expect(onSettled).toHaveBeenLastCalledWith('Toumani Camara', 'Miami Heat');
 });
+
+test('a contribution that rounds to 0.0% is neither green nor red', async () => {
+  const flat = JSON.parse(JSON.stringify(camaraVsDen));
+  flat.players[0].scores.AST.season.components.assist_locations.value = 0.0002;
+  flat.players[0].scores.AST.season.components.traditional.value = -0.0002;
+  flat.players[0].scores.AST.season.blend.value = 0;
+  apiClient.get.mockResolvedValue({ data: flat });
+  await renderProfile({ lineType: 'PRA' });
+  fireEvent.click(within(group('Assists')).getByRole('button', { name: '+1 more' }));
+  expect(
+    [...group('Assists').querySelectorAll('.pmc-val')].map((value) => [
+      value.textContent,
+      value.className,
+    ]),
+  ).toEqual([
+    ['0.0%', 'pmc-val '],
+    ['0.0%', 'pmc-val '],
+    ['0.0%', 'pmc-val '],
+  ]);
+});

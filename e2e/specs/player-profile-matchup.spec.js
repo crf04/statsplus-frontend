@@ -106,34 +106,103 @@ test('the card picker and the Line Type select are one market selection', async 
   await expect(card.getByText('RA score', { exact: true })).toBeVisible();
 });
 
-for (const viewport of [
-  { width: 1440, height: 1000 },
-  { width: 390, height: 844 },
-]) {
-  test(`the PRA sheet opens whole groups while it fits, and keeps what the reader opened at ${viewport.width}px`, async ({
+const DESKTOP = { width: 1440, height: 1000 };
+const PHONE = { width: 390, height: 844 };
+
+// Each stat group as shown: how many Bases it has, how many show, and its "+N more" button.
+const groupStates = (card) =>
+  card.locator('[data-fit-group]').evaluateAll((sections) =>
+    sections.map((section) => ({
+      stat: section.getAttribute('aria-label'),
+      bases: Number(section.dataset.bases),
+      shown: section.querySelectorAll('.pmc-w3-toggle').length,
+      more: section.querySelector('.pmc-w3-more')?.textContent ?? null,
+    })),
+  );
+
+// Beside the Opposing Team Profile the sheet's room is that card's natural height. The room
+// left is how far the neighbour's content reaches below this card's content; a group still
+// compact must need more than that to open (its hidden rows less its "+N more" button).
+const desktopFit = (card) =>
+  card.evaluate((element) => {
+    const row = element.closest('.row');
+    const neighbour = [...row.querySelectorAll('.dark-card')].find((c) => c !== element);
+    const contentBottom = (c) => {
+      const body = c.querySelector('.card-body');
+      return body.lastElementChild.getBoundingClientRect().bottom - c.getBoundingClientRect().top;
+    };
+    const left = contentBottom(neighbour) - contentBottom(element);
+    const rowHeight = element.querySelector('.pmc-w3-base').getBoundingClientRect().height;
+    const compact = [...element.querySelectorAll('[data-fit-group]')]
+      .filter((section) => section.querySelector('.pmc-w3-more'))
+      .map((section) => ({
+        stat: section.getAttribute('aria-label'),
+        needs:
+          (Number(section.dataset.bases) - 1) * rowHeight -
+          section.querySelector('.pmc-w3-more').getBoundingClientRect().height,
+      }));
+    return { left, compact };
+  });
+
+const expectDesktopFit = async (card) => {
+  const { left, compact } = await desktopFit(card);
+  expect(left).toBeGreaterThan(-1);
+  for (const { stat, needs } of compact) expect([stat, needs > left]).toEqual([stat, true]);
+};
+
+test('on a phone the PRA sheet has room for every group, so all open with no "+N more"', async ({
+  authenticatedPage: page,
+}) => {
+  await page.setViewportSize(PHONE);
+  await page.goto('/?player_name=LeBron+James&line_type=PRA');
+  const card = profileCard(page);
+  await expect(card.getByText('PRA score', { exact: true })).toBeVisible();
+  await expect
+    .poll(() => groupStates(card))
+    .toEqual([
+      { stat: 'Points', bases: 4, shown: 4, more: null },
+      { stat: 'Rebounds', bases: 2, shown: 2, more: null },
+      { stat: 'Assists', bases: 2, shown: 2, more: null },
+    ]);
+});
+
+test('on desktop the sheet opens groups while they fit the row, and fits again on resize and a new market', async ({
+  authenticatedPage: page,
+}) => {
+  await page.setViewportSize(DESKTOP);
+  await page.goto('/?player_name=LeBron+James&line_type=PRA');
+  const card = profileCard(page);
+  await expect(card.getByText('PRA score', { exact: true })).toBeVisible();
+  await expect(opponentCard(page).getByText('Rebounds', { exact: true })).toBeVisible();
+  await expectDesktopFit(card);
+  const desktop = await groupStates(card);
+  // At least one group opens here, so the fit is not leaving everything compact.
+  expect(desktop.some(({ bases, shown }) => bases > 1 && shown === bases)).toBe(true);
+
+  await page.setViewportSize(PHONE);
+  await expect
+    .poll(async () => (await groupStates(card)).map(({ shown, more }) => [shown, more]))
+    .toEqual([
+      [4, null],
+      [2, null],
+      [2, null],
+    ]);
+  await page.setViewportSize(DESKTOP);
+  await expect.poll(() => groupStates(card)).toEqual(desktop);
+
+  await card.getByRole('combobox', { name: 'Market' }).selectOption('PA');
+  await expect(card.getByText('PA score', { exact: true })).toBeVisible();
+  await expectDesktopFit(card);
+});
+
+for (const viewport of [DESKTOP, PHONE]) {
+  test(`a Base the reader opened stays open across a resize at ${viewport.width}px`, async ({
     authenticatedPage: page,
   }) => {
     await page.setViewportSize(viewport);
     await page.goto('/?player_name=LeBron+James&line_type=PRA');
     const card = profileCard(page);
     await expect(card.getByText('PRA score', { exact: true })).toBeVisible();
-    await expect(opponentCard(page).getByRole('combobox').first()).toBeVisible();
-
-    // A fitted group shows every Base and no button; one that does not fit shows its lead
-    // Base and "+N more".
-    const groups = card.locator('[data-fit-group]');
-    await expect(groups).toHaveCount(3);
-    const states = await groups.evaluateAll((sections) =>
-      sections.map((section) => ({
-        bases: Number(section.dataset.bases),
-        shown: section.querySelectorAll('.pmc-w3-toggle').length,
-        more: section.querySelector('.pmc-w3-more')?.textContent ?? null,
-      })),
-    );
-    for (const { bases, shown, more } of states) {
-      if (shown === bases) expect(more).toBeNull();
-      else expect([shown, more]).toEqual([1, `+${bases - 1} more`]);
-    }
     expect(await overflow(card)).toBe(0);
 
     // The reader opens Traditional under Rebounds; a resize keeps it open.
@@ -143,9 +212,7 @@ for (const viewport of [
     const [metric, ...reading] = await rowCells(row);
     expect(metric).toMatch(/^[A-Z]{3}: rebounds allowed per 48$/);
     expect(reading).toEqual(['', '8th', '−3%']);
-    await page.setViewportSize(
-      viewport.width > 600 ? { width: 390, height: 844 } : { width: 1440, height: 1000 },
-    );
+    await page.setViewportSize(viewport === DESKTOP ? PHONE : DESKTOP);
     await page.setViewportSize(viewport);
     await expect(rebounds.getByRole('button', { name: /^Traditional/ })).toHaveAttribute(
       'aria-expanded',

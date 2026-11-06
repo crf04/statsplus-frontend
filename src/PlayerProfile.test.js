@@ -292,3 +292,199 @@ test('a contribution that rounds to 0.0% is neither green nor red', async () => 
     ['0.0%', 'pmc-val '],
   ]);
 });
+
+const variant = (edit) => {
+  const data = JSON.parse(JSON.stringify(camaraVsDen));
+  edit(data);
+  apiClient.get.mockResolvedValue({ data });
+};
+
+test('the picker leaves out a market the response gives no Matchup Score', async () => {
+  variant((data) => {
+    delete data.players[0].scores.STL;
+    data.players[0].scores.BLK.season = {};
+  });
+  await renderProfile();
+  const other = screen
+    .getByRole('combobox', { name: 'Market' })
+    .querySelector('optgroup[label="Other"]');
+  expect([...other.querySelectorAll('option')].map((option) => option.value)).toEqual(['TOV']);
+});
+
+test('a stat averages the Bases its own market carries in the response, and divides by their count', async () => {
+  // PTS scored on three Bases (no Shot types), its Blend their mean; the PRA score the sum.
+  variant((data) => {
+    const pts = data.players[0].scores.PTS.season;
+    delete pts.components.shot_types;
+    pts.blend.value =
+      (pts.components.play_types.value +
+        pts.components.shot_zones.value +
+        pts.components.traditional.value) /
+      3;
+    data.players[0].scores.PRA.season.blend.value = 0.010583;
+  });
+  await renderProfile({ lineType: 'PRA' });
+  fireEvent.click(within(group('Points')).getByRole('button', { name: '+2 more' }));
+  expect(groupHead('Points')).toBe('+1.4%');
+  expect(baseBars('Points')).toEqual(['▸Play types+1.0%', '▸Shot zones+0.3%', '▸Traditional+0.1%']);
+  expect(screen.getByText('PRA score').parentElement).toHaveTextContent('PRA score+1.1%');
+});
+
+test("a points market reads a slice's own PTS row even when another row sits further from league", async () => {
+  variant((data) => {
+    data.teams[0].defense_sheet.play_types.push({
+      key: 'Spotup:FTA',
+      markets: ['PTS', 'FTA'],
+      season: { rank: 30, percent_vs_league_average: 40 },
+    });
+  });
+  await renderProfile();
+  expect(rowsOf('Play types')[0]).toEqual(['Spot up', '41%', '27th', '+10%']);
+});
+
+test('the court tints each zone by its % vs league, green for more and red for less', async () => {
+  await renderProfile();
+  const court = screen.getByRole('img', { name: 'Shot zones half court against DEN' });
+  // Above-break 3, both corners, mid-range, paint, restricted area, in drawing order.
+  expect(
+    [...court.querySelectorAll('[fill]')]
+      .map((shape) => shape.getAttribute('fill'))
+      .filter((fill) => fill.startsWith('rgb(')),
+  ).toEqual([
+    'rgb(var(--ct-miss-fill-rgb) / 0.13)',
+    'rgb(var(--ct-hit-fill-rgb) / 0.40)',
+    'rgb(var(--ct-hit-fill-rgb) / 0.40)',
+    'rgb(var(--ct-hit-fill-rgb) / 0.31)',
+    'rgb(var(--ct-hit-fill-rgb) / 0.32)',
+    'rgb(var(--ct-miss-fill-rgb) / 0.22)',
+  ]);
+});
+
+test('every W3 bar sits on one scale, the largest contribution reaching the edge', async () => {
+  await renderProfile({ lineType: 'PRA' });
+  fireEvent.click(within(group('Points')).getByRole('button', { name: '+3 more' }));
+  const widths = (name) =>
+    [...group(name).querySelectorAll('.pmc-bar > i')].map((bar) => bar.style.width);
+  expect(widths('Points')).toEqual(['50%', '30.6%', '9.2%', '7.8%', '2.5%']);
+  expect(widths('Rebounds')).toEqual(['24.3%', '14%']);
+  expect(
+    screen.getByText('PRA score').parentElement.querySelector('.pmc-bar > i').style.width,
+  ).toBe('35%');
+});
+
+/*
+ * Fit to space. jsdom has no layout, so the boxes the fit measures are faked: each Base row is
+ * `rowHeight` tall, "+N more" 20, each stat header and the total row 30, the sheet their sum.
+ * In jsdom the card has no neighbour, so the room is the phone budget, 640.
+ */
+describe('fit to space', () => {
+  let rowHeight;
+  const box = (height) => ({ top: 0, bottom: height, height, left: 0, right: 0, width: 0 });
+  beforeEach(() => {
+    jest.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function measure() {
+      if (this.classList.contains('pmc-w3-base')) return box(rowHeight);
+      if (this.classList.contains('pmc-w3-more')) return box(20);
+      if (this.querySelector(':scope > [data-fit-group]')) {
+        const sections = [...this.querySelectorAll(':scope > [data-fit-group]')];
+        return box(
+          sections.reduce(
+            (sum, section) =>
+              sum +
+              30 +
+              section.querySelectorAll('.pmc-w3-base').length * rowHeight +
+              section.querySelectorAll('.pmc-w3-more').length * 20,
+            30,
+          ),
+        );
+      }
+      return box(0);
+    });
+  });
+  afterEach(() => jest.restoreAllMocks());
+
+  const more = () =>
+    screen
+      .getAllByRole('region')
+      .map((section) => [
+        section.getAttribute('aria-label'),
+        section.querySelector('.pmc-w3-more')?.textContent ?? null,
+      ]);
+  const resize = (height) =>
+    act(() => {
+      rowHeight = height;
+      window.dispatchEvent(new Event('resize'));
+    });
+
+  test('with room for every group, all open and none offers "+N more"', async () => {
+    rowHeight = 20;
+    await renderProfile({ lineType: 'PRA' });
+    expect(more()).toEqual([
+      ['Points', null],
+      ['Rebounds', null],
+      ['Assists', null],
+    ]);
+    expect(baseBars('Points')).toHaveLength(4);
+  });
+
+  test('with no room, every group stays compact behind "+N more"', async () => {
+    rowHeight = 200;
+    await renderProfile({ lineType: 'PRA' });
+    expect(more()).toEqual([
+      ['Points', '+3 more'],
+      ['Rebounds', '+1 more'],
+      ['Assists', '+1 more'],
+    ]);
+  });
+
+  test('at the boundary only the group that does not fit offers "+N more"', async () => {
+    // Compact sheet 480; Points needs 280 more (no), then Rebounds 80 (560) and Assists 80 (640).
+    rowHeight = 100;
+    await renderProfile({ lineType: 'PRA' });
+    expect(more()).toEqual([
+      ['Points', '+3 more'],
+      ['Rebounds', null],
+      ['Assists', null],
+    ]);
+  });
+
+  test('a resize fits again', async () => {
+    rowHeight = 200;
+    await renderProfile({ lineType: 'PRA' });
+    resize(20);
+    expect(more()).toEqual([
+      ['Points', null],
+      ['Rebounds', null],
+      ['Assists', null],
+    ]);
+    resize(200);
+    expect(more()).toEqual([
+      ['Points', '+3 more'],
+      ['Rebounds', '+1 more'],
+      ['Assists', '+1 more'],
+    ]);
+  });
+
+  test('a group the reader opened survives a resize, and the fit no longer moves', async () => {
+    rowHeight = 200;
+    await renderProfile({ lineType: 'PRA' });
+    fireEvent.click(within(group('Rebounds')).getByRole('button', { name: '+1 more' }));
+    resize(20);
+    expect(more()).toEqual([
+      ['Points', '+3 more'],
+      ['Rebounds', 'Show less'],
+      ['Assists', '+1 more'],
+    ]);
+  });
+
+  test('a new market starts the fit over, whatever the reader opened before', async () => {
+    rowHeight = 200;
+    const { rerenderWith } = await renderProfile({ lineType: 'PRA' });
+    fireEvent.click(within(group('Points')).getByRole('button', { name: '+3 more' }));
+    rowHeight = 20;
+    await act(async () => rerenderWith({ lineType: 'PA' }));
+    expect(more()).toEqual([
+      ['Points', null],
+      ['Assists', null],
+    ]);
+  });
+});

@@ -125,10 +125,12 @@ export default function TargetLab({
   const named = hostSeason
     ? (hostPick ?? (hostSeason.kind === 'linked' ? hostSeason.season : null))
     : evidenceSeason.linked;
-  const chosenSeason = backtestSeason({
-    ...evidenceSeason,
-    reads: named ?? hostSeason?.season ?? evidenceSeason.reads,
-  });
+  const chosenSeason =
+    hostPick ??
+    backtestSeason({
+      ...evidenceSeason,
+      reads: named ?? hostSeason?.season ?? evidenceSeason.reads,
+    });
   const choose = (next) =>
     hostSeason
       ? setHostPick(next)

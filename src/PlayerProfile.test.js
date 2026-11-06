@@ -125,6 +125,27 @@ test('FGA without an overall row reads the 2PT or 3PT row furthest from league, 
   ]);
 });
 
+test("FGM reads a shot type's overall FGM row over the 2PT and 3PT makes rows", async () => {
+  apiClient.get.mockResolvedValue({
+    data: withShotTypeRow({
+      key: 'Catch and Shoot:FGM',
+      markets: ['FGM'],
+      season: { rank: 9, percent_vs_league_average: -2.1 },
+    }),
+  });
+  await renderProfile({ lineType: 'FGM' });
+  expect(rowsOf('Shot types')[0]).toEqual(['Catch & shoot', '52%', '9th', '−2%']);
+});
+
+test('FGM without an overall row reads the 2PT or 3PT makes row furthest from league, ranked', async () => {
+  await renderProfile({ lineType: 'FGM' });
+  expect(rowsOf('Shot types')).toEqual([
+    ['Catch & shoot', '52%', '22nd', '+7%'],
+    ['Less Than 10 ft', '32%', '14th', '−1%'],
+    ['Pull-ups', '14%', '25th', '+10%'],
+  ]);
+});
+
 test('slice rows show no league share', async () => {
   const { container } = await renderProfile();
   expect(container.textContent).not.toMatch(/\blg\b/);

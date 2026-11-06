@@ -99,7 +99,7 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
-test('while /seasons is pending the Player Profile neither reads nor shows, then reads its default season once', async () => {
+test('while /seasons is pending the Player Profile neither reads nor shows, then reads 2026-27 once', async () => {
   let answerSeasons;
   fetchSeasons.mockReturnValue(new Promise((resolve) => (answerSeasons = resolve)));
   render(
@@ -118,8 +118,9 @@ test('while /seasons is pending the Player Profile neither reads nor shows, then
   await screen.findByText('Player Profile');
   await waitFor(() => expect(profileRequests()).not.toEqual([]));
   await act(async () => {});
-  // The card reads CourtAI's default season, as MCP get_matchup does: it names none.
-  expect(profileRequests()).toEqual([{ player_name: 'LeBron James', opponent: 'ATL' }]);
+  expect(profileRequests()).toEqual([
+    { player_name: 'LeBron James', opponent: 'ATL', season: '2026-27' },
+  ]);
 });
 
 test('a signed-out reader, who never reads /seasons, still sees the Player Profile', async () => {
@@ -175,7 +176,7 @@ test('a signed-out reader, who never reads /seasons, still sees the Opposing Tea
   ]);
 });
 
-test('a link that names its season still waits for /seasons, then each profile reads once', async () => {
+test('a link that names its season still waits for /seasons, then each profile reads that season once', async () => {
   let answerSeasons;
   fetchSeasons.mockReturnValue(new Promise((resolve) => (answerSeasons = resolve)));
   render(
@@ -194,7 +195,9 @@ test('a link that names its season still waits for /seasons, then each profile r
   await screen.findByText('Opposing Team Profile');
   await waitFor(() => expect(opponentRequests()).not.toEqual([]));
   await act(async () => {});
-  expect(profileRequests()).toEqual([{ player_name: 'LeBron James', opponent: 'ATL' }]);
+  expect(profileRequests()).toEqual([
+    { player_name: 'LeBron James', opponent: 'ATL', season: '2026-27' },
+  ]);
   expect(opponentRequests()).toEqual([
     { category: 'Traditional', team: 'Atlanta Hawks', date: null, season: '2026-27' },
   ]);

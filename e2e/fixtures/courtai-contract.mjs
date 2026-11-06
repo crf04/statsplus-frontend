@@ -2,6 +2,7 @@ import statCatalogue from '../../src/targets/targetStatCatalogue.json' with { ty
 import reportFixture from './report.json' with { type: 'json' };
 import blockReportFixture from './report-blocks.json' with { type: 'json' };
 import unscheduledMatchupFixture from './unscheduled-matchup.json' with { type: 'json' };
+import unscheduledMatchup2627Fixture from './unscheduled-matchup-2026-27.json' with { type: 'json' };
 
 export const E2E_AUTH_STORAGE_KEY = 'courtai:e2e-authenticated';
 export const E2E_ADMIN_STORAGE_KEY = 'courtai:e2e-admin';
@@ -3265,11 +3266,15 @@ const fulfillOverride = (route, response) =>
 
 // An Unscheduled Matchup as production served it (Toumani Camara vs DEN, 2026-11-06, trimmed
 // to what the Player Profile card reads), answered for the player and opponent asked.
-const unscheduledMatchupPayload = (playerName, opponent) => ({
-  ...unscheduledMatchupFixture,
-  players: unscheduledMatchupFixture.players.map((player) => ({ ...player, name: playerName })),
-  teams: unscheduledMatchupFixture.teams.map((team) => ({ ...team, tricode: opponent })),
-});
+// With `season=2026-27` it answers that season's read (captured the same day).
+const unscheduledMatchupPayload = (playerName, opponent, season) => {
+  const fixture = season === '2026-27' ? unscheduledMatchup2627Fixture : unscheduledMatchupFixture;
+  return {
+    ...fixture,
+    players: fixture.players.map((player) => ({ ...player, name: playerName })),
+    teams: fixture.teams.map((team) => ({ ...team, tricode: opponent })),
+  };
+};
 
 // The MCP server's Report Builder routes (crf04/statsplus#382, the coordination repository's
 // docs/contracts/report-builder-cards.md). The browser calls them cross-origin with the bearer.
@@ -4354,7 +4359,11 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
         return;
       }
       await route.fulfill({
-        json: unscheduledMatchupPayload(url.searchParams.get('player_name'), opponent),
+        json: unscheduledMatchupPayload(
+          url.searchParams.get('player_name'),
+          opponent,
+          url.searchParams.get('season'),
+        ),
       });
       return;
     }

@@ -1,0 +1,1465 @@
+{
+  "as_of": {
+    "last_15_defense": null,
+    "player_diets": "2026-11-02",
+    "season": "2025-26",
+    "season_defense": "2026-11-06"
+  },
+  "season_context": {
+    "published_season": "2025-26",
+    "selected_season": "2026-27"
+  },
+  "players": [
+    {
+      "name": "Toumani Camara",
+      "tricode": "POR",
+      "season_averages": {
+        "3PM": 3.428571,
+        "AST": 1.285714,
+        "BLK": 0.285714,
+        "FG2A": 1.571429,
+        "FG2M": 1.285714,
+        "FG3A": 7.285714,
+        "FGA": 8.857143,
+        "FGM": 4.714286,
+        "FTA": 1.428571,
+        "FTM": 0.857143,
+        "PA": 15,
+        "PR": 16.571429,
+        "PRA": 17.857143,
+        "PTS": 13.714286,
+        "RA": 4.142857,
+        "REB": 2.857143,
+        "STKS": 1.285714,
+        "STL": 1,
+        "TOV": 1.428571
+      },
+      "diet_thin": {
+        "assist_locations": false,
+        "play_types": true,
+        "rebound_types": false,
+        "shot_types": false,
+        "shot_zones": false
+      },
+      "diet_shares": {
+        "assist_locations": [
+          {
+            "key": "Arc3Assists",
+            "season": {
+              "share": 0.444444,
+              "league_average_share": 0.298201,
+              "sigma_deviation": 1.375159
+            }
+          },
+          {
+            "key": "AtRimAssists",
+            "season": {
+              "share": 0.222222,
+              "league_average_share": 0.374599,
+              "sigma_deviation": -1.215398
+            }
+          },
+          {
+            "key": "Corner3Assists",
+            "season": {
+              "share": 0.111111,
+              "league_average_share": 0.133178,
+              "sigma_deviation": -0.297877
+            }
+          },
+          {
+            "key": "LongMidRangeAssists",
+            "season": {
+              "share": 0,
+              "league_average_share": 0.041535,
+              "sigma_deviation": -0.944278
+            }
+          },
+          {
+            "key": "ShortMidRangeAssists",
+            "season": {
+              "share": 0.222222,
+              "league_average_share": 0.152486,
+              "sigma_deviation": 0.780322
+            }
+          }
+        ],
+        "play_types": [
+          {
+            "key": "Spotup",
+            "season": {
+              "share": 0.564,
+              "league_average_share": 0.248532,
+              "sigma_deviation": 2.931028
+            }
+          },
+          {
+            "key": "Transition",
+            "season": {
+              "share": 0.244,
+              "league_average_share": 0.193413,
+              "sigma_deviation": 0.825383
+            }
+          }
+        ],
+        "rebound_types": [
+          {
+            "key": "DefThreePtRebounds",
+            "season": {
+              "share": 0.25,
+              "league_average_share": 0.352825,
+              "sigma_deviation": -1.058405
+            }
+          },
+          {
+            "key": "DefTwoPtRebounds",
+            "season": {
+              "share": 0.45,
+              "league_average_share": 0.327815,
+              "sigma_deviation": 1.405757
+            }
+          },
+          {
+            "key": "FTDefRebounds",
+            "season": {
+              "share": 0.05,
+              "league_average_share": 0.052648,
+              "sigma_deviation": -0.074149
+            }
+          },
+          {
+            "key": "FTOffRebounds",
+            "season": {
+              "share": 0.1,
+              "league_average_share": 0.006974,
+              "sigma_deviation": 7.72315
+            }
+          },
+          {
+            "key": "OffThreePtRebounds",
+            "season": {
+              "share": 0.15,
+              "league_average_share": 0.120823,
+              "sigma_deviation": 0.45271
+            }
+          },
+          {
+            "key": "OffTwoPtRebounds",
+            "season": {
+              "share": 0,
+              "league_average_share": 0.138915,
+              "sigma_deviation": -1.827035
+            }
+          }
+        ],
+        "shot_types": [
+          {
+            "key": "Catch and Shoot",
+            "season": {
+              "share": 0.711,
+              "league_average_share": 0.326749,
+              "sigma_deviation": 2.49175,
+              "shot_values": {
+                "2": {
+                  "volume": 0,
+                  "sigma_deviation": -0.676316
+                },
+                "3": {
+                  "volume": 32,
+                  "sigma_deviation": 2.538083
+                }
+              }
+            }
+          },
+          {
+            "key": "Less Than 10 ft",
+            "season": {
+              "share": 0.133,
+              "league_average_share": 0.420736,
+              "sigma_deviation": -1.604879,
+              "shot_values": {
+                "2": {
+                  "volume": 6,
+                  "sigma_deviation": -1.604524
+                },
+                "3": {
+                  "volume": 0,
+                  "sigma_deviation": -0.076029
+                }
+              }
+            }
+          },
+          {
+            "key": "Pullups",
+            "season": {
+              "share": 0.133,
+              "league_average_share": 0.249568,
+              "sigma_deviation": -0.76208,
+              "shot_values": {
+                "2": {
+                  "volume": 0,
+                  "sigma_deviation": -1.45851
+                },
+                "3": {
+                  "volume": 6,
+                  "sigma_deviation": 0.134049
+                }
+              }
+            }
+          }
+        ],
+        "shot_zones": [
+          {
+            "key": "Above the Break 3",
+            "season": {
+              "share": 0.5,
+              "league_average_share": 0.323547,
+              "sigma_deviation": 1.221129
+            }
+          },
+          {
+            "key": "Corner 3",
+            "season": {
+              "share": 0.322581,
+              "league_average_share": 0.115482,
+              "sigma_deviation": 2.381252
+            }
+          },
+          {
+            "key": "In The Paint (Non-RA)",
+            "season": {
+              "share": 0.048387,
+              "league_average_share": 0.194115,
+              "sigma_deviation": -1.649155
+            }
+          },
+          {
+            "key": "Mid-Range",
+            "season": {
+              "share": 0,
+              "league_average_share": 0.100762,
+              "sigma_deviation": -1.34436
+            }
+          },
+          {
+            "key": "Restricted Area",
+            "season": {
+              "share": 0.129032,
+              "league_average_share": 0.266095,
+              "sigma_deviation": -0.953698
+            }
+          }
+        ]
+      },
+      "scores": {
+        "3PM": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": 0.067552
+            },
+            "components": {
+              "shot_types": {
+                "thin": false,
+                "value": 0.129547
+              },
+              "shot_zones": {
+                "thin": false,
+                "value": 0.0386
+              },
+              "traditional": {
+                "thin": false,
+                "value": 0.034509
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "AST": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": 0.056715
+            },
+            "components": {
+              "assist_locations": {
+                "thin": false,
+                "value": 0.038357
+              },
+              "traditional": {
+                "thin": false,
+                "value": 0.075073
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "BLK": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": -0.156969
+            },
+            "components": {
+              "traditional": {
+                "thin": false,
+                "value": -0.156969
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "FG2A": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": 0.101066
+            },
+            "components": {
+              "shot_types": {
+                "thin": false,
+                "value": 0.09522
+              },
+              "shot_zones": {
+                "thin": false,
+                "value": 0.106912
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "FG2M": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": 0.115914
+            },
+            "components": {
+              "shot_types": {
+                "thin": false,
+                "value": 0.143866
+              },
+              "shot_zones": {
+                "thin": false,
+                "value": 0.087961
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "FG3A": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": 0.043104
+            },
+            "components": {
+              "shot_types": {
+                "thin": false,
+                "value": 0.064552
+              },
+              "shot_zones": {
+                "thin": false,
+                "value": 0.046404
+              },
+              "traditional": {
+                "thin": false,
+                "value": 0.018355
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "FGA": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": 0.046694
+            },
+            "components": {
+              "shot_types": {
+                "slices": [
+                  {
+                    "key": "Catch and Shoot",
+                    "percent_vs_league_average": 6.212752
+                  },
+                  {
+                    "key": "Less Than 10 ft",
+                    "percent_vs_league_average": 9.521993
+                  },
+                  {
+                    "key": "Pullups",
+                    "percent_vs_league_average": 7.74851
+                  }
+                ],
+                "thin": false,
+                "value": 0.067142
+              },
+              "shot_zones": {
+                "thin": false,
+                "value": 0.057139
+              },
+              "traditional": {
+                "thin": false,
+                "value": 0.0158
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "FGM": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": 0.071714
+            },
+            "components": {
+              "shot_types": {
+                "slices": [
+                  {
+                    "key": "Catch and Shoot",
+                    "percent_vs_league_average": 18.866702
+                  },
+                  {
+                    "key": "Less Than 10 ft",
+                    "percent_vs_league_average": 14.386615
+                  },
+                  {
+                    "key": "Pullups",
+                    "percent_vs_league_average": -18.575733
+                  }
+                ],
+                "thin": false,
+                "value": 0.128571
+              },
+              "shot_zones": {
+                "thin": false,
+                "value": 0.047358
+              },
+              "traditional": {
+                "thin": false,
+                "value": 0.039213
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "FTA": {
+          "season": {
+            "blend": {
+              "thin": true,
+              "value": -0.095879
+            },
+            "components": {
+              "play_types": {
+                "thin": true,
+                "value": 0.02208
+              },
+              "traditional": {
+                "thin": false,
+                "value": -0.213838
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "FTM": {
+          "season": {
+            "blend": {
+              "thin": true,
+              "value": -0.074696
+            },
+            "components": {
+              "play_types": {
+                "thin": true,
+                "value": 0.02208
+              },
+              "traditional": {
+                "thin": false,
+                "value": -0.171473
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "PA": {
+          "season": {
+            "blend": {
+              "thin": true,
+              "value": 0.069316
+            },
+            "components": {
+              "assist_locations": {
+                "thin": false,
+                "value": 0.003288
+              },
+              "play_types": {
+                "thin": true,
+                "value": 0.094984
+              },
+              "shot_types": {
+                "thin": false,
+                "value": 0.117551
+              },
+              "shot_zones": {
+                "thin": false,
+                "value": 0.043299
+              },
+              "traditional": {
+                "thin": false,
+                "value": 0.00842
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "PR": {
+          "season": {
+            "blend": {
+              "thin": true,
+              "value": 0.055918
+            },
+            "components": {
+              "play_types": {
+                "thin": true,
+                "value": 0.085977
+              },
+              "rebound_types": {
+                "thin": false,
+                "value": -0.001366
+              },
+              "shot_types": {
+                "thin": false,
+                "value": 0.106404
+              },
+              "shot_zones": {
+                "thin": false,
+                "value": 0.039193
+              },
+              "traditional": {
+                "thin": false,
+                "value": -0.001686
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "PRA": {
+          "season": {
+            "blend": {
+              "thin": true,
+              "value": 0.055975
+            },
+            "components": {
+              "assist_locations": {
+                "thin": false,
+                "value": 0.002762
+              },
+              "play_types": {
+                "thin": true,
+                "value": 0.079787
+              },
+              "rebound_types": {
+                "thin": false,
+                "value": -0.001268
+              },
+              "shot_types": {
+                "thin": false,
+                "value": 0.098743
+              },
+              "shot_zones": {
+                "thin": false,
+                "value": 0.036371
+              },
+              "traditional": {
+                "thin": false,
+                "value": 0.003841
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "PTS": {
+          "season": {
+            "blend": {
+              "thin": true,
+              "value": 0.070497
+            },
+            "components": {
+              "play_types": {
+                "thin": true,
+                "value": 0.103889
+              },
+              "shot_types": {
+                "slices": [
+                  {
+                    "key": "Catch and Shoot",
+                    "percent_vs_league_average": 18.866702
+                  },
+                  {
+                    "key": "Less Than 10 ft",
+                    "percent_vs_league_average": 14.386615
+                  },
+                  {
+                    "key": "Pullups",
+                    "percent_vs_league_average": -18.575733
+                  }
+                ],
+                "thin": false,
+                "value": 0.128571
+              },
+              "shot_zones": {
+                "thin": false,
+                "value": 0.047358
+              },
+              "traditional": {
+                "thin": false,
+                "value": 0.002171
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "RA": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": 0.007904
+            },
+            "components": {
+              "assist_locations": {
+                "thin": false,
+                "value": 0.011904
+              },
+              "rebound_types": {
+                "thin": false,
+                "value": -0.005465
+              },
+              "traditional": {
+                "thin": false,
+                "value": 0.009369
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "REB": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": -0.014061
+            },
+            "components": {
+              "rebound_types": {
+                "thin": false,
+                "value": -0.007924
+              },
+              "traditional": {
+                "thin": false,
+                "value": -0.020198
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "STKS": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": 0.000519
+            },
+            "components": {
+              "traditional": {
+                "thin": false,
+                "value": 0.000519
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "STL": {
+          "season": {
+            "blend": {
+              "thin": false,
+              "value": 0.045516
+            },
+            "components": {
+              "traditional": {
+                "thin": false,
+                "value": 0.045516
+              }
+            },
+            "missing_inputs": []
+          }
+        },
+        "TOV": {
+          "season": {
+            "blend": {
+              "thin": true,
+              "value": -0.013691
+            },
+            "components": {
+              "play_types": {
+                "thin": true,
+                "value": -0.039266
+              },
+              "traditional": {
+                "thin": false,
+                "value": 0.011884
+              }
+            },
+            "missing_inputs": []
+          }
+        }
+      }
+    }
+  ],
+  "teams": [
+    {
+      "tricode": "DEN",
+      "name": "Denver Nuggets",
+      "defense_sheet": {
+        "assist_locations": [
+          {
+            "key": "Arc3Assists",
+            "markets": ["AST", "PA", "RA", "PRA"],
+            "season": {
+              "rank": 27,
+              "percent_vs_league_average": 15.360243
+            }
+          },
+          {
+            "key": "Assists",
+            "markets": ["AST", "PA", "RA", "PRA"],
+            "season": {
+              "rank": 26,
+              "percent_vs_league_average": 7.507256
+            }
+          },
+          {
+            "key": "AtRimAssists",
+            "markets": ["AST", "PA", "RA", "PRA"],
+            "season": {
+              "rank": 28,
+              "percent_vs_league_average": 25.118387
+            }
+          },
+          {
+            "key": "Corner3Assists",
+            "markets": ["AST", "PA", "RA", "PRA"],
+            "season": {
+              "rank": 13,
+              "percent_vs_league_average": -1.894792
+            }
+          },
+          {
+            "key": "LongMidRangeAssists",
+            "markets": ["AST", "PA", "RA", "PRA"],
+            "season": {
+              "rank": 18,
+              "percent_vs_league_average": -5.138657
+            }
+          },
+          {
+            "key": "ShortMidRangeAssists",
+            "markets": ["AST", "PA", "RA", "PRA"],
+            "season": {
+              "rank": 1,
+              "percent_vs_league_average": -37.630918
+            }
+          }
+        ],
+        "play_types": [
+          {
+            "key": "Cut:FTT",
+            "markets": ["FTA", "FTM"],
+            "season": {
+              "rank": 5,
+              "percent_vs_league_average": -29.309882
+            }
+          },
+          {
+            "key": "Cut:POSS",
+            "markets": ["PTS"],
+            "season": {
+              "rank": 21,
+              "percent_vs_league_average": 7.099528
+            }
+          },
+          {
+            "key": "Cut:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 24,
+              "percent_vs_league_average": 17.131838
+            }
+          },
+          {
+            "key": "Cut:TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 2,
+              "percent_vs_league_average": -67.587847
+            }
+          },
+          {
+            "key": "Handoff:FTT",
+            "markets": ["FTA", "FTM"],
+            "season": {
+              "rank": 12,
+              "percent_vs_league_average": -39.604082
+            }
+          },
+          {
+            "key": "Handoff:POSS",
+            "markets": ["PTS"],
+            "season": {
+              "rank": 6,
+              "percent_vs_league_average": -19.189925
+            }
+          },
+          {
+            "key": "Handoff:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 9,
+              "percent_vs_league_average": -18.032518
+            }
+          },
+          {
+            "key": "Handoff:TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 19,
+              "percent_vs_league_average": 23.643956
+            }
+          },
+          {
+            "key": "Isolation:FTT",
+            "markets": ["FTA", "FTM"],
+            "season": {
+              "rank": 26,
+              "percent_vs_league_average": 60.46055
+            }
+          },
+          {
+            "key": "Isolation:POSS",
+            "markets": ["PTS"],
+            "season": {
+              "rank": 20,
+              "percent_vs_league_average": 8.967115
+            }
+          },
+          {
+            "key": "Isolation:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 20,
+              "percent_vs_league_average": 8.017382
+            }
+          },
+          {
+            "key": "Isolation:TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 15,
+              "percent_vs_league_average": 0.028607
+            }
+          },
+          {
+            "key": "Misc:FTT",
+            "markets": ["FTA", "FTM"],
+            "season": {
+              "rank": 3,
+              "percent_vs_league_average": -45.334772
+            }
+          },
+          {
+            "key": "Misc:POSS",
+            "markets": ["PTS"],
+            "season": {
+              "rank": 18,
+              "percent_vs_league_average": -1.192184
+            }
+          },
+          {
+            "key": "Misc:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 17,
+              "percent_vs_league_average": 1.96638
+            }
+          },
+          {
+            "key": "Misc:TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 10,
+              "percent_vs_league_average": -7.467192
+            }
+          },
+          {
+            "key": "OffRebound:FTT",
+            "markets": ["FTA", "FTM"],
+            "season": {
+              "rank": 2,
+              "percent_vs_league_average": -48.360282
+            }
+          },
+          {
+            "key": "OffRebound:POSS",
+            "markets": ["PTS"],
+            "season": {
+              "rank": 30,
+              "percent_vs_league_average": 33.984147
+            }
+          },
+          {
+            "key": "OffRebound:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 23,
+              "percent_vs_league_average": 13.302343
+            }
+          },
+          {
+            "key": "OffRebound:TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 30,
+              "percent_vs_league_average": 153.749543
+            }
+          },
+          {
+            "key": "OffScreen:FTT",
+            "markets": ["FTA", "FTM"],
+            "season": {
+              "rank": 22,
+              "percent_vs_league_average": 37.908201
+            }
+          },
+          {
+            "key": "OffScreen:POSS",
+            "markets": ["PTS"],
+            "season": {
+              "rank": 8,
+              "percent_vs_league_average": -20.443686
+            }
+          },
+          {
+            "key": "OffScreen:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 16,
+              "percent_vs_league_average": -1.188157
+            }
+          },
+          {
+            "key": "OffScreen:TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 20,
+              "percent_vs_league_average": 25.583752
+            }
+          },
+          {
+            "key": "PRBallHandler:FTT",
+            "markets": ["FTA", "FTM"],
+            "season": {
+              "rank": 12,
+              "percent_vs_league_average": -12.15985
+            }
+          },
+          {
+            "key": "PRBallHandler:POSS",
+            "markets": ["PTS"],
+            "season": {
+              "rank": 12,
+              "percent_vs_league_average": -9.375569
+            }
+          },
+          {
+            "key": "PRBallHandler:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 4,
+              "percent_vs_league_average": -28.077987
+            }
+          },
+          {
+            "key": "PRBallHandler:TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 26,
+              "percent_vs_league_average": 20.157996
+            }
+          },
+          {
+            "key": "PRRollMan:FTT",
+            "markets": ["FTA", "FTM"],
+            "season": {
+              "rank": 3,
+              "percent_vs_league_average": -80.978374
+            }
+          },
+          {
+            "key": "PRRollMan:POSS",
+            "markets": ["PTS"],
+            "season": {
+              "rank": 14,
+              "percent_vs_league_average": -5.350175
+            }
+          },
+          {
+            "key": "PRRollMan:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 6,
+              "percent_vs_league_average": -23.245765
+            }
+          },
+          {
+            "key": "PRRollMan:TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 16,
+              "percent_vs_league_average": -9.060165
+            }
+          },
+          {
+            "key": "Postup:FTT",
+            "markets": ["FTA", "FTM"],
+            "season": {
+              "rank": 21,
+              "percent_vs_league_average": 20.352861
+            }
+          },
+          {
+            "key": "Postup:POSS",
+            "markets": ["PTS"],
+            "season": {
+              "rank": 2,
+              "percent_vs_league_average": -47.377199
+            }
+          },
+          {
+            "key": "Postup:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 6,
+              "percent_vs_league_average": -28.15943
+            }
+          },
+          {
+            "key": "Postup:TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 5,
+              "percent_vs_league_average": -73.15869
+            }
+          },
+          {
+            "key": "Spotup:FTT",
+            "markets": ["FTA", "FTM"],
+            "season": {
+              "rank": 17,
+              "percent_vs_league_average": 2.208009
+            }
+          },
+          {
+            "key": "Spotup:POSS",
+            "markets": ["PTS"],
+            "season": {
+              "rank": 26,
+              "percent_vs_league_average": 11.671947
+            }
+          },
+          {
+            "key": "Spotup:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 28,
+              "percent_vs_league_average": 21.549163
+            }
+          },
+          {
+            "key": "Spotup:TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 14,
+              "percent_vs_league_average": -13.116326
+            }
+          },
+          {
+            "key": "Transition:FTT",
+            "markets": ["FTA", "FTM"],
+            "season": {
+              "rank": 1,
+              "percent_vs_league_average": -60.163885
+            }
+          },
+          {
+            "key": "Transition:POSS",
+            "markets": ["PTS"],
+            "season": {
+              "rank": 11,
+              "percent_vs_league_average": -5.739489
+            }
+          },
+          {
+            "key": "Transition:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 11,
+              "percent_vs_league_average": -7.232971
+            }
+          },
+          {
+            "key": "Transition:TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 20,
+              "percent_vs_league_average": 8.330489
+            }
+          }
+        ],
+        "rebound_types": [
+          {
+            "key": "DefThreePtRebounds",
+            "markets": ["REB", "PR", "RA", "PRA"],
+            "season": {
+              "rank": 2,
+              "percent_vs_league_average": -18.016184
+            }
+          },
+          {
+            "key": "DefTwoPtRebounds",
+            "markets": ["REB", "PR", "RA", "PRA"],
+            "season": {
+              "rank": 15,
+              "percent_vs_league_average": -0.918896
+            }
+          },
+          {
+            "key": "FTDefRebounds",
+            "markets": ["REB", "PR", "RA", "PRA"],
+            "season": {
+              "rank": 22,
+              "percent_vs_league_average": 13.655482
+            }
+          },
+          {
+            "key": "FTOffRebounds",
+            "markets": ["REB", "PR", "RA", "PRA"],
+            "season": {
+              "rank": 23,
+              "percent_vs_league_average": 28.458765
+            }
+          },
+          {
+            "key": "OffThreePtRebounds",
+            "markets": ["REB", "PR", "RA", "PRA"],
+            "season": {
+              "rank": 18,
+              "percent_vs_league_average": 3.976481
+            }
+          },
+          {
+            "key": "OffTwoPtRebounds",
+            "markets": ["REB", "PR", "RA", "PRA"],
+            "season": {
+              "rank": 28,
+              "percent_vs_league_average": 23.756533
+            }
+          }
+        ],
+        "shot_types": [
+          {
+            "key": "Catch and Shoot:FG2A",
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "rank": 19,
+              "percent_vs_league_average": 7.464675
+            }
+          },
+          {
+            "key": "Catch and Shoot:FG2M",
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 18,
+              "percent_vs_league_average": -6.95509
+            }
+          },
+          {
+            "key": "Catch and Shoot:FG3A",
+            "markets": ["FGA", "FG3A"],
+            "season": {
+              "rank": 24,
+              "percent_vs_league_average": 6.212752
+            }
+          },
+          {
+            "key": "Catch and Shoot:FG3M",
+            "markets": ["3PM", "PTS", "FGM", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 28,
+              "percent_vs_league_average": 18.866702
+            }
+          },
+          {
+            "key": "Catch and Shoot:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 26,
+              "percent_vs_league_average": 17.434162
+            }
+          },
+          {
+            "key": "Less Than 10 ft:FG2A",
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "rank": 26,
+              "percent_vs_league_average": 9.521993
+            }
+          },
+          {
+            "key": "Less Than 10 ft:FG2M",
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 26,
+              "percent_vs_league_average": 14.386615
+            }
+          },
+          {
+            "key": "Less Than 10 ft:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 26,
+              "percent_vs_league_average": 14.386615
+            }
+          },
+          {
+            "key": "Pullups:FG2A",
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "rank": 8,
+              "percent_vs_league_average": -9.470691
+            }
+          },
+          {
+            "key": "Pullups:FG2M",
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 6,
+              "percent_vs_league_average": -23.565135
+            }
+          },
+          {
+            "key": "Pullups:FG3A",
+            "markets": ["FGA", "FG3A"],
+            "season": {
+              "rank": 21,
+              "percent_vs_league_average": 7.74851
+            }
+          },
+          {
+            "key": "Pullups:FG3M",
+            "markets": ["3PM", "PTS", "FGM", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 7,
+              "percent_vs_league_average": -18.575733
+            }
+          },
+          {
+            "key": "Pullups:PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 4,
+              "percent_vs_league_average": -20.957108
+            }
+          }
+        ],
+        "shot_zones": [
+          {
+            "key": "Above the Break 3:FGA",
+            "markets": ["FGA", "FG3A"],
+            "season": {
+              "rank": 10,
+              "percent_vs_league_average": -4.218701
+            }
+          },
+          {
+            "key": "Above the Break 3:FGM",
+            "markets": ["PTS", "3PM", "FGM", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 18,
+              "percent_vs_league_average": 2.88539
+            }
+          },
+          {
+            "key": "Corner 3:FGA",
+            "markets": ["FGA", "FG3A"],
+            "season": {
+              "rank": 25,
+              "percent_vs_league_average": 18.372072
+            }
+          },
+          {
+            "key": "Corner 3:FGM",
+            "markets": ["PTS", "3PM", "FGM", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 15,
+              "percent_vs_league_average": 5.37064
+            }
+          },
+          {
+            "key": "In The Paint (Non-RA):FGA",
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "rank": 4,
+              "percent_vs_league_average": -15.335197
+            }
+          },
+          {
+            "key": "In The Paint (Non-RA):FGM",
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 3,
+              "percent_vs_league_average": -27.633217
+            }
+          },
+          {
+            "key": "Mid-Range:FGA",
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "rank": 4,
+              "percent_vs_league_average": -19.093762
+            }
+          },
+          {
+            "key": "Mid-Range:FGM",
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 12,
+              "percent_vs_league_average": -12.58738
+            }
+          },
+          {
+            "key": "Restricted Area:FGA",
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "rank": 27,
+              "percent_vs_league_average": 20.451068
+            }
+          },
+          {
+            "key": "Restricted Area:FGM",
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 28,
+              "percent_vs_league_average": 22.457096
+            }
+          }
+        ],
+        "traditional": [
+          {
+            "key": "OPP_AST",
+            "markets": ["AST", "PA", "RA", "PRA"],
+            "season": {
+              "rank": 26,
+              "percent_vs_league_average": 7.507256
+            }
+          },
+          {
+            "key": "OPP_BLK",
+            "markets": ["BLK", "STKS"],
+            "season": {
+              "rank": 9,
+              "percent_vs_league_average": -15.696902
+            }
+          },
+          {
+            "key": "OPP_FG3A",
+            "markets": ["FG3A"],
+            "season": {
+              "rank": 19,
+              "percent_vs_league_average": 1.835546
+            }
+          },
+          {
+            "key": "OPP_FG3M",
+            "markets": ["3PM"],
+            "season": {
+              "rank": 21,
+              "percent_vs_league_average": 3.450875
+            }
+          },
+          {
+            "key": "OPP_FGA",
+            "markets": ["FGA"],
+            "season": {
+              "rank": 21,
+              "percent_vs_league_average": 1.579975
+            }
+          },
+          {
+            "key": "OPP_FGM",
+            "markets": ["FGM"],
+            "season": {
+              "rank": 23,
+              "percent_vs_league_average": 3.921304
+            }
+          },
+          {
+            "key": "OPP_FTA",
+            "markets": ["FTA"],
+            "season": {
+              "rank": 2,
+              "percent_vs_league_average": -21.383766
+            }
+          },
+          {
+            "key": "OPP_FTM",
+            "markets": ["FTM"],
+            "season": {
+              "rank": 4,
+              "percent_vs_league_average": -17.147333
+            }
+          },
+          {
+            "key": "OPP_PTS",
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "rank": 17,
+              "percent_vs_league_average": 0.217146
+            }
+          },
+          {
+            "key": "OPP_REB",
+            "markets": ["REB", "PR", "RA", "PRA"],
+            "season": {
+              "rank": 12,
+              "percent_vs_league_average": -2.019847
+            }
+          },
+          {
+            "key": "OPP_STL",
+            "markets": ["STL", "STKS"],
+            "season": {
+              "rank": 19,
+              "percent_vs_league_average": 4.551563
+            }
+          },
+          {
+            "key": "OPP_TOV",
+            "markets": ["TOV"],
+            "season": {
+              "rank": 17,
+              "percent_vs_league_average": 1.188414
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

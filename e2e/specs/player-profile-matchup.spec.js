@@ -221,3 +221,57 @@ for (const viewport of [DESKTOP, PHONE]) {
     await expect(row).toBeVisible();
   });
 }
+
+// A backend serving 2026-27 before its cutover offers it (crf04/statsplus#330), so the
+// Workspace's Season select names it.
+const offerUnpublishedSeason = (page) =>
+  page.route('**/api/games/seasons', (route) =>
+    route.fulfill({
+      json: {
+        seasons: ['2025-26'],
+        default_season: '2025-26',
+        choices: [
+          {
+            season: '2026-27',
+            mode: 'unpublished',
+            families: { game_logs: { served_season: '2026-27', state: 'serving' } },
+            team_games: { min: 2, max: 4 },
+          },
+          {
+            season: '2025-26',
+            mode: 'published',
+            families: { game_logs: { served_season: '2025-26', state: 'serving' } },
+          },
+        ],
+      },
+    }),
+  );
+
+test('the card reads the Workspace Evidence season, and reads again when it changes', async ({
+  authenticatedPage: page,
+}) => {
+  await offerUnpublishedSeason(page);
+  const asked = (season) =>
+    page.waitForRequest(
+      (request) =>
+        request.url().includes('/api/matchups/unscheduled') &&
+        new URL(request.url()).searchParams.get('season') === season,
+    );
+  const first = asked('2026-27');
+  await page.goto('/?player_name=LeBron+James&season_filter=2026-27');
+  await first;
+  const card = profileCard(page);
+  const spotUp = () =>
+    rowCells(card.getByRole('list', { name: 'Play types' }).getByRole('listitem').first());
+  await expect(card.getByText(/· 2026-27 · data as of Nov 6/)).toBeVisible();
+  await expect.poll(spotUp).toEqual(['Spot up', '56%', '28th', '+22%']);
+  await expect(card.getByTitle('PTS Season Matchup Score')).toHaveText('+7.0%');
+  // The score's marker and the Play types Base's, both naming the thin Base (Jest pins where).
+  await expect(card.getByText('low confidence', { exact: true })).toHaveCount(2);
+  await expect(card.getByTitle('Low confidence: thin evidence in Play types')).toHaveCount(2);
+
+  await page.getByTestId('filter-panel').getByLabel('Season').selectOption('2025-26');
+  await expect(card.getByText(/· 2025-26 · data as of Aug 24/)).toBeVisible();
+  await expect.poll(spotUp).toEqual(['Spot up', '41%', '27th', '+10%']);
+  await expect(card.getByText('low confidence')).toHaveCount(0);
+});

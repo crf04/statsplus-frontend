@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { LINE_TYPE_GROUPS } from '../filterUtils';
 import MatchupCourt from './MatchupCourt';
 import {
+  BASES,
   COMBO_STATS,
   COURT_REGIONS,
   ordinal,
@@ -78,10 +79,26 @@ const BaseRows = ({ base, limit = null }) => (
   </ul>
 );
 
+/*
+ * The response's low-confidence flag (MCP's "[low confidence]"), muted. The response gives a
+ * flag, not a sentence, so the tooltip names what it flags: the thin Bases behind a score.
+ */
+const BASE_NAMES = Object.fromEntries(BASES);
+const thinReason = (keys) =>
+  keys.length
+    ? `Low confidence: thin evidence in ${keys.map((key) => BASE_NAMES[key]).join(', ')}`
+    : 'Low confidence: thin season sample';
+const LowConfidence = ({ reason }) => (
+  <span className="pmc-low" title={reason}>
+    low confidence
+  </span>
+);
+
 const BaseHeading = ({ base }) => (
   <div className="pmc-base">
     {base.label}
     {allMix(base) && <i> · for his mix of 2s and 3s</i>}
+    {base.thin && <LowConfidence reason={thinReason([base.key])} />}
   </div>
 );
 
@@ -114,7 +131,12 @@ const SingleMarket = ({ reading, market }) => {
             ))}
             {market.traditional && (
               <div className="pmc-group">
-                <div className="pmc-base">Traditional</div>
+                <div className="pmc-base">
+                  Traditional
+                  {market.traditional.thin && (
+                    <LowConfidence reason={thinReason(['traditional'])} />
+                  )}
+                </div>
                 <ul className="pmc-rows" aria-label="Traditional">
                   <TraditionalRow row={market.traditional} opponent={reading.opponent} />
                 </ul>
@@ -298,6 +320,9 @@ const ComboMarket = ({ reading, market }) => {
                   <i>
                     · {Math.round(stat.weight * 100)}% of his {market.market}
                   </i>
+                  {stat.thin && (
+                    <LowConfidence reason={thinReason(reading.markets[stat.stat].thinBases)} />
+                  )}
                 </span>
                 <Bar value={stat.value} max={max} />
                 <span className={`pmc-val ${tone(stat.value)}`}>{scoreText(stat.value)}</span>
@@ -320,7 +345,10 @@ const ComboMarket = ({ reading, market }) => {
                       <span className="pmc-caret" aria-hidden="true">
                         {isOpen ? '▾' : '▸'}
                       </span>
-                      <span className="pmc-w3-name">{base.label}</span>
+                      <span className="pmc-w3-name">
+                        {base.label}
+                        {base.thin && <LowConfidence reason={thinReason([base.key])} />}
+                      </span>
                       <Bar value={base.value} max={max} />
                       <span className={`pmc-val ${tone(base.value)}`}>{scoreText(base.value)}</span>
                     </button>
@@ -400,6 +428,9 @@ const ProfileMatchupCard = ({ reading, lineType, setLineType }) => {
           >
             {market?.score == null ? '—' : scoreText(market.score)}
           </span>
+          {market?.score != null && market.thin && (
+            <LowConfidence reason={thinReason(market.thinBases)} />
+          )}
           <select
             className="pmc-market"
             aria-label="Market"

@@ -14,6 +14,8 @@ const TRADITIONAL = [
     'Scoring',
     [
       ['OPP_PTS', 'Points'],
+      // Omitted while the Season publication has no possessions.
+      ['DRTG', 'DRTG', 'rating'],
       ['OPP_FGM', 'FG made'],
       ['OPP_FGA', 'FG attempts'],
       ['OPP_FG_PCT', 'FG%', 'pct'],
@@ -102,7 +104,7 @@ const SHOT_TYPE_STATS = [
 ];
 
 export const formatValue = (value, kind = 'count') => {
-  if (value === null) return null;
+  if (value === null) return kind === 'rating' ? 'N/A' : null;
   return kind === 'pct' ? `${(value * 100).toFixed(1)}%` : value.toFixed(1);
 };
 

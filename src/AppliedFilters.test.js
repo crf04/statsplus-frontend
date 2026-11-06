@@ -42,6 +42,12 @@ test('an opponent rank reads as league ranks, never a bare sign', () => {
   expect(screen.getByText('Rebounds Allowed (ranks 21–30)')).toBeVisible();
 });
 
+test('a Defensive Rating filter reads as its label with league ranks', () => {
+  render(<AppliedFilters filters={{ 'teams_against[]': ['DRTG'], 'rank_filter[]': ['10'] }} />);
+
+  expect(screen.getByText('Defensive Rating (ranks 21–30)')).toBeVisible();
+});
+
 test('a Defense Sheet row filter reads as its label, never its token', () => {
   render(
     <AppliedFilters

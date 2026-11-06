@@ -19,7 +19,10 @@ const PlaystyleComparisonChart = ({ playerData, teamData }) => {
       .map((key) => {
         const playstyle = key.replace('%', '');
         const playerFrequency = parseFloat(playerData[key]) || 0;
-        const teamDefense = teamData ? parseFloat(teamData[playstyle]) || 1 : 1;
+        // A ratio to league (1.06 = allows 6% more points per 48), as the chart,
+        // its colours and the Total Matchup Rating read it.
+        const vsLeague = teamData ? parseFloat(teamData[`${playstyle}_vs_avg_pct`]) : NaN;
+        const teamDefense = Number.isFinite(vsLeague) ? 1 + vsLeague / 100 : 1;
         const teamDefenseRank = teamData ? parseInt(teamData[`${playstyle}_RANK`]) || 0 : null;
 
         return {

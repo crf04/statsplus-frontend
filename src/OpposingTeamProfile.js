@@ -53,7 +53,7 @@ const OpposingTeamProfile = ({
       if (selectedTeam && selectedCategory) {
         readTeamStats(
           {
-            category: selectedCategory,
+            category: selectedCategory === 'Playtypes' ? 'Playtype Points' : selectedCategory,
             team: selectedTeam,
             date: debouncedDateFilter || null,
             ...(season ? { season } : {}),

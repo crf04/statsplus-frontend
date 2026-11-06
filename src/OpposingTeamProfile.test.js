@@ -12,7 +12,12 @@ const traditional = {
   OPP_FTA_RANK: 1,
   OPP_FTA_vs_avg_pct: -13.09613820198009,
 };
-const playtypes = { Misc: 1.171157615146854, Misc_RANK: 29 };
+// Charlotte's 2025-26 Playtype Points (production, 2026-11-06): points allowed per 48.
+const playtypes = {
+  OffScreen: 4.580106302201974,
+  OffScreen_RANK: 25,
+  OffScreen_vs_avg_pct: 15.895584947429686,
+};
 
 const show = async (category, data, seasonChoice) => {
   apiClient.get.mockResolvedValue({ data });
@@ -74,12 +79,18 @@ test('a Traditional body without DRTG shows its row as N/A', async () => {
   );
 });
 
-test('Playtypes stay in one column with percent vs league and no footnote', async () => {
+test('Playtypes read points allowed per 48 in one column with no footnote', async () => {
   await show('Playtypes', playtypes);
+  expect(sentParams()).toContainEqual({
+    category: 'Playtype Points',
+    team: 'Charlotte Hornets',
+    date: null,
+  });
   expect(screen.getAllByTestId('opponent-bars-column')).toHaveLength(1);
-  expect(screen.getByText('Misc')).toBeInTheDocument();
-  expect(screen.getByText('+17%')).toBeInTheDocument();
-  expect(screen.getByTitle('Rank 29 of 30')).toBeInTheDocument();
+  expect(screen.getByText('Off screen')).toBeInTheDocument();
+  expect(screen.getByText('4.6')).toBeInTheDocument();
+  expect(screen.getByText('+16%')).toBeInTheDocument();
+  expect(screen.getByTitle('Rank 25 of 30')).toBeInTheDocument();
   expect(screen.queryByText(/relative to league average/)).not.toBeInTheDocument();
 });
 

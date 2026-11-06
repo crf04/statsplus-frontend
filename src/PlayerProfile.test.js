@@ -366,7 +366,7 @@ test('the comparison read names the Evidence season, the default never', async (
     apiClient.get.mock.calls
       .filter(([url]) => url === 'TEAM_STATS')
       .map(([, { params }]) => params);
-  expect(comparisonReads()).toEqual([{ category: 'Playtypes', team: 'BOS' }]);
+  expect(comparisonReads()).toEqual([{ category: 'Playtype Points', team: 'BOS' }]);
 
   apiClient.get.mockClear();
   rerender(
@@ -377,7 +377,9 @@ test('the comparison read names the Evidence season, the default never', async (
     />,
   );
   await act(async () => {});
-  expect(comparisonReads()).toEqual([{ category: 'Playtypes', team: 'BOS', season: '2026-27' }]);
+  expect(comparisonReads()).toEqual([
+    { category: 'Playtype Points', team: 'BOS', season: '2026-27' },
+  ]);
 });
 
 test('a comparison answered for an Evidence season renders its data', async () => {

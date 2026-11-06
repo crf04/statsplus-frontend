@@ -14,14 +14,18 @@ const traditional = {
 };
 
 const playtypes = {
-  Cut: 0.9580421949250032,
-  Cut_RANK: 8,
-  Misc: 1.171157615146854,
-  Misc_RANK: 29,
-  PRBallHandler: 1.0315146019765173,
-  PRBallHandler_RANK: 24,
-  Drive: 1.2,
+  Cut: 8.832194381169325,
+  Cut_RANK: 7,
+  Cut_vs_avg_pct: -8.630465116491305,
+  Misc: 3.0129081245254365,
+  Misc_RANK: 16,
+  Misc_vs_avg_pct: 1.446803790253437,
+  PRBallHandler: 16.206529992406985,
+  PRBallHandler_RANK: 26,
+  PRBallHandler_vs_avg_pct: 11.636827003292671,
+  Drive: 12.5,
   Drive_RANK: 30,
+  Drive_vs_avg_pct: 20,
   TEAM_NAME: 'Charlotte Hornets',
 };
 
@@ -83,14 +87,17 @@ test('Traditional readings carry a per-game value, rank and percent vs league', 
   });
 });
 
-test('Playtypes turn ratios into percent vs league, known types first', () => {
+test('Playtypes read points allowed per 48 with rank and percent vs league, known types first', () => {
   const [group] = opponentReadings('Playtypes', playtypes);
   expect(group.title).toBeNull();
   expect(group.rows.map((r) => r.label)).toEqual(['P&R ball handler', 'Cut', 'Misc', 'Drive']);
-  const misc = group.rows.find((r) => r.label === 'Misc');
-  expect(misc.value).toBeNull();
-  expect(misc.rank).toBe(29);
-  expect(misc.vs).toBeCloseTo(17.1158, 3);
+  expect(group.rows.find((r) => r.label === 'P&R ball handler')).toEqual({
+    key: 'PRBallHandler',
+    label: 'P&R ball handler',
+    value: '16.2',
+    rank: 26,
+    vs: 11.636827003292671,
+  });
 });
 
 test('Assists read as percent vs league with no value of their own', () => {

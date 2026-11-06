@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import TargetRecord from './TargetRecord';
-import { BacktestSeasonLabel } from './backtestSample';
+import { BacktestSeasonLabel, backtestSeason } from './backtestSample';
 import { deriveTargetTitle, formatQualifierParts } from './targetCatalog';
 import { useTargetPreview } from './useTargets';
 import ErrorMessage from '../feedback/ErrorMessage';
@@ -24,16 +24,21 @@ const samples = [
 
 // A sample reads the page's season, or the backend's default once that is refused.
 function SampleCard({ target, evidence, onAdd }) {
-  const [refused, setRefused] = useState(false);
-  const season = refused ? null : evidence.season;
+  const [refusal, setRefusal] = useState(null);
+  const chosen = backtestSeason(evidence);
+  const season = refusal ? null : chosen;
   const { status, preview, error, unavailable, retry } = useTargetPreview(
     evidence.ready ? (season ? { ...target, season } : target) : null,
     { immediateInitial: true },
   );
-  const seasonRefused = Boolean(evidence.season && unavailable?.season === evidence.season);
   useEffect(() => {
-    if (seasonRefused) setRefused(true);
-  }, [seasonRefused]);
+    if (season && unavailable?.season === season) setRefusal(unavailable);
+  }, [season, unavailable]);
+  // The season's refusal, about to be or being read again without it; that
+  // read's own refusal is shown.
+  const seasonRefused =
+    Boolean(season && unavailable?.season === season) ||
+    Boolean(refusal && unavailable === refusal);
   const [preferences, setPreferences] = useState(null);
   const columns = preferences?.columns ?? preview?.statColumns ?? [];
   const gradedBy = preferences?.gradedBy ?? columns[0];

@@ -54,6 +54,7 @@ const target = {
  * for, so the shares are labelled by those Qualifiers rather than the page's.
  */
 const backtest = {
+  season: '2025-26',
   target,
   proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
   statColumns: ['PTS', '3PM'],

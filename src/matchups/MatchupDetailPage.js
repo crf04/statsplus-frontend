@@ -1430,7 +1430,12 @@ function Detail({ matchup, gameId, evidence }) {
           )}
         </div>
       </div>
-      <TargetCaptureModal capture={capture} onHide={() => setCapture(null)} />
+      {/* The capture's Lab reads the season this Matchup reads. */}
+      <TargetCaptureModal
+        capture={capture}
+        newestUpTo={seasonOfGameId(gameId)}
+        onHide={() => setCapture(null)}
+      />
     </>
   );
 }

@@ -165,6 +165,7 @@ const resolution = {
  * colours them by direction.
  */
 const preview = {
+  season: '2025-26',
   target: {
     opponent: 'OKC',
     title: 'OKC vs Corner 3 ≥ 40%',
@@ -974,7 +975,7 @@ test('the Lab leads with the summary and whether the draft fires tonight, then t
   composeQualifier();
   await settle();
 
-  expect(screen.getByText('Lab · Backtest · season to date · vs OKC')).toBeVisible();
+  expect(screen.getByText('Lab · Backtest · 2025-26 season to date · vs OKC')).toBeVisible();
   fireEvent.click(screen.getByText('PTS vs the player’s own season average'));
   expect(
     screen.getByText('Outcomes are box-score proxies; there are no per-game slice splits.'),
@@ -1057,7 +1058,7 @@ const defaultRead = {
   gamesConsidered: { played: 2, kept: 2 },
 };
 
-test('the Lab offers the listed seasons, reads the default, and names only another one', async () => {
+test('the Lab offers the listed seasons and names the one it reads, the default included', async () => {
   beforeNewSeason();
   fetchTargetPreview.mockImplementation(async ({ season }) =>
     season === '2026-27'
@@ -1083,7 +1084,7 @@ test('the Lab offers the listed seasons, reads the default, and names only anoth
   await settle();
 
   expect(fetchTargetPreview).toHaveBeenLastCalledWith(
-    expect.not.objectContaining({ season: expect.anything() }),
+    expect.objectContaining({ season: '2025-26' }),
   );
   expect(toggleSeasons()).toEqual([
     ['2026-27', 'false'],
@@ -1115,11 +1116,11 @@ test('the Lab offers the listed seasons, reads the default, and names only anoth
 
   expect(screen.getByTestId('location')).toHaveTextContent('/targets?season=2026-27');
 
-  // Back to the default: the request names no season, and nor does the URL.
+  // Back to the default: the request names it, and the URL does not.
   fireEvent.click(screen.getByRole('button', { name: '2025-26' }));
   await settle();
   expect(fetchTargetPreview).toHaveBeenLastCalledWith(
-    expect.not.objectContaining({ season: expect.anything() }),
+    expect.objectContaining({ season: '2025-26' }),
   );
   expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets$/);
   expect(screen.getByText('Lab · Backtest · 2025-26 · vs OKC')).toBeInTheDocument();
@@ -1146,7 +1147,7 @@ test.each([
 test('a refused or failed read still offers every listed season, and 2026-27 is refused plainly', async () => {
   beforeNewSeason();
   fetchTargetPreview.mockImplementation(async ({ season }) => {
-    if (!season) throw operationFailed();
+    if (season === '2025-26') throw operationFailed();
     if (season === '2026-27') throw refusalNaming('2026-27', '2025-26');
     return { ...defaultRead, season, seasonReason: 'requested' };
   });
@@ -1189,7 +1190,7 @@ test('a refused or failed read still offers every listed season, and 2026-27 is 
   fireEvent.click(screen.getByRole('button', { name: 'Show 2025-26' }));
   await settle();
   expect(fetchTargetPreview).toHaveBeenLastCalledWith(
-    expect.not.objectContaining({ season: expect.anything() }),
+    expect.objectContaining({ season: '2025-26' }),
   );
   expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets$/);
   expect(screen.getByRole('alert')).toHaveTextContent('Failed to backtest the target.');
@@ -1263,12 +1264,13 @@ test.each([
   expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
 });
 
+// A backend that lists no choices keeps the Lab's own pair, named only when picked.
 test.each([
-  ['2027-28', unpublishedSeasons],
-  ['2026-27', legacySeasons],
+  ['2027-28', unpublishedSeasons, '2025-26'],
+  ['2026-27', legacySeasons, undefined],
 ])(
   'a linked season %s the Lab is not offered says so and reads the default',
-  async (linked, seasons) => {
+  async (linked, seasons, named) => {
     beforeNewSeason();
     fetchSeasons.mockResolvedValue(seasons);
     fetchTargetPreview.mockResolvedValue(defaultRead);
@@ -1278,9 +1280,7 @@ test.each([
     await settle();
     expect(screen.getByText(`${linked} isn’t offered, so this is 2025-26 evidence.`)).toBeVisible();
     expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets$/);
-    expect(fetchTargetPreview).toHaveBeenLastCalledWith(
-      expect.not.objectContaining({ season: expect.anything() }),
-    );
+    expect(fetchTargetPreview.mock.lastCall[0].season).toBe(named);
   },
 );
 
@@ -1375,9 +1375,15 @@ test('a refusal naming a later published season makes the default season a past 
   await settle();
   expect(screen.getByRole('group', { name: 'OKC opponent context' })).toBeInTheDocument();
 
+  // The named default is refused, and so is the read without it.
   answer = 'refuse';
   composeQualifier({ percent: '35' });
   await settle();
+  await settle();
+  expect(fetchTargetPreview.mock.calls.slice(1).map(([request]) => request.season)).toEqual([
+    '2025-26',
+    undefined,
+  ]);
   expect(screen.getByRole('alert')).toHaveTextContent('The 2025-26 season is unavailable.');
   expect(screen.getByText(/hidden while the Lab reads another/)).toBeVisible();
   expect(screen.queryByRole('group', { name: 'OKC opponent context' })).not.toBeInTheDocument();
@@ -1474,8 +1480,8 @@ test('the Lab opens on 2026-27, and reads 2025-26 once it is picked', async () =
 
   fireEvent.click(screen.getByRole('button', { name: '2025-26' }));
   await settle();
-  // 2025-26 is the backend's default, so it is picked in the URL and never named on a request.
-  expect(previewSeasons()).toEqual(['2026-27', undefined]);
+  // Picked, it rides the URL and is named on the request.
+  expect(previewSeasons()).toEqual(['2026-27', '2025-26']);
   expect(screen.getByTestId('location')).toHaveTextContent('/targets?season=2025-26');
   expect(screen.getByText('Lab · Backtest · 2025-26 · vs OKC')).toBeInTheDocument();
   expect(screen.queryByText(/hidden while the Lab reads another/)).not.toBeInTheDocument();
@@ -1635,6 +1641,101 @@ test.each([
       .map(([request]) => request.season),
   ).toEqual(seasons);
   expect(within(sample).queryByRole('alert')).toBeNull();
+});
+
+/*
+ * After the Season Cutover /seasons names 2026-27 as its default while the
+ * backend's no-season Backtest can still read the Diets' 2025-26, so every
+ * Backtest names its season and the resolve keeps naming none
+ * (crf04/statsplus#446).
+ */
+const cutoverChoice = { season: '2026-27', mode: 'published', families: {}, teamGames: null };
+const afterCutover = (choices = [cutoverChoice]) => {
+  jest.useFakeTimers().setSystemTime(new Date('2026-11-04T18:00:00Z'));
+  fetchSeasons.mockResolvedValue({
+    seasons: choices.map((choice) => choice.season),
+    defaultSeason: '2026-27',
+    choices,
+  });
+};
+const readFor = (season) => ({
+  ...preview,
+  season: season ?? '2025-26',
+  seasonReason: season ? 'requested' : 'default',
+  publishedSeason: '2026-27',
+});
+const seasonsSentFor = (opponent) =>
+  fetchTargetPreview.mock.calls
+    .filter(([request]) => request.opponent === opponent)
+    .map(([request]) => request.season);
+
+test('after the cutover each saved card names 2026-27 on the batch and single reads', async () => {
+  afterCutover();
+  fetchTargetBacktests.mockImplementation(async () => uncachedBatch(targets));
+  fetchTargetBacktest.mockImplementation(async ({ season }) => readFor(season));
+  renderPage(false);
+
+  await screen.findAllByRole('article');
+  await waitFor(() =>
+    expect(cardLabels().map((label) => label.textContent)).toEqual([
+      'Backtest · 2026-27',
+      'Backtest · 2026-27',
+    ]),
+  );
+  expect(fetchTargetBacktests.mock.calls.map(([request]) => request.season)).toEqual(['2026-27']);
+  expect(
+    fetchTargetBacktest.mock.calls
+      .map(([request]) => [request.id, request.season])
+      .sort(([a], [b]) => a - b),
+  ).toEqual([
+    [7, '2026-27'],
+    [8, '2026-27'],
+  ]);
+  expect(fetchResolvedTargets.mock.calls.map(([request]) => request.season)).toEqual([undefined]);
+});
+
+test('after the cutover the Lab and a sample card name 2026-27', async () => {
+  afterCutover();
+  fetchTargets.mockResolvedValue([]);
+  fetchTargetPreview.mockImplementation(async ({ season }) => readFor(season));
+  renderPage();
+
+  const samples = await screen.findByRole('region', { name: 'Sample Targets' });
+  const [sample] = within(samples).getAllByRole('article');
+  await waitFor(() =>
+    expect(within(sample).getByRole('region', { name: 'Sample backtest' })).toHaveTextContent(
+      'Backtest · 2026-27',
+    ),
+  );
+  expect(seasonsSentFor('ORL')).toEqual(['2026-27']);
+
+  composeQualifier();
+  await settle();
+  expect(seasonsSentFor('OKC')).toEqual(['2026-27']);
+  expect(screen.getByText('Lab · Backtest · 2026-27 · vs OKC')).toBeInTheDocument();
+});
+
+test('after the cutover a 2025-26 pick names 2025-26, and the cards keep 2026-27', async () => {
+  afterCutover([
+    cutoverChoice,
+    { season: '2025-26', mode: 'retained', families: {}, teamGames: null },
+  ]);
+  fetchTargetBacktests.mockImplementation(async ({ season }) =>
+    readyBatch(targets, readFor(season)),
+  );
+  fetchTargetPreview.mockImplementation(async ({ season }) => readFor(season));
+  renderPage(true, '/targets?season=2025-26');
+  await screen.findAllByRole('article');
+  composeQualifier();
+  await settle();
+
+  expect(seasonsSentFor('OKC')).toEqual(['2025-26']);
+  expect(screen.getByText('Lab · Backtest · 2025-26 season · vs OKC')).toBeInTheDocument();
+  expect(fetchTargetBacktests.mock.calls.map(([request]) => request.season)).toEqual(['2026-27']);
+  expect(cardLabels().map((label) => label.textContent)).toEqual([
+    'Backtest · 2026-27',
+    'Backtest · 2026-27',
+  ]);
 });
 
 test('a rate_limited Backtest read shows the backend message on its card, with no reference', async () => {

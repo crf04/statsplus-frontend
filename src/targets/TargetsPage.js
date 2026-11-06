@@ -18,7 +18,12 @@ import { dietQualifiers, formatQualifierParts, formatObservedShare } from './tar
 import { fitStat, formatFitStat } from './TargetFits';
 import { createTarget, fetchTargetBacktest, fetchTargetBacktests } from './targetsApi';
 import TargetsSignedOut from './TargetsSignedOut';
-import { BacktestSeasonLabel, LabSeasonProvider, describeBacktestFailure } from './backtestSample';
+import {
+  BacktestSeasonLabel,
+  LabSeasonProvider,
+  backtestSeason,
+  describeBacktestFailure,
+} from './backtestSample';
 import SampleTargets from './SampleTargets';
 import { SeasonMinutesProvider, useResolvedTargets, useTargets } from './useTargets';
 import '../SlatePage.css';
@@ -292,12 +297,12 @@ function TargetsPageContent() {
     for (const entry of resolved.entries) map.set(entry.target.id, entry);
     return map;
   }, [resolved.entries]);
-  // Each card's Backtest reads the fits' season, refused or not the same way.
+  // Each card's Backtest reads the fits' season, named even as the default.
   const reads = useListBacktests(
     targets,
     status === 'ready' && isAuthenticated && evidence.ready,
     currentUser?.uid,
-    evidence.season,
+    backtestSeason(evidence),
   );
   const [draft, setDraft] = useState(blankTargetDraft);
   const [draftPreferences, setDraftPreferences] = useState(null);

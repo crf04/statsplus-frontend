@@ -44,6 +44,18 @@ export function LabSeasonProvider({ children }) {
 export const countAppearances = (backtest) =>
   backtest ? backtest.players.reduce((total, player) => total + player.games.length, 0) : null;
 
+// The seasons a Backtest reads.
+export const BACKTEST_SEASONS = ['2025-26', '2026-27'];
+
+/*
+ * The season a Backtest names for a page's Evidence season. The backend's
+ * no-season Backtest is the Diets' Serving Season, which can trail the
+ * Published Season /seasons calls its default, so a Backtest season is named
+ * even when it is that default (crf04/statsplus#446).
+ */
+export const backtestSeason = ({ season, reads }) =>
+  BACKTEST_SEASONS.includes(reads) ? reads : season;
+
 // A season names two consecutive years, as "2025-26".
 export const isSeason = (value) =>
   typeof value === 'string' &&
@@ -89,11 +101,14 @@ export const isOtherSeason = (season, published) =>
 
 /*
  * A completed season is read whole, so only the published one is "to date".
- * A backend that does not echo the season reads the published one.
+ * A backend that does not echo the season reads the published one. The
+ * Published Season named on the request reads as its default does.
  */
 export const describeBacktestSeason = (backtest, published = publishedSeasonOf(backtest)) => {
   if (!backtest?.season) return 'season to date';
   if (backtest.seasonReason === 'default') return backtest.season;
+  if (backtest.seasonReason === 'requested' && backtest.season === published)
+    return backtest.season;
   return isPastSeason(backtest.season, published)
     ? `${backtest.season} season`
     : `${backtest.season} season to date`;

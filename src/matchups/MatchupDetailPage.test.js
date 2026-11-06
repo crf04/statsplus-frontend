@@ -2104,6 +2104,35 @@ test('the capture dialog reads the prefilled draft live beneath its form', async
   ).toBeVisible();
 });
 
+/*
+ * The capture's Lab reads the season this Matchup reads: a 2025-26 game's
+ * Matchup reads 2025-26 even while 2026-27 is offered, so its capture does
+ * too (crf04/statsplus#446).
+ */
+test.each([
+  ['0022500584', '2025-26', '2025-26'],
+  ['0022600003', '2026-27', '2026-27 season to date'],
+])("a capture from game %s reads the Matchup's %s", async (gameId, season, label) => {
+  fetchSeasons.mockResolvedValue(unpublishedSeasons);
+  fetchTargetPreview.mockImplementation(async (request) => ({
+    ...capturePreview,
+    season: request.season,
+    seasonReason: 'requested',
+    publishedSeason: '2025-26',
+  }));
+  renderMatchup(`/matchups/${gameId}`);
+
+  const { dialog } = await openCapture('Transition');
+  await within(dialog).findByRole('list', { name: 'Backtest summary' }, { timeout: 3000 });
+  expect(fetchTargetPreview.mock.calls.map(([request]) => request.season)).toEqual([season]);
+  await waitFor(() =>
+    expect(within(dialog).getByText(`Lab · Backtest · ${label} · vs BOS`)).toBeVisible(),
+  );
+  expect(fetchMatchup.mock.calls.map(([, options]) => options.season)).toEqual([
+    season === '2026-27' ? season : undefined,
+  ]);
+});
+
 test('captures against whichever team’s sheet is open', async () => {
   createTarget.mockResolvedValue(storedTarget({ opponent: 'LAL' }));
   renderMatchup();

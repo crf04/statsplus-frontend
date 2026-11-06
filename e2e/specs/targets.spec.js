@@ -237,7 +237,8 @@ test('the Targets list falls back to one read per Target without the batch route
   authenticatedPage: page,
 }) => {
   await installApiContract(page);
-  await page.route('**/api/user/targets/backtests', (route) =>
+  // The batch names its season, so the route matches any query.
+  await page.route(/\/api\/user\/targets\/backtests(\?.*)?$/, (route) =>
     route.fulfill({
       status: 404,
       json: { error: { code: 'resource_not_found', message: 'Not found.' } },

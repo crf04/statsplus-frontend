@@ -212,8 +212,29 @@ const seasonScore = (window) => {
   return null;
 };
 
+/*
+ * Low confidence, as the response flags it and MCP shows it ("[low confidence]"): the score
+ * cell's `thin` (the Blend's, or the single component's that stands for it), each component's
+ * `thin`, and the Rebound types Diet's `diet_thin`, the one Diet flag MCP states.
+ */
+const seasonScoreThin = (window) => {
+  if (window?.blend?.value != null) return Boolean(window.blend.thin);
+  const components = Object.values(window?.components ?? {}).filter((c) => c?.value != null);
+  return components.length === 1 && !(window.missing_inputs ?? []).length
+    ? Boolean(components[0].thin)
+    : false;
+};
+const thinBases = (player, window) =>
+  BASES.map(([key]) => key).filter(
+    (key) =>
+      (window.components?.[key]?.value != null && Boolean(window.components[key].thin)) ||
+      (key === 'rebound_types' && Boolean(player.diet_thin?.rebound_types)),
+  );
+
 const readMarket = (player, team, market) => {
   const window = player.scores?.[market]?.season ?? {};
+  const thin = thinBases(player, window);
+  const traditional = window.components?.traditional?.value != null && traditionalRow(team, market);
   const components = Object.fromEntries(
     BASES.filter(([key]) => window.components?.[key]?.value != null).map(([key]) => [
       key,
@@ -223,14 +244,17 @@ const readMarket = (player, team, market) => {
   const bases = DIET_BASES.map((key) => ({
     key,
     label: BASE_LABELS[key],
+    thin: thin.includes(key),
     slices: dietSlices(player, team, key, market),
   })).filter((base) => base.slices.some((slice) => slice.vsLeague != null));
   return {
     market,
     score: seasonScore(window),
+    thin: seasonScoreThin(window),
+    thinBases: thin,
     components,
     bases,
-    traditional: 'traditional' in components ? traditionalRow(team, market) : null,
+    traditional: traditional ? { ...traditional, thin: thin.includes('traditional') } : null,
   };
 };
 
@@ -252,10 +276,12 @@ const decomposeCombo = (markets, averages, combo) => {
       label: STAT_LABELS[stat],
       weight,
       value: single?.score != null ? weight * single.score : 0,
+      thin: Boolean(single?.thin),
       bases: fed
         .map(([key, component]) => ({
           key,
           label: BASE_LABELS[key],
+          thin: single.thinBases.includes(key),
           value: (weight * component) / fed.length,
         }))
         .sort((a, b) => Math.abs(b.value) - Math.abs(a.value)),
@@ -277,7 +303,8 @@ export const readMatchup = (data, opponent) => {
   return {
     player: player.name,
     opponent,
-    season: data.as_of?.season ?? null,
+    // The season read: the one asked for when a season was named, else the default.
+    season: data.season_context?.selected_season ?? data.as_of?.season ?? null,
     dataDate: data.as_of?.season_defense ?? data.as_of?.player_diets ?? null,
     markets,
   };

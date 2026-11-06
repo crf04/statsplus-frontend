@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import LoginButton from '../components/Auth/LoginButton';
 import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
-import { filterSetToSearchParams } from '../filterUtils';
+import { filterSetToSearchParams, withLineType } from '../filterUtils';
 import { getStatusPresentation, getSurfaceFreshnessPresentation } from '../slateStatus';
 import { DIET_BASE_WIRE_NAMES, fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import {
@@ -289,6 +289,9 @@ const STAT_WORDS = {
 };
 const statWords = (stat) => STAT_WORDS[stat] ?? categoryLabel(stat);
 
+// Game-log Line Types are market keys except 3PM, which they spell FG3M.
+const LINE_TYPE_FOR_STAT = { '3PM': 'FG3M' };
+
 // His Matchup Score beside his name: signed, toned, and underlined when thin.
 // It sits above the row's button so its label shows on hover, so a click on it
 // opens the card the way the rest of the row does.
@@ -389,8 +392,12 @@ function RailRow({
   season,
 }) {
   const serializedPlayerId = String(player.id);
-  // Game Logs name the season the Matchup read, since their own default may differ.
-  const gameLogsPath = `/?${filterSetToSearchParams({ player_name: player.name, season_filter: season ?? undefined })}`;
+  // Game Logs name the season the Matchup read, since their own default may differ,
+  // and open on the stat this rail shows.
+  const gameLogsPath = `/?${withLineType(
+    filterSetToSearchParams({ player_name: player.name, season_filter: season ?? undefined }),
+    LINE_TYPE_FOR_STAT[stat] ?? stat,
+  )}`;
   const injuryBadge = injury && (
     <span className="injury-badge">{injury.status || injury.rawStatus}</span>
   );

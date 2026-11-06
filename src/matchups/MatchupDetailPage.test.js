@@ -4376,6 +4376,32 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
     expect(slots(austinPill)).toEqual(['stub', 'stub', 'tone-up', 'tone-down', 'tone-down']);
   });
 
+  test('game-log links open on the stat category selected on the Matchup', async () => {
+    const candidate = served();
+    const austin = candidate.players.find((player) => player.id === 1630559);
+    austin.statCategories = ['PTS', '3PM'];
+    austin.lastFiveGames = null;
+    fetchMatchup.mockResolvedValueOnce(candidate);
+    renderMatchup();
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+
+    await userEvent.click(screen.getByRole('button', { name: 'FGA' }));
+    const lebron = row('LeBron James');
+    expect(within(lebron).getByRole('link', { name: 'LeBron James game logs' })).toHaveAttribute(
+      'href',
+      '/?player_name=LeBron+James&season_filter=2025-26&line_type=FGA',
+    );
+    expect(
+      within(lebron).getByRole('link', { name: /^Last 5 field goal attempts: / }),
+    ).toHaveAttribute('href', '/?player_name=LeBron+James&season_filter=2025-26&line_type=FGA');
+
+    // The Matchup spells made threes 3PM; the game logs spell them FG3M.
+    await userEvent.click(screen.getByRole('button', { name: '3PM' }));
+    expect(
+      within(row('Austin Reaves')).getByRole('link', { name: 'Austin Reaves game logs' }),
+    ).toHaveAttribute('href', '/?player_name=Austin+Reaves&season_filter=2025-26&line_type=FG3M');
+  });
+
   test('AC3, AC5: with no line the bars measure against his season average', async () => {
     fetchMatchup.mockResolvedValueOnce(served());
     renderMatchup();

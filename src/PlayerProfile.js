@@ -19,6 +19,13 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, lineType, setLineType, on
   // The read last finished, with the inputs it was for, so a late answer for an earlier
   // player or opponent can never stand in for the current one.
   const [read, setRead] = useState({ key: null, reading: null, error: null });
+  // Each new read starts unsettled, before any effect reports readiness, so returning to an
+  // earlier player and opponent waits for that read again.
+  const [readingFor, setReadingFor] = useState(readKey);
+  if (readingFor !== readKey) {
+    setReadingFor(readKey);
+    setRead({ key: null, reading: null, error: null });
+  }
   const settled = !readKey || read.key === readKey;
 
   useEffect(() => {

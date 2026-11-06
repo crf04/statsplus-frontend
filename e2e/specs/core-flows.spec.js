@@ -500,7 +500,9 @@ test('the Log Workspace fits a phone and every control stays tappable', async ({
   // containers, which a finger cannot.)
   const readings = [
     page.getByText('Hit rate', { exact: true }),
-    ...['Playtypes', 'Zone Shooting', 'Shooting', 'Misc'].map((name) =>
+    page.getByRole('combobox', { name: 'Market' }),
+    page.getByText('Spot up', { exact: true }),
+    ...['Shooting', 'Misc'].map((name) =>
       page.locator('label').filter({ hasText: new RegExp(`^${name}$`) }),
     ),
   ];

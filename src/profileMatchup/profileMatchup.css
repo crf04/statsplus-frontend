@@ -71,7 +71,11 @@
   font: 600 12px var(--ct-mono);
   letter-spacing: 0.03em;
   color: var(--ct-text);
-  background: var(--pmc-tint) var(--ct-select-chevron) no-repeat right 6px center / 9px 6px;
+  background-color: var(--ct-overlay-bg-7);
+  background-image: var(--ct-select-chevron);
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 9px 6px;
   border: 1px solid var(--ct-line-strong);
   border-radius: 6px;
   padding: 4px 22px 4px 8px;

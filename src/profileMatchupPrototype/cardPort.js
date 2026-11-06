@@ -681,7 +681,7 @@ const NOUN = {
 
 const sRow = (s) => `<div class="srow">
     <span class="sn">${esc(s.slice)}</span>
-    <span class="ss"><b>${esc(s.share ?? '–')}</b> <i>lg ${esc(s.league_share ?? '–')}</i></span>
+    <span class="ss"><b>${esc(s.share ?? '–')}</b></span>
     ${sPill(s)}<span class="sv">${s.vs_league == null ? '' : esc(minus(s.vs_league))}</span>
   </div>`;
 

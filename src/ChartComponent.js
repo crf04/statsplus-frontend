@@ -247,6 +247,13 @@ const ChartComponent = ({
                 `MIN: ${numericOrZero(gameLogs[index]?.MIN)}`,
                 `${lineType}: ${numericOrZero(value)}`,
               ];
+              // Points show the shot attempts behind them.
+              if (lineType === 'PTS') {
+                lines.push(
+                  `FGA: ${numericOrZero(gameLogs[index]?.FGA)}`,
+                  `3PA: ${numericOrZero(gameLogs[index]?.FG3A)}`,
+                );
+              }
               if (tracking) {
                 const chances = toFiniteNumber(gameLogs[index]?.[tracking.chances]);
                 const made = numericOrZero(value);

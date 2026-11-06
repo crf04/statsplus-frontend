@@ -3061,6 +3061,18 @@ describe('book_lines', () => {
     expect(player.provenance).toEqual({ prizepicks: ['PTS', 'FGA'], underdog: ['PTS'] });
   });
 
+  test('decodes the sportsbook combo markets PR, PA and RA', () => {
+    const [player] = decodeMatchup(
+      withBookLines({ PR: bookQuote, PA: bookQuote, RA: bookQuote }),
+    ).players;
+
+    expect(Object.keys(player.bookLines)).toEqual(['PR', 'PA', 'RA']);
+    expect(player.bookLines.RA.books.map((entry) => [entry.book, entry.line])).toEqual([
+      ['draftkings', 27.5],
+      ['fanduel', 27.5],
+    ]);
+  });
+
   test('accepts a market no DFS provider posts for the player', () => {
     const [player] = decodeMatchup(withBookLines({ AST: bookQuote })).players;
 

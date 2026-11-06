@@ -791,7 +791,17 @@ function decodeProvenance(provenance, postedMarkets) {
 // market no DFS provider does, so nothing here is checked against the posted
 // markets. The contract (statsplus#185 section 4) makes the key required, with
 // {} for no books, so a missing key is rejected like any other malformed field.
-const BOOK_LINE_MARKETS = ['PTS', 'REB', 'AST', '3PM', 'PRA', ...SHOOTING_MARKETS];
+const BOOK_LINE_MARKETS = [
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  'PRA',
+  'PR',
+  'PA',
+  'RA',
+  ...SHOOTING_MARKETS,
+];
 const requireBoolean = (value) => {
   if (typeof value !== 'boolean') throw invalid();
   return value;

@@ -498,7 +498,9 @@ signedInTest(
 );
 
 // A backend serving 2026-27 before its cutover (crf04/statsplus#330) offers it
-// in the Lab, but Backtests never read a season before its cutover.
+// in the Lab, but Backtests never read a season before its cutover: the Lab
+// opens on it as today's season, falls back to 2025-26, and refuses it plainly
+// once picked (crf04/statsplus#446).
 signedInTest(
   'the Lab offers the listed Evidence seasons and refuses a 2026-27 Backtest plainly',
   async ({ app, screen, browser, api }) => {
@@ -528,6 +530,9 @@ signedInTest(
     await expect(sampleCount(screen)).toHaveText(/^4 player-games$/);
     const seasons = screen.getByRole('group', 'Evidence season');
     await expect(seasons.getByRole('button', '2025-26')).toHaveAttribute('aria-pressed', 'true');
+    await expect(
+      screen.getByText('2026-27 isn’t offered, so this is 2025-26 evidence.'),
+    ).toBeVisible();
 
     await seasons.getByRole('button', '2026-27').tap();
     await expect(browser).toHaveURL('/targets?season=2026-27');

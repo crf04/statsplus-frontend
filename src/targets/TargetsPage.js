@@ -7,6 +7,7 @@ import { getRequestErrorMessage } from '../gameLogsApi';
 import { formatTip, getTodaySlateDate } from '../calendarDate';
 import { useDefaultEvidenceSeason } from '../EvidenceSeason';
 import { seasonOfDate } from '../gameSeason';
+import { isSeasonRefusal } from '../servingSeason';
 import { readRevisit } from '../revisitCache';
 import TargetForm, { blankTargetDraft, targetToDraft } from './TargetForm';
 import TargetLab from './TargetLab';
@@ -107,8 +108,8 @@ const TargetCard = memo(function TargetCard({ target, entry, read, resolutionSta
           </section>
         )}
         <section aria-label="Backtest">
-          {/* A card has no season of its own: it reads the backend's default,
-              so the label says which season that turned out to be. */}
+          {/* A card reads the fits' season, or the backend's default when
+              that is refused, so the label says which season it read. */}
           <p className="target-backtest-proxy">
             <BacktestSeasonLabel backtest={read?.status === 'ready' ? read.backtest : null} />
             {minutesNote && <span className="target-backtest-note"> · {minutesNote}</span>}
@@ -147,14 +148,19 @@ const batchRouteAbsent = (error) => [404, 405].includes(error?.response?.status)
 
 // Scans each queued Target through the single route, BACKTEST_CONCURRENCY at
 // a time, settling each card as its own read lands.
-const readQueue = async (queue, signal, settle) => {
+const readQueue = async (queue, signal, settle, season) => {
   let next = 0;
   const worker = async () => {
     while (!signal.aborted && next < queue.length) {
       const target = queue[next];
       next += 1;
       try {
-        const backtest = await fetchTargetBacktest({ id: target.id, signal });
+        const backtest = await fetchTargetBacktest({ id: target.id, signal, season }).catch(
+          (error) => {
+            if (!season || !isSeasonRefusal(error)) throw error;
+            return fetchTargetBacktest({ id: target.id, signal });
+          },
+        );
         settle({ [target.id]: { status: 'ready', backtest } });
       } catch (error) {
         settle({
@@ -186,7 +192,7 @@ const partialRead = () =>
     partial: true,
   });
 
-const readListBacktests = async (targets, signal, settle) => {
+const readListBacktests = async (targets, signal, settle, season) => {
   const reads = {};
   const record = (batch) => {
     Object.assign(reads, batch);
@@ -194,7 +200,7 @@ const readListBacktests = async (targets, signal, settle) => {
   };
   let queue = targets;
   try {
-    const items = await fetchTargetBacktests({ signal });
+    const items = await fetchTargetBacktests({ signal, season });
     const byId = new Map(items.map(({ targetId, ...read }) => [String(targetId), read]));
     const missing = { status: 'error', error: BACKTEST_FALLBACK_MESSAGE };
     const settled = {};
@@ -207,6 +213,8 @@ const readListBacktests = async (targets, signal, settle) => {
     record(settled);
   } catch (error) {
     if (signal.aborted) throw error;
+    // A season the backend refuses is read again as its default, as the fits are.
+    if (season && isSeasonRefusal(error)) return readListBacktests(targets, signal, settle, null);
     if (!batchRouteAbsent(error)) {
       // Anything else is every card's failure, read the way one card's was.
       const failed = {
@@ -217,12 +225,12 @@ const readListBacktests = async (targets, signal, settle) => {
       throw partialRead();
     }
   }
-  await readQueue(queue, signal, record);
+  await readQueue(queue, signal, record, season);
   if (targets.some((target) => reads[target.id]?.status !== 'ready')) throw partialRead();
   return reads;
 };
 
-function useListBacktests(targets, enabled, userId) {
+function useListBacktests(targets, enabled, userId, season) {
   const [reads, setReads] = useState({});
   useEffect(() => {
     if (!enabled) {
@@ -239,8 +247,8 @@ function useListBacktests(targets, enabled, userId) {
     readRevisit(
       'backtests',
       userId,
-      targets.map((target) => target.id),
-      () => readListBacktests(targets, signal, settle),
+      [season, ...targets.map((target) => target.id)],
+      () => readListBacktests(targets, signal, settle, season),
       { signal },
     ).then(
       (combined) => settle(combined),
@@ -248,7 +256,7 @@ function useListBacktests(targets, enabled, userId) {
       () => {},
     );
     return () => controller.abort();
-  }, [targets, enabled, userId]);
+  }, [targets, enabled, userId, season]);
   return reads;
 }
 
@@ -284,7 +292,13 @@ function TargetsPageContent() {
     for (const entry of resolved.entries) map.set(entry.target.id, entry);
     return map;
   }, [resolved.entries]);
-  const reads = useListBacktests(targets, status === 'ready' && isAuthenticated, currentUser?.uid);
+  // Each card's Backtest reads the fits' season, refused or not the same way.
+  const reads = useListBacktests(
+    targets,
+    status === 'ready' && isAuthenticated && evidence.ready,
+    currentUser?.uid,
+    evidence.season,
+  );
   const [draft, setDraft] = useState(blankTargetDraft);
   const [draftPreferences, setDraftPreferences] = useState(null);
   const [composing, setComposing] = useState(false);
@@ -421,6 +435,7 @@ function TargetsPageContent() {
             </div>
             <SampleTargets
               key={currentUser?.uid}
+              evidence={evidence}
               onAdd={(target, preferences) => {
                 setDraft(targetToDraft(target));
                 setDraftPreferences(preferences);

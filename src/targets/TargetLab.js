@@ -15,7 +15,9 @@ import StatPicker from './StatPicker';
 import { useTargetPreview } from './useTargets';
 import './TargetFits.css';
 import ErrorMessage from '../feedback/ErrorMessage';
+import { getTodaySlateDate } from '../calendarDate';
 import { SeasonRefusal, useEvidenceSeason } from '../EvidenceSeason';
+import { seasonOfDate } from '../gameSeason';
 import { seasonFallbackText } from '../servingSeason';
 
 /*
@@ -110,13 +112,23 @@ export default function TargetLab({
   onPreferencesChange,
 }) {
   const [localPreferences, setLocalPreferences] = useState(null);
-  // The page's Evidence season; null is the backend's default, never named.
-  const evidenceSeason = useEvidenceSeason();
+  // The page's Evidence season, newest offered up to today's slate season as
+  // the Slate's (crf04/statsplus#446); null is the backend's default, never named.
+  const evidenceSeason = useEvidenceSeason({ newestUpTo: seasonOfDate(getTodaySlateDate()) });
   // A backend that lists no Evidence seasons keeps the Lab's own pair, picked
   // in place and named when picked, as before crf04/statsplus#330.
   const ownPair = evidenceSeason.listsChoices === false;
   const [pairSeason, setPairSeason] = useState(null);
-  const season = ownPair ? pairSeason : evidenceSeason.season;
+  // The page's own default, refused, reads the backend's default instead; a
+  // season the reader linked or picked, the refused default included, is
+  // refused plainly.
+  const [refusedDefault, setRefusedDefault] = useState(null);
+  const fellBack =
+    !ownPair &&
+    !evidenceSeason.linked &&
+    evidenceSeason.season !== null &&
+    evidenceSeason.season === refusedDefault;
+  const season = ownPair ? pairSeason : fellBack ? null : evidenceSeason.season;
   const defaultSeason = ownPair ? OWN_PAIR[0] : evidenceSeason.defaultSeason;
   const [published, setPublished] = useState(null);
   const { valid, request } = describeDraft(draft);
@@ -135,6 +147,10 @@ export default function TargetLab({
   useEffect(() => {
     if (unavailable?.publishedSeason) setPublished(unavailable.publishedSeason);
   }, [unavailable]);
+  useEffect(() => {
+    if (!ownPair && unavailable && !evidenceSeason.linked && unavailable.season === season)
+      setRefusedDefault(season);
+  }, [ownPair, unavailable, evidenceSeason.linked, season]);
   // The season the evidence is for, or is about to be for: what the form's
   // season-bound controls follow. Before any answer, the default.
   const shownSeason = season ?? preview?.season ?? defaultSeason;
@@ -148,8 +164,14 @@ export default function TargetLab({
   const misread = valid && status === 'ready' && !reading && preview && !evidence;
   const notYetPublished =
     !ownPair && Boolean(unavailable && unavailable.season > unavailable.publishedSeason);
+  // The default's refusal, already being read again for the backend's default.
+  const refused = status === 'error' && !(fellBack && unavailable?.season === refusedDefault);
   const seasonNote = describeSeasonNote(evidence);
-  const otherSeason = isOtherSeason(shownSeason, published);
+  // Before any answer, the Published Season is the one /seasons names.
+  const otherSeason = isOtherSeason(
+    shownSeason,
+    published ?? (ownPair ? null : evidenceSeason.defaultSeason),
+  );
   const labSeason = useMemo(
     () => ({ season: shownSeason, requested: season, otherSeason }),
     [shownSeason, season, otherSeason],
@@ -192,16 +214,19 @@ export default function TargetLab({
             label="Evidence season"
             seasons={evidenceSeason.choices.map((choice) => choice.season)}
             shown={shownSeason}
-            onChange={evidenceSeason.choose}
+            onChange={(next) => evidenceSeason.choose(next, { keep: fellBack })}
           />
         )}
         {workbench && evidence && (
           <StatPicker columns={columns} gradedBy={gradedBy} onChange={changePreferences} />
         )}
       </div>
-      {evidenceSeason.fallbackFrom && evidenceSeason.defaultSeason && (
+      {(evidenceSeason.fallbackFrom || fellBack) && evidenceSeason.defaultSeason && (
         <p className="target-lab-season-note">
-          {seasonFallbackText(evidenceSeason.fallbackFrom, evidenceSeason.defaultSeason)}
+          {seasonFallbackText(
+            evidenceSeason.fallbackFrom ?? refusedDefault,
+            evidenceSeason.defaultSeason,
+          )}
         </p>
       )}
       {seasonNote && <p className="target-lab-season-note">{seasonNote}</p>}
@@ -214,14 +239,14 @@ export default function TargetLab({
       )}
       {/* Backtests never read a season before its cutover, so one not yet
           published is refused as every page refuses it. */}
-      {status === 'error' && notYetPublished && (
+      {refused && notYetPublished && (
         <SeasonRefusal
           selectedSeason={unavailable.season}
           defaultSeason={evidenceSeason.defaultSeason ?? unavailable.publishedSeason}
           onShowDefault={() => evidenceSeason.choose(null)}
         />
       )}
-      {status === 'error' && !notYetPublished && (
+      {refused && !notYetPublished && (
         <p className="target-error" role="alert">
           <ErrorMessage message={error} />{' '}
           <button type="button" onClick={retry}>

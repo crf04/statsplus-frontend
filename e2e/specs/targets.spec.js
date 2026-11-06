@@ -438,7 +438,9 @@ test('@critical the Lab reads on change and the workbench preserves its evidence
   await expect(page.getByRole('cell', { name: 'ATL', exact: true })).toBeVisible();
 });
 
-test('the Lab offers the listed seasons, reads the default, and a saved card names it', async ({
+// Today's slate season is 2026-27, so the Lab opens on it; this backend
+// refuses it, so the Lab reads the default and says so (crf04/statsplus#446).
+test('the Lab opens on the newest offered season, falls back when refused, and a saved card names it', async ({
   authenticatedPage: page,
 }) => {
   await installApiContract(page);
@@ -462,14 +464,18 @@ test('the Lab offers the listed seasons, reads the default, and a saved card nam
     'aria-pressed',
     'true',
   );
+  await expect(lab.getByText('2026-27 isn’t offered, so this is 2025-26 evidence.')).toBeVisible();
+  await expect(lab.getByRole('alert')).toHaveCount(0);
   await expect(
     page.getByRole('region', { name: 'Lab · Backtest · 2025-26 · vs ATL' }),
   ).toBeVisible();
   await expect(page.getByText(/default season|has played/)).toHaveCount(0);
-  await expect(page.getByText(/has no games yet/)).toHaveCount(0);
-  expect(previews.at(-1)).not.toHaveProperty('season');
+  // The Sample Targets read on their own; the Lab tried 2026-27 once, then the default.
+  expect(
+    previews.filter((body) => body.opponent === 'ATL').map((body) => body.season ?? 'default'),
+  ).toEqual(['2026-27', 'default']);
 
-  // Backtests never read 2026-27 before its cutover: refused, never an empty Backtest.
+  // Picked again, 2026-27 is refused plainly, never an empty Backtest.
   await season.getByRole('button', { name: '2026-27' }).click();
   await expect(page).toHaveURL('/targets?season=2026-27');
   await expect(lab.getByRole('alert')).toHaveText(
@@ -478,13 +484,9 @@ test('the Lab offers the listed seasons, reads the default, and a saved card nam
   await expect(lab.getByRole('list', { name: 'Backtest summary' })).toHaveCount(0);
   expect(previews.at(-1)).toMatchObject({ opponent: 'ATL', season: '2026-27' });
 
-  // Back to the default, which is never named: its Backtest is already read.
   await lab.getByRole('button', { name: 'Show 2025-26' }).click();
   await expect(page).toHaveURL('/targets');
   await expect(summaryItem(lab, 'Player-games')).toHaveText(/^4 player-games$/);
-  expect(previews.filter((body) => body.season !== undefined).map((body) => body.season)).toEqual([
-    '2026-27',
-  ]);
 
   // Only an omitted season is the default; 2024-25 and an explicit null are refused.
   const preview = (body) =>

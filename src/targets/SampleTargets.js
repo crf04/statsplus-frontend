@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import TargetRecord from './TargetRecord';
 import { BacktestSeasonLabel } from './backtestSample';
 import { deriveTargetTitle, formatQualifierParts } from './targetCatalog';
@@ -22,8 +22,18 @@ const samples = [
   },
 ];
 
-function SampleCard({ target, onAdd }) {
-  const { status, preview, error, retry } = useTargetPreview(target, { immediateInitial: true });
+// A sample reads the page's season, or the backend's default once that is refused.
+function SampleCard({ target, evidence, onAdd }) {
+  const [refused, setRefused] = useState(false);
+  const season = refused ? null : evidence.season;
+  const { status, preview, error, unavailable, retry } = useTargetPreview(
+    evidence.ready ? (season ? { ...target, season } : target) : null,
+    { immediateInitial: true },
+  );
+  const seasonRefused = Boolean(evidence.season && unavailable?.season === evidence.season);
+  useEffect(() => {
+    if (seasonRefused) setRefused(true);
+  }, [seasonRefused]);
   const [preferences, setPreferences] = useState(null);
   const columns = preferences?.columns ?? preview?.statColumns ?? [];
   const gradedBy = preferences?.gradedBy ?? columns[0];
@@ -58,7 +68,7 @@ function SampleCard({ target, onAdd }) {
           <p className="target-backtest-proxy">
             <BacktestSeasonLabel backtest={preview} />
           </p>
-          {status === 'error' ? (
+          {status === 'error' && !seasonRefused ? (
             <p className="target-error" role="alert">
               <ErrorMessage message={error} />{' '}
               <button className="target-ghost" type="button" onClick={retry}>
@@ -82,7 +92,7 @@ function SampleCard({ target, onAdd }) {
   );
 }
 
-export default function SampleTargets({ onAdd }) {
+export default function SampleTargets({ evidence, onAdd }) {
   return (
     <section aria-labelledby="sample-targets-heading">
       <div className="sample-targets-intro">
@@ -90,7 +100,7 @@ export default function SampleTargets({ onAdd }) {
       </div>
       <ul className="target-grid">
         {samples.map((target) => (
-          <SampleCard key={target.opponent} target={target} onAdd={onAdd} />
+          <SampleCard key={target.opponent} target={target} evidence={evidence} onAdd={onAdd} />
         ))}
       </ul>
     </section>

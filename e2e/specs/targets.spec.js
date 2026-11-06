@@ -486,8 +486,9 @@ test('the Lab opens on the newest offered season, falls back when refused, and a
   expect(previews.at(-1)).toMatchObject({ opponent: 'ATL', season: '2026-27' });
 
   await lab.getByRole('button', { name: 'Show 2025-26' }).click();
-  await expect(page).toHaveURL('/targets');
+  await expect(page).toHaveURL('/targets?season=2025-26');
   await expect(summaryItem(lab, 'Player-games')).toHaveText(/^4 player-games$/);
+  await expect.poll(() => previews.at(-1)).toMatchObject({ opponent: 'ATL', season: '2025-26' });
 
   // Only an omitted season is the default; 2024-25 and an explicit null are refused.
   const preview = (body) =>

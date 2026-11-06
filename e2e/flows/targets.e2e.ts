@@ -548,7 +548,7 @@ signedInTest(
     await app.screenshot('target-lab-2026-27-refused');
 
     await lab.getByRole('button', 'Show 2025-26').tap();
-    await expect(browser).toHaveURL('/targets');
+    await expect(browser).toHaveURL('/targets?season=2025-26');
     await expect(sampleCount(screen)).toHaveText(/^4 player-games$/);
   },
 );

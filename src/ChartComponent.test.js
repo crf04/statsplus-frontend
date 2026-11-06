@@ -69,6 +69,19 @@ test('a typed line keeps the plain label, even at the posted value', () => {
   expect(lineLabel('26.5', null)).toEqual(['Line: 26.5']);
 });
 
+test('the points tooltip adds the shot attempts behind the points', () => {
+  const logs = [
+    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', MIN: 34, PTS: 28, FGA: 19, FG3A: 7 },
+  ];
+  const tooltipFor = (lineType) => {
+    render(<ChartComponent gameLogs={logs} lineType={lineType} lineValue="" averages={averages} />);
+    const { callbacks } = barProps.options.plugins.tooltip;
+    return callbacks.label({ dataIndex: 0, raw: barProps.data.datasets[0].data[0] });
+  };
+  expect(tooltipFor('PTS')).toEqual(['OPP: BOS', 'MIN: 34', 'PTS: 28', 'FGA: 19', '3PA: 7']);
+  expect(tooltipFor('FGA')).toEqual(['OPP: BOS', 'MIN: 34', 'FGA: 19']);
+});
+
 describe('tracking ghost bars', () => {
   const logs = [
     {

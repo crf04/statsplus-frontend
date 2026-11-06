@@ -722,7 +722,7 @@ const driverSentence = (dr, opp) => {
 export const drawCardS = (
   d,
   picked,
-  { note = '', mode = 'S1', open = new Set(), combo = 'C1' } = {},
+  { note = '', mode = 'S1', open = new Set(), combo = 'C1', picker = null } = {},
 ) => {
   const m = d.markets.find((x) => x.market === picked) || d.markets[0];
   const opp = d.player.opponent;
@@ -735,7 +735,16 @@ export const drawCardS = (
   const info = `Share: his share of each Base for ${m.market}; lg = league average share. Pill: ${opp}'s rank, 30th = allows the most (green). % = ${opp} vs league. Score: ${m.market} Season Matchup Score${m.last15 ? `; Last 15 ${pct(m.last15.value)}` : ''}.`;
   const head = `<div class="gh sh">
       <div class="gt"><b>${esc(d.player.name)}</b> vs <b>${esc(opp)}</b> · ${esc(a.season || '–')} · data as of ${esc(asOf ? day(asOf) : '–')} <span class="sinfo" tabindex="0" title="${esc(info)}">ⓘ</span></div>
-      <div class="gs">${pill}<span class="gm">${esc(m.market)}</span></div>
+      <div class="gs">${pill}${
+        picker
+          ? `<select class="smkt" data-market-select aria-label="Market (sets the game logs' Line Type)">${picker.options
+              .map(
+                (o) =>
+                  `<option value="${esc(o.value)}"${o.value === picker.value ? ' selected' : ''}>${esc(o.label)}</option>`,
+              )
+              .join('')}</select>`
+          : `<span class="gm">${esc(m.market)}</span>`
+      }</div>
     </div>${note ? `<p class="gfall">${esc(note)}</p>` : ''}`;
   const bases = (m.bases || []).filter((b) => b.base !== 'Traditional');
   const all = open.has('all');
@@ -1045,11 +1054,13 @@ function waterfallByStat(d, m, opp, open) {
     .map((st) => {
       // Compact: the group's largest Base shows; the rest sit behind "+N more".
       const grpKey = `grp:${st.key}`;
-      const grpOpen = open.has(grpKey);
+      // fit: keys are groups the height fit opened; they show in full with no button.
+      const fitOpen = open.has(`fit${grpKey}`);
+      const grpOpen = fitOpen || open.has(grpKey);
       const visible = grpOpen ? st.bases : st.bases.slice(0, 1);
       const hidden = st.bases.length - visible.length;
       const moreRow =
-        st.bases.length > 1
+        st.bases.length > 1 && !fitOpen
           ? `<button type="button" class="w3more" data-more="${grpKey}">${grpOpen ? 'Show less' : `+${hidden} more`}</button>`
           : '';
       const rows =
@@ -1065,7 +1076,7 @@ function waterfallByStat(d, m, opp, open) {
           </div>`;
           })
           .join('') + moreRow;
-      return `<div class="w3g">
+      return `<div class="w3g" data-grp="${grpKey}" data-bases="${st.bases.length}">
           <div class="w3h"><span class="wcar"></span><span class="wname"><b>${esc(st.label)}</b> <i>· ${Math.round(st.weight * 100)}% of his ${esc(m.market)}</i></span>${bar(st.value)}<span class="wval ${st.value >= 0 ? 'up' : 'down'}">${pct1(st.value)}</span></div>
           ${rows}
         </div>`;

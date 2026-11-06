@@ -56,6 +56,7 @@ const PlayerProfile = ({
   seasonChoice = null,
   onSettled,
   lineType = 'PTS',
+  setLineType = null,
 }) => {
   const season = seasonChoice?.season ?? null;
   const proto = useProto();
@@ -297,6 +298,7 @@ const PlayerProfile = ({
           variant={proto.variant}
           combo={proto.combo}
           lineType={lineType}
+          onLineType={setLineType}
           playerName={selectedPlayer}
           opponent={protoOpponent}
         />

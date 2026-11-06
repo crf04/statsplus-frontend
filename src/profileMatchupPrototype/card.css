@@ -1504,3 +1504,21 @@
   outline: 2px solid var(--mcc-amber);
   border-radius: 4px;
 }
+
+/* Market picker in the header: sets the game logs' Line Type. */
+.mcc select.smkt {
+  appearance: none;
+  -webkit-appearance: none;
+  font: 600 12px var(--mcc-mono);
+  letter-spacing: 0.03em;
+  color: var(--mcc-fg);
+  background: var(--mcc-tint) var(--ct-select-chevron) no-repeat right 6px center / 9px 6px;
+  border: 1px solid var(--mcc-line-strong);
+  border-radius: 6px;
+  padding: 4px 20px 4px 8px;
+  cursor: pointer;
+}
+.mcc select.smkt:focus-visible {
+  outline: 2px solid var(--mcc-amber);
+  outline-offset: 1px;
+}

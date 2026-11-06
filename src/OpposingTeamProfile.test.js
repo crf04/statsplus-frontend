@@ -60,14 +60,18 @@ test('Defensive Rating reads with one decimal, its rank and its gap from league'
     DRTG_RANK: 4,
     DRTG_vs_avg_pct: -5.21,
   });
-  const drtg = screen.getByText('DRTG').closest('[role="listitem"]');
+  const scoring = screen.getByRole('list', { name: 'Scoring' });
+  const drtg = within(scoring).getByText('DRTG').closest('[role="listitem"]');
   expect(drtg).toHaveTextContent('DRTG108.4−5.2%4');
   expect(within(drtg).getByTitle('Rank 4 of 30')).toBeInTheDocument();
 });
 
 test('a Traditional body without DRTG shows its row as N/A', async () => {
   await show('Traditional', traditional);
-  expect(screen.getByText('DRTG').closest('[role="listitem"]')).toHaveTextContent('DRTGN/A—–');
+  const scoring = screen.getByRole('list', { name: 'Scoring' });
+  expect(within(scoring).getByText('DRTG').closest('[role="listitem"]')).toHaveTextContent(
+    'DRTGN/A—–',
+  );
 });
 
 test('Playtypes stay in one column with percent vs league and no footnote', async () => {

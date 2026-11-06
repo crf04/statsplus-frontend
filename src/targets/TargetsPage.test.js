@@ -1528,7 +1528,7 @@ test('a refused 2026-27 default reads 2025-26 in the Lab and says so', async () 
   expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
   expect(labStatus()).toHaveTextContent('Backtest up to date.');
 
-  // Picked again, it is refused plainly, and the way back reads the default.
+  // Picked again, it is refused plainly, and the way back picks 2025-26.
   fireEvent.click(screen.getByRole('button', { name: '2026-27' }));
   await settle();
   expect(screen.getByTestId('location')).toHaveTextContent('/targets?season=2026-27');
@@ -1537,7 +1537,7 @@ test('a refused 2026-27 default reads 2025-26 in the Lab and says so', async () 
   );
   fireEvent.click(screen.getByRole('button', { name: 'Show 2025-26' }));
   await settle();
-  expect(screen.getByTestId('location')).toHaveTextContent(/^\/targets$/);
+  expect(screen.getByTestId('location')).toHaveTextContent('/targets?season=2025-26');
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   expect(screen.getByRole('list', { name: 'Backtest summary' })).toBeInTheDocument();
 });
@@ -1565,6 +1565,13 @@ test('picking 2026-27 back from 2025-26 keeps it in the URL when it is refused',
   expect(screen.getByRole('alert').textContent).toBe(
     "2026-27 isn't available yet. CourtAI still reads 2025-26 by default.Show 2025-26",
   );
+
+  fireEvent.click(screen.getByRole('button', { name: 'Show 2025-26' }));
+  await settle();
+  expect(previewSeasons()).toStrictEqual(['2026-27', '2025-26', '2026-27']);
+  expect(screen.getByTestId('location')).toHaveTextContent('/targets?season=2025-26');
+  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.getByText('Lab · Backtest · 2025-26 · vs OKC')).toBeInTheDocument();
 });
 
 const cardLabels = () =>

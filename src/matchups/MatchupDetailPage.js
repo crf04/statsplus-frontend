@@ -1430,10 +1430,14 @@ function Detail({ matchup, gameId, evidence }) {
           )}
         </div>
       </div>
-      {/* The capture's Lab reads the season this Matchup's evidence is for. */}
+      {/* The capture's Lab reads the season this Matchup's evidence is for,
+          as a link to it or as its default. */}
       <TargetCaptureModal
         capture={capture}
-        readSeason={matchup.seasonContext?.selectedSeason ?? matchup.asOfSeason ?? evidence.reads}
+        hostSeason={{
+          kind: evidence.linked ? 'linked' : 'default',
+          season: matchup.seasonContext?.selectedSeason ?? matchup.asOfSeason ?? evidence.reads,
+        }}
         onHide={() => setCapture(null)}
       />
     </>

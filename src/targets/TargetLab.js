@@ -111,20 +111,34 @@ export default function TargetLab({
   children,
   preferences,
   onPreferencesChange,
-  readSeason = null,
+  hostSeason = null,
 }) {
   const [localPreferences, setLocalPreferences] = useState(null);
   // The page's Evidence season, newest offered up to today's slate season as
-  // the Slate's (crf04/statsplus#446), unless a link or the host names one.
+  // the Slate's (crf04/statsplus#446), unless a link names one. A host's
+  // season (a Matchup's capture) replaces the page's: one its link chose
+  // (`kind: 'linked'`) is named as a link is, and one it read by default
+  // (`kind: 'default'`) is a default. Its Lab picks in place, leaving the
+  // host's link alone.
   const evidenceSeason = useEvidenceSeason({ newestUpTo: seasonOfDate(getTodaySlateDate()) });
-  const named = evidenceSeason.linked ?? readSeason;
-  const chosenSeason = backtestSeason({ ...evidenceSeason, reads: named ?? evidenceSeason.reads });
+  const [hostPick, setHostPick] = useState(null);
+  const named = hostSeason
+    ? (hostPick ?? (hostSeason.kind === 'linked' ? hostSeason.season : null))
+    : evidenceSeason.linked;
+  const chosenSeason = backtestSeason({
+    ...evidenceSeason,
+    reads: named ?? hostSeason?.season ?? evidenceSeason.reads,
+  });
+  const choose = (next) =>
+    hostSeason
+      ? setHostPick(next)
+      : evidenceSeason.choose(next, { keep: next !== evidenceSeason.defaultSeason });
   // A backend that lists no Evidence seasons keeps the Lab's own pair, picked
   // in place and named when picked, as before crf04/statsplus#330.
   const ownPair = evidenceSeason.listsChoices === false;
   const [pairSeason, setPairSeason] = useState(null);
   // The page's own default, refused, reads the backend's default instead; a
-  // season the reader linked or picked, or the host named, is refused plainly.
+  // season the reader linked or picked is refused plainly.
   const [defaultRefusal, setDefaultRefusal] = useState(null);
   const refusedDefault = defaultRefusal?.season ?? null;
   const fellBack = !ownPair && !named && chosenSeason !== null && chosenSeason === refusedDefault;
@@ -162,6 +176,7 @@ export default function TargetLab({
   // A backend that ignores the picked season answers with another one: that
   // is not the picked season's Backtest, nor a season nobody fit.
   const misread = valid && status === 'ready' && !reading && preview && !evidence;
+  const refusalDefault = evidenceSeason.defaultSeason ?? unavailable?.publishedSeason;
   const notYetPublished =
     !ownPair && Boolean(unavailable && unavailable.season > unavailable.publishedSeason);
   // The default's refusal, already being read again for the backend's default;
@@ -223,9 +238,7 @@ export default function TargetLab({
             label="Evidence season"
             seasons={evidenceSeason.choices.map((choice) => choice.season)}
             shown={shownSeason}
-            onChange={(next) =>
-              evidenceSeason.choose(next, { keep: next !== evidenceSeason.defaultSeason })
-            }
+            onChange={choose}
           />
         )}
         {workbench && evidence && (
@@ -246,8 +259,8 @@ export default function TargetLab({
       {refused && notYetPublished && (
         <SeasonRefusal
           selectedSeason={unavailable.season}
-          defaultSeason={evidenceSeason.defaultSeason ?? unavailable.publishedSeason}
-          onShowDefault={() => evidenceSeason.choose(null)}
+          defaultSeason={refusalDefault}
+          onShowDefault={() => choose(refusalDefault)}
         />
       )}
       {refused && !notYetPublished && (

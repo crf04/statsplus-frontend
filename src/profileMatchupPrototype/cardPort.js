@@ -730,17 +730,22 @@ export const drawCardS = (
   const asOf = a.season_defense || a.player_diets;
   const season = m.season;
   const pill = season
-    ? `<span class="pill" style="${wash(season.value)}">${pct(season.value)}</span>`
+    ? `<span class="pill" style="${wash(season.value)}">${pct1(season.value)}</span>`
     : '<span class="pill">—</span>';
-  const info = `Share: his share of each Base for ${m.market}; lg = league average share. Pill: ${opp}'s rank, 30th = allows the most (green). % = ${opp} vs league. Score: ${m.market} Season Matchup Score${m.last15 ? `; Last 15 ${pct(m.last15.value)}` : ''}.`;
+  const info = `Share: his share of each Base for ${m.market}; lg = league average share. Pill: ${opp}'s rank, 30th = allows the most (green). % = ${opp} vs league. Score: ${m.market} Season Matchup Score${m.last15 ? `; Last 15 ${pct1(m.last15.value)}` : ''}.`;
   const head = `<div class="gh sh">
       <div class="gt"><b>${esc(d.player.name)}</b> vs <b>${esc(opp)}</b> · ${esc(a.season || '–')} · data as of ${esc(asOf ? day(asOf) : '–')} <span class="sinfo" tabindex="0" title="${esc(info)}">ⓘ</span></div>
       <div class="gs">${pill}${
         picker
-          ? `<select class="smkt" data-market-select aria-label="Market (sets the game logs' Line Type)">${picker.options
+          ? `<select class="smkt" data-market-select aria-label="Market (sets the game logs' Line Type)">${picker.groups
               .map(
-                (o) =>
-                  `<option value="${esc(o.value)}"${o.value === picker.value ? ' selected' : ''}>${esc(o.label)}</option>`,
+                (g) =>
+                  `<optgroup label="${esc(g.label)}">${g.options
+                    .map(
+                      (o) =>
+                        `<option value="${esc(o.value)}"${o.value === picker.value ? ' selected' : ''}>${esc(o.label)}</option>`,
+                    )
+                    .join('')}</optgroup>`,
               )
               .join('')}</select>`
           : `<span class="gm">${esc(m.market)}</span>`
@@ -901,7 +906,7 @@ function waterfall(d, m, opp, combo, open) {
     combo === 'W2'
       ? `Each bar is that Base's share of the ${esc(m.market)} score.`
       : `Each bar is that Base's ${esc(m.market)} component, as MCP reports it.`;
-  return `<div class="wtitle">${esc(m.market)} vs ${esc(opp)} ${total != null ? `<span class="pill" style="${wash(total)}">${pct1(total)}</span>` : ''}</div>
+  return `<div class="wtitle">${esc(m.market)} vs ${esc(opp)}</div>
     <div class="wlist">${body}${totalRow}</div><div class="wfoot">${foot}</div>`;
 }
 
@@ -1086,6 +1091,6 @@ function waterfallByStat(d, m, opp, open) {
     total != null
       ? `<div class="wtotal"><span class="wcar"></span><span class="wname">${esc(m.market)} score</span>${bar(total)}<span class="wval ${total >= 0 ? 'up' : 'down'}">${pct1(total)}</span></div>`
       : '';
-  return `<div class="wtitle">${esc(m.market)} vs ${esc(opp)} ${total != null ? `<span class="pill" style="${wash(total)}">${pct1(total)}</span>` : ''}</div>
+  return `<div class="wtitle">${esc(m.market)} vs ${esc(opp)}</div>
     <div class="wlist w3">${groups}${totalRow}</div><div class="wfoot">Bars are each Base's share of the ${esc(m.market)} score.</div>`;
 }

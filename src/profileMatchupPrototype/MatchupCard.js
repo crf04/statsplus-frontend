@@ -5,7 +5,7 @@
  */
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useMatchup } from './read';
-import { lineTypeOptions } from '../filterUtils';
+import { LINE_TYPE_GROUPS } from '../filterUtils';
 import { drawCard, drawCardG, drawCardH, drawCardS, toCard } from './cardPort';
 import './card.css';
 
@@ -73,16 +73,19 @@ const MatchupCard = ({ playerName, opponent, variant, lineType, combo, onLineTyp
           : `PTS shown; ${label} has no Matchup Score`;
       const shown = scored ? wanted : 'PTS';
       const effective = new Set([...open, ...[...fitted].map((k) => `fit${k}`)]);
-      // The picker lists the Line Types that have a Matchup Score, in the Line Type select's order.
+      // The picker lists the Line Types that have a Matchup Score, in the Line Type select's groups.
       const picker = onLineType
         ? {
             value: scored ? lineType : 'PTS',
-            options: lineTypeOptions
-              .filter((lt) => {
-                const mk = marketFor(lt);
-                return mk && card.markets.some((m) => m.market === mk && m.season);
-              })
-              .map((lt) => ({ value: lt, label: marketFor(lt) })),
+            groups: LINE_TYPE_GROUPS.map((group) => ({
+              label: group.label,
+              options: group.options
+                .filter((lt) => {
+                  const mk = marketFor(lt);
+                  return mk && card.markets.some((m) => m.market === mk && m.season);
+                })
+                .map((lt) => ({ value: lt, label: marketFor(lt) })),
+            })).filter((group) => group.options.length),
           }
         : null;
       html =

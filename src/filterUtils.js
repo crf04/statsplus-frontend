@@ -24,6 +24,15 @@ export const lineTypeOptions = [
   'FGA',
   'TOV',
 ];
+// PROTOTYPE (throwaway, prototype/profile-matchup-tabs): the Line Type list in groups, shared by the
+// game-log Line Type select and the Matchup card's market picker. Same values as lineTypeOptions.
+export const LINE_TYPE_GROUPS = [
+  { label: 'Main', options: ['PTS', 'REB', 'AST', 'FG3M'] },
+  { label: 'Combos', options: ['PRA', 'PA', 'PR', 'RA', 'STKS'] },
+  { label: 'Shooting', options: ['FGM', 'FGA', 'FG2M', 'FG2A', 'FG3A', 'FTM', 'FTA'] },
+  { label: 'Other', options: ['STL', 'BLK', 'TOV', 'FD_PTS'] },
+];
+
 /**
  * Shared filter translation and cleaning.
  *

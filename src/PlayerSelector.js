@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Row, Col, Form, FormControl, ListGroup } from 'react-bootstrap';
-import { lineTypeOptions } from './filterUtils';
+import { LINE_TYPE_GROUPS } from './filterUtils';
 import './PlayerSelector.css'; // Import the CSS file
 import { formatNumber } from './numberUtils';
 import { lineSourceId, lineSourcesFor } from './gameLogsApi';
@@ -197,10 +197,16 @@ const PlayerSelector = ({
             onChange={(e) => setLineType(e.target.value)}
             className="player-selector-select"
           >
-            {lineTypeOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+            {/* PROTOTYPE (throwaway): grouped like the Matchup card's market picker. */}
+            <option value="None">None</option>
+            {LINE_TYPE_GROUPS.map((group) => (
+              <optgroup key={group.label} label={group.label}>
+                {group.options.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </Form.Select>
         </Form.Group>

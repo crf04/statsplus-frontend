@@ -49,7 +49,14 @@ const PROPERTIES = [
 const PROFILE = {
   '/api/players/profile': () => ({ body: { 'PRBallHandler%': 31.4, 'Isolation%': 17.8 } }),
   '/api/teams/stats': () => ({
-    body: { PRBallHandler: 1.14, PRBallHandler_RANK: 27, Isolation: 0.86, Isolation_RANK: 4 },
+    body: {
+      PRBallHandler: 9.6,
+      PRBallHandler_RANK: 27,
+      PRBallHandler_vs_avg_pct: 14,
+      Isolation: 4.1,
+      Isolation_RANK: 4,
+      Isolation_vs_avg_pct: -14,
+    },
   }),
 };
 

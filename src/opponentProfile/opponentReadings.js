@@ -4,9 +4,10 @@ import { toFiniteNumber } from '../numberUtils';
  * Shapes a /api/teams/stats payload into labelled groups of readings for the
  * Opposing Team Profile. A reading is how much of a stat the opponent allows:
  * its per-game value (when the category has one), its 1-30 rank (30 allows
- * the most) and its percent above or below league average. Playtypes and
- * Assists carry only a ratio to league (1.06 = 6% above), so their percent is
- * derived from that ratio and they have no value of their own.
+ * the most) and its percent above or below league average. Playtypes read
+ * points allowed per 48 in each play type. Assists carry only a ratio to
+ * league (1.06 = 6% above), so their percent is derived from that ratio and
+ * they have no value of their own.
  */
 
 const TRADITIONAL = [
@@ -137,16 +138,16 @@ const isObject = (data) => data !== null && typeof data === 'object' && !Array.i
 
 const playtypeGroups = (data) => {
   // Play types the labels do not know yet still appear, under their own key.
-  const keys = Object.keys(data).filter((key) => !key.includes('RANK') && !key.includes('TEAM'));
+  const keys = Object.keys(data).filter(
+    (key) => !key.includes('RANK') && !key.includes('TEAM') && !key.endsWith('_vs_avg_pct'),
+  );
   const known = Object.keys(PLAYTYPE_LABELS).filter((key) => keys.includes(key));
   const unknown = keys.filter((key) => !(key in PLAYTYPE_LABELS));
   return [
     {
       key: 'playtypes',
       title: null,
-      rows: [...known, ...unknown].map((key) =>
-        ratioReading(data, key, PLAYTYPE_LABELS[key] ?? key),
-      ),
+      rows: [...known, ...unknown].map((key) => reading(data, key, PLAYTYPE_LABELS[key] ?? key)),
     },
   ];
 };

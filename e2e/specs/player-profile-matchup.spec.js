@@ -265,10 +265,10 @@ test('the card reads the Workspace Evidence season, and reads again when it chan
     rowCells(card.getByRole('list', { name: 'Play types' }).getByRole('listitem').first());
   await expect(card.getByText(/· 2026-27 · data as of Nov 6/)).toBeVisible();
   await expect.poll(spotUp).toEqual(['Spot up', '56%', '28th', '+22%']);
-  await expect(card.locator('.pmc-score').getByText('low confidence')).toHaveAttribute(
-    'title',
-    'Low confidence: thin evidence in Play types',
-  );
+  await expect(card.getByTitle('PTS Season Matchup Score')).toHaveText('+7.0%');
+  // The score's marker and the Play types Base's, both naming the thin Base (Jest pins where).
+  await expect(card.getByText('low confidence', { exact: true })).toHaveCount(2);
+  await expect(card.getByTitle('Low confidence: thin evidence in Play types')).toHaveCount(2);
 
   await page.getByTestId('filter-panel').getByLabel('Season').selectOption('2025-26');
   await expect(card.getByText(/· 2025-26 · data as of Aug 24/)).toBeVisible();

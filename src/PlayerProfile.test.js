@@ -581,6 +581,82 @@ describe('Evidence season', () => {
     expect(rowsOf('Play types')[0]).toEqual(['Spot up', '56%', '28th', '+22%']);
   });
 
+  // Each flag on its own: the selected score's, a lone component's, a Base's, the Rebound Diet's.
+  const flagged = (season, edit) => {
+    const data = JSON.parse(JSON.stringify(season === '2026-27' ? camaraVsDen2627 : camaraVsDen));
+    edit(data.players[0]);
+    apiClient.get.mockResolvedValue({ data });
+  };
+  const markers = () =>
+    screen
+      .getAllByText('low confidence')
+      .map((marker) => [marker.parentElement.className, marker.getAttribute('title')]);
+
+  test('a market whose own score is not flagged has no marker, whatever his Play types Diet says', async () => {
+    // 2026-27 AST: Blend and components not thin, while his Play types Diet is thin.
+    expect(camaraVsDen2627.players[0].diet_thin.play_types).toBe(true);
+    await renderProfile({ seasonChoice: season2627, lineType: 'AST' });
+    expect(screen.getByTitle('AST Season Matchup Score')).toHaveTextContent('+5.7%');
+    expect(screen.queryByText('low confidence')).not.toBeInTheDocument();
+  });
+
+  test("a one-Base score with no Blend takes its component's flag", async () => {
+    flagged('2025-26', (player) => {
+      delete player.scores.STKS.season.blend;
+      player.scores.STKS.season.components.traditional.thin = true;
+    });
+    await renderProfile({ lineType: 'STKS' });
+    expect(screen.getByTitle('STKS Season Matchup Score')).toHaveTextContent('−6.9%');
+    expect(markers()).toEqual([
+      ['pmc-score', 'Low confidence: thin evidence in Traditional'],
+      ['pmc-base', 'Low confidence: thin evidence in Traditional'],
+    ]);
+  });
+
+  test('a thin Traditional component marks the Traditional heading only', async () => {
+    flagged('2025-26', (player) => {
+      player.scores.PTS.season.components.traditional.thin = true;
+    });
+    await renderProfile();
+    expect(markers()).toEqual([['pmc-base', 'Low confidence: thin evidence in Traditional']]);
+    expect(screen.getByText('Traditional', { selector: '.pmc-base' })).toHaveTextContent(
+      'Traditionallow confidence',
+    );
+  });
+
+  test('a thin Rebound types Diet marks the Rebound types Base', async () => {
+    flagged('2025-26', (player) => {
+      player.diet_thin.rebound_types = true;
+    });
+    await renderProfile({ lineType: 'REB' });
+    expect(markers()).toEqual([['pmc-base', 'Low confidence: thin evidence in Rebound types']]);
+    expect(screen.getByText('Rebound types', { selector: '.pmc-base' })).toHaveTextContent(
+      'Rebound typeslow confidence',
+    );
+  });
+
+  test("a season change hides the last season's read while the new one is pending", async () => {
+    const pending = {};
+    apiClient.get.mockImplementation(
+      (url, { params }) =>
+        new Promise((resolve) => {
+          pending[params.season ?? 'default'] = () => resolve({ data: bySeason(params) });
+        }),
+    );
+    const { rerenderWith } = await renderProfile({ seasonChoice: season2627 });
+    await act(async () => pending['2026-27']());
+    expect(rowsOf('Play types')[0]).toEqual(['Spot up', '56%', '28th', '+22%']);
+
+    rerenderWith({ seasonChoice: null });
+    await act(async () => {});
+    expect(screen.getByText('Loading data...')).toBeVisible();
+    expect(screen.queryByRole('list', { name: 'Play types' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/· 2026-27 ·/)).not.toBeInTheDocument();
+
+    await act(async () => pending.default());
+    expect(rowsOf('Play types')[0]).toEqual(['Spot up', '41%', '27th', '+10%']);
+  });
+
   test('a season the backend refuses says it is not available yet', async () => {
     apiClient.get.mockRejectedValue(
       Object.assign(new Error('Request failed with status code 503'), {

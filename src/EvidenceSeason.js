@@ -71,6 +71,7 @@ export function useDefaultEvidenceSeason({ newestUpTo }) {
   return {
     ready: !signedIn || read.status !== 'loading',
     season: signedIn && reads !== defaultSeason ? reads : null,
+    reads: signedIn ? reads : null,
   };
 }
 
@@ -106,13 +107,14 @@ export function useEvidenceSeason({ newestUpTo = null } = {}) {
   const explicit = signedIn && offered ? linked : null;
   const reads = signedIn ? (explicit ?? pageDefault) : null;
   const season = reads !== defaultSeason ? reads : null;
+  // `keep` names even the page's default in the URL, as a link to it does.
   const choose = useCallback(
-    (next) => {
+    (next, { keep = false } = {}) => {
       setFallbackFrom(null);
       setSearchParams(
         (current) => {
           const params = new URLSearchParams(current);
-          if (next && next !== pageDefault) params.set(SEASON_PARAM, next);
+          if (next && (keep || next !== pageDefault)) params.set(SEASON_PARAM, next);
           else params.delete(SEASON_PARAM);
           return params;
         },
@@ -132,6 +134,8 @@ export function useEvidenceSeason({ newestUpTo = null } = {}) {
     // backend that predates them, a failed read, or a reader signed out.
     listsChoices: !signedIn ? false : settled ? Boolean(choices) : null,
     season,
+    // The season read, named on a request or not.
+    reads,
     // The season the URL chose, which links keep in place of the page's own default.
     linked: explicit,
     defaultSeason,

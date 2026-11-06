@@ -1078,6 +1078,24 @@ test("reads one Target's backtest from the documented path with a cold-start-saf
   });
 });
 
+// A saved Target's Backtest reads the Targets page's season, refused as the resolve is.
+test.each([
+  ['the single read', () => fetchTargetBacktest({ id: 7, season: '2026-27' }), wireBacktest],
+  ['the batch read', () => fetchTargetBacktests({ season: '2026-27' }), { backtests: [] }],
+])('%s names a chosen season and types its refusal', async (_label, read, data) => {
+  apiClient.get.mockResolvedValueOnce({ data });
+  await read();
+  expect(apiClient.get.mock.calls.at(-1)[1].params).toEqual({ season: '2026-27' });
+
+  apiClient.get.mockRejectedValueOnce({
+    response: {
+      status: 503,
+      data: { error: { code: 'season_unavailable', message: 'Refused.', details: {} } },
+    },
+  });
+  await expect(read()).rejects.toBeInstanceOf(SeasonUnavailableError);
+});
+
 /*
  * The batch read carries every Target's Backtest in list order. An ok item is
  * the single route's body without `success`, decoded by the same decoder; an

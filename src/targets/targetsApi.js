@@ -804,11 +804,16 @@ export const fetchResolvedTargets = async ({ date, signal, fallback, season } = 
  * The league-wide game-log scan the day view exists to avoid, so it is only
  * ever requested by a reader who asked for it.
  */
-export const fetchTargetBacktest = async ({ id, signal } = {}) => {
-  const response = await apiClient.get(targetsUrl(`/${encodeURIComponent(id)}/backtest`), {
-    signal,
-    timeout: TARGET_READ_TIMEOUT,
-  });
+export const fetchTargetBacktest = async ({ id, signal, season } = {}) => {
+  const response = await apiClient
+    .get(targetsUrl(`/${encodeURIComponent(id)}/backtest`), {
+      ...(season ? { params: { season } } : {}),
+      signal,
+      timeout: TARGET_READ_TIMEOUT,
+    })
+    .catch((error) => {
+      throw seasonRefusalOr(error);
+    });
   return decodeBacktest(response.data);
 };
 
@@ -857,11 +862,16 @@ export const decodeBacktests = (payload) => {
   return reads;
 };
 
-export const fetchTargetBacktests = async ({ signal } = {}) => {
-  const response = await apiClient.get(getApiUrl('TARGET_BACKTESTS'), {
-    signal,
-    timeout: TARGET_READ_TIMEOUT,
-  });
+export const fetchTargetBacktests = async ({ signal, season } = {}) => {
+  const response = await apiClient
+    .get(getApiUrl('TARGET_BACKTESTS'), {
+      ...(season ? { params: { season } } : {}),
+      signal,
+      timeout: TARGET_READ_TIMEOUT,
+    })
+    .catch((error) => {
+      throw seasonRefusalOr(error);
+    });
   return decodeBacktests(response.data);
 };
 

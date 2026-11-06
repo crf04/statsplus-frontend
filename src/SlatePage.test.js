@@ -1407,3 +1407,119 @@ describe('Evidence season', () => {
     );
   });
 });
+
+/*
+ * A fit card's lean reads the Slate's own Evidence season, named even as the
+ * /seasons default, and only the default's refusal reads the backend's
+ * default instead (crf04/statsplus#446).
+ */
+describe("the fit cards' Backtest season", () => {
+  const autumnGame = { ...game, gameId: '0022600003' };
+  const leanFor = (season) => [
+    {
+      targetId: 7,
+      status: 'ready',
+      backtest: {
+        season,
+        statColumns: ['PTS'],
+        players: [
+          {
+            canonicalId: 1,
+            seasonAverages: { PTS: 20 },
+            games: [
+              { gameDate: '2026-01-01', stats: { PTS: 18 } },
+              { gameDate: '2026-01-03', stats: { PTS: 24 } },
+            ],
+          },
+        ],
+      },
+    },
+  ];
+  const refusal = () =>
+    seasonRefusalOr(
+      Object.assign(new Error('Request failed with status code 503'), {
+        response: {
+          status: 503,
+          headers: {},
+          data: {
+            error: {
+              code: 'season_unavailable',
+              message: 'Refused.',
+              details: { season: '2026-27', published_season: '2025-26' },
+            },
+          },
+        },
+      }),
+    );
+  const batchSeasons = () => fetchTargetBacktests.mock.calls.map(([request]) => request.season);
+  const renderSlate = (entry) =>
+    render(
+      <MemoryRouter initialEntries={[entry]}>
+        <SlatePage />
+      </MemoryRouter>,
+    );
+  beforeEach(() => {
+    fetchSeasons.mockResolvedValue(unpublishedSeasons);
+    fetchSlate.mockImplementation(async (date) => ({
+      ...slate,
+      slateDate: date,
+      games: [autumnGame],
+    }));
+    fetchResolvedTargets.mockImplementation(async ({ date }) => ({
+      slateDate: date,
+      entries: [resolvedEntry({ game: { ...resolvedEntry().game, gameId: '0022600003' } })],
+    }));
+  });
+
+  test("a 2026-27 day's lean reads 2026-27, as its fits do", async () => {
+    fetchTargetBacktests.mockImplementation(async ({ season }) => leanFor(season ?? '2025-26'));
+    renderSlate('/matchups?date=2026-10-27');
+
+    expect(
+      await screen.findByText('2026-27 backtest: PTS +5% vs own average, 50% of games over it.'),
+    ).toBeVisible();
+    expect(batchSeasons()).toEqual(['2026-27']);
+  });
+
+  test('a refused 2026-27 default leans on the backend default instead', async () => {
+    fetchTargetBacktests.mockImplementation(async ({ season }) => {
+      if (season) throw refusal();
+      return leanFor('2025-26');
+    });
+    renderSlate('/matchups?date=2026-10-27');
+
+    expect(
+      await screen.findByText('2025-26 backtest: PTS +5% vs own average, 50% of games over it.'),
+    ).toBeVisible();
+    expect(batchSeasons()).toEqual(['2026-27', undefined]);
+  });
+
+  test('a linked 2026-27 that is refused has no lean, never another season’s', async () => {
+    fetchTargetBacktests.mockImplementation(async ({ season }) => {
+      if (season) throw refusal();
+      return leanFor('2025-26');
+    });
+    renderSlate('/matchups?date=2026-10-27&season=2026-27');
+
+    expect(await screen.findByText('LeBron James')).toBeVisible();
+    await waitFor(() => expect(batchSeasons()).toEqual(['2026-27']));
+    expect(screen.queryByText(/backtest:/)).not.toBeInTheDocument();
+  });
+
+  test('after the cutover the default 2026-27 is still named on the batch', async () => {
+    fetchSeasons.mockResolvedValue({
+      seasons: ['2026-27'],
+      defaultSeason: '2026-27',
+      choices: [{ season: '2026-27', mode: 'published', families: {}, teamGames: null }],
+    });
+    fetchTargetBacktests.mockImplementation(async ({ season }) => leanFor(season ?? '2025-26'));
+    renderSlate('/matchups?date=2026-10-27');
+
+    expect(
+      await screen.findByText('2026-27 backtest: PTS +5% vs own average, 50% of games over it.'),
+    ).toBeVisible();
+    expect(batchSeasons()).toEqual(['2026-27']);
+    // The Slate itself still names no default.
+    expect(fetchSlate.mock.calls).toEqual([['2026-10-27', { signal: expect.any(AbortSignal) }]]);
+  });
+});

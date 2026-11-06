@@ -13,9 +13,12 @@ import TargetRecord, { TargetGameRows } from './TargetRecord';
 import { describeDraft } from './TargetForm';
 import StatPicker from './StatPicker';
 import { useTargetPreview } from './useTargets';
+import { BACKTEST_SEASONS, backtestSeason } from './backtestSample';
 import './TargetFits.css';
 import ErrorMessage from '../feedback/ErrorMessage';
+import { getTodaySlateDate } from '../calendarDate';
 import { SeasonRefusal, useEvidenceSeason } from '../EvidenceSeason';
+import { seasonOfDate } from '../gameSeason';
 import { seasonFallbackText } from '../servingSeason';
 
 /*
@@ -25,7 +28,7 @@ import { seasonFallbackText } from '../servingSeason';
  * line says what would make it one.
  */
 // The Lab's own seasons, default first, for a backend that lists none.
-const OWN_PAIR = ['2025-26', '2026-27'];
+const OWN_PAIR = BACKTEST_SEASONS;
 
 const describeLab = ({ valid, status, pending, misread }) => {
   if (!valid) return 'Complete the Qualifiers to see the Backtest.';
@@ -108,15 +111,40 @@ export default function TargetLab({
   children,
   preferences,
   onPreferencesChange,
+  hostSeason = null,
 }) {
   const [localPreferences, setLocalPreferences] = useState(null);
-  // The page's Evidence season; null is the backend's default, never named.
-  const evidenceSeason = useEvidenceSeason();
+  // The page's Evidence season, newest offered up to today's slate season as
+  // the Slate's (crf04/statsplus#446), unless a link names one. A host's
+  // season (a Matchup's capture) replaces the page's: one its link chose
+  // (`kind: 'linked'`) is named as a link is, and one it read by default
+  // (`kind: 'default'`) is a default. Its Lab picks in place, leaving the
+  // host's link alone.
+  const evidenceSeason = useEvidenceSeason({ newestUpTo: seasonOfDate(getTodaySlateDate()) });
+  const [hostPick, setHostPick] = useState(null);
+  const named = hostSeason
+    ? (hostPick ?? (hostSeason.kind === 'linked' ? hostSeason.season : null))
+    : evidenceSeason.linked;
+  const chosenSeason =
+    hostPick ??
+    backtestSeason({
+      ...evidenceSeason,
+      reads: named ?? hostSeason?.season ?? evidenceSeason.reads,
+    });
+  const choose = (next) =>
+    hostSeason
+      ? setHostPick(next)
+      : evidenceSeason.choose(next, { keep: next !== evidenceSeason.defaultSeason });
   // A backend that lists no Evidence seasons keeps the Lab's own pair, picked
   // in place and named when picked, as before crf04/statsplus#330.
   const ownPair = evidenceSeason.listsChoices === false;
   const [pairSeason, setPairSeason] = useState(null);
-  const season = ownPair ? pairSeason : evidenceSeason.season;
+  // The page's own default, refused, reads the backend's default instead; a
+  // season the reader linked or picked is refused plainly.
+  const [defaultRefusal, setDefaultRefusal] = useState(null);
+  const refusedDefault = defaultRefusal?.season ?? null;
+  const fellBack = !ownPair && !named && chosenSeason !== null && chosenSeason === refusedDefault;
+  const season = ownPair ? pairSeason : fellBack ? null : chosenSeason;
   const defaultSeason = ownPair ? OWN_PAIR[0] : evidenceSeason.defaultSeason;
   const [published, setPublished] = useState(null);
   const { valid, request } = describeDraft(draft);
@@ -135,6 +163,10 @@ export default function TargetLab({
   useEffect(() => {
     if (unavailable?.publishedSeason) setPublished(unavailable.publishedSeason);
   }, [unavailable]);
+  useEffect(() => {
+    if (!ownPair && unavailable && !named && unavailable.season === season)
+      setDefaultRefusal(unavailable);
+  }, [ownPair, unavailable, named, season]);
   // The season the evidence is for, or is about to be for: what the form's
   // season-bound controls follow. Before any answer, the default.
   const shownSeason = season ?? preview?.season ?? defaultSeason;
@@ -146,10 +178,26 @@ export default function TargetLab({
   // A backend that ignores the picked season answers with another one: that
   // is not the picked season's Backtest, nor a season nobody fit.
   const misread = valid && status === 'ready' && !reading && preview && !evidence;
+  const refusalDefault = evidenceSeason.defaultSeason ?? unavailable?.publishedSeason;
   const notYetPublished =
     !ownPair && Boolean(unavailable && unavailable.season > unavailable.publishedSeason);
+  // The default's refusal, already being read again for the backend's default;
+  // that read's own refusal is shown.
+  const refused = status === 'error' && !(fellBack && unavailable === defaultRefusal);
   const seasonNote = describeSeasonNote(evidence);
-  const otherSeason = isOtherSeason(shownSeason, published);
+  // A refused default is read without a season, which answers for the season
+  // the backend reads by default, not necessarily the one /seasons names.
+  const fallbackNote =
+    evidenceSeason.fallbackFrom && evidenceSeason.defaultSeason
+      ? seasonFallbackText(evidenceSeason.fallbackFrom, evidenceSeason.defaultSeason)
+      : fellBack && preview?.season && preview.season !== refusedDefault
+        ? seasonFallbackText(refusedDefault, preview.season)
+        : null;
+  // Before any answer, the Published Season is the one /seasons names.
+  const otherSeason = isOtherSeason(
+    shownSeason,
+    published ?? (ownPair ? null : evidenceSeason.defaultSeason),
+  );
   const labSeason = useMemo(
     () => ({ season: shownSeason, requested: season, otherSeason }),
     [shownSeason, season, otherSeason],
@@ -192,18 +240,14 @@ export default function TargetLab({
             label="Evidence season"
             seasons={evidenceSeason.choices.map((choice) => choice.season)}
             shown={shownSeason}
-            onChange={evidenceSeason.choose}
+            onChange={choose}
           />
         )}
         {workbench && evidence && (
           <StatPicker columns={columns} gradedBy={gradedBy} onChange={changePreferences} />
         )}
       </div>
-      {evidenceSeason.fallbackFrom && evidenceSeason.defaultSeason && (
-        <p className="target-lab-season-note">
-          {seasonFallbackText(evidenceSeason.fallbackFrom, evidenceSeason.defaultSeason)}
-        </p>
-      )}
+      {fallbackNote && <p className="target-lab-season-note">{fallbackNote}</p>}
       {seasonNote && <p className="target-lab-season-note">{seasonNote}</p>}
       {!valid && !evidence && <TargetTutorial />}
       {misread && (
@@ -214,14 +258,14 @@ export default function TargetLab({
       )}
       {/* Backtests never read a season before its cutover, so one not yet
           published is refused as every page refuses it. */}
-      {status === 'error' && notYetPublished && (
+      {refused && notYetPublished && (
         <SeasonRefusal
           selectedSeason={unavailable.season}
-          defaultSeason={evidenceSeason.defaultSeason ?? unavailable.publishedSeason}
-          onShowDefault={() => evidenceSeason.choose(null)}
+          defaultSeason={refusalDefault}
+          onShowDefault={() => choose(refusalDefault)}
         />
       )}
-      {status === 'error' && !notYetPublished && (
+      {refused && !notYetPublished && (
         <p className="target-error" role="alert">
           <ErrorMessage message={error} />{' '}
           <button type="button" onClick={retry}>

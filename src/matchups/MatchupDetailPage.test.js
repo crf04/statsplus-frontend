@@ -2104,6 +2104,186 @@ test('the capture dialog reads the prefilled draft live beneath its form', async
   ).toBeVisible();
 });
 
+/*
+ * The capture's Lab reads the season this Matchup reads: a 2025-26 game's
+ * Matchup reads 2025-26 even while 2026-27 is offered, so its capture does
+ * too (crf04/statsplus#446).
+ */
+test.each([
+  ['0022500584', '2025-26', '2025-26'],
+  ['0022600003', '2026-27', '2026-27 season to date'],
+])("a capture from game %s reads the Matchup's %s", async (gameId, season, label) => {
+  fetchSeasons.mockResolvedValue(unpublishedSeasons);
+  fetchTargetPreview.mockImplementation(async (request) => ({
+    ...capturePreview,
+    season: request.season,
+    seasonReason: 'requested',
+    publishedSeason: '2025-26',
+  }));
+  renderMatchup(`/matchups/${gameId}`);
+
+  const { dialog } = await openCapture('Transition');
+  await within(dialog).findByRole('list', { name: 'Backtest summary' }, { timeout: 3000 });
+  expect(fetchTargetPreview.mock.calls.map(([request]) => request.season)).toStrictEqual([season]);
+  await waitFor(() =>
+    expect(within(dialog).getByText(`Lab · Backtest · ${label} · vs BOS`)).toBeVisible(),
+  );
+  expect(fetchMatchup.mock.calls.map(([, options]) => options.season)).toStrictEqual([
+    season === '2026-27' ? season : undefined,
+  ]);
+});
+
+/*
+ * After the cutover a 2025-26 game's Matchup reads the Published Season,
+ * 2026-27, unless the reader picks 2025-26; its capture names the same one.
+ */
+test.each([
+  ['', '2026-27', null],
+  ['?season=2025-26', '2025-26', { selectedSeason: '2025-26', publishedSeason: '2026-27' }],
+])('after the cutover a capture from %s names the Matchup’s %s', async (query, season, context) => {
+  fetchSeasons.mockResolvedValue({
+    seasons: ['2026-27', '2025-26'],
+    defaultSeason: '2026-27',
+    choices: [
+      { season: '2026-27', mode: 'published', families: {}, teamGames: null },
+      { season: '2025-26', mode: 'retained', families: {}, teamGames: null },
+    ],
+  });
+  fetchMatchup.mockResolvedValue({ ...matchup, asOfSeason: '2026-27', seasonContext: context });
+  fetchTargetPreview.mockImplementation(async (request) => ({
+    ...capturePreview,
+    season: request.season,
+    seasonReason: 'requested',
+    publishedSeason: '2026-27',
+  }));
+  renderMatchup(`/matchups/0022500584${query}`);
+
+  const { dialog } = await openCapture('Transition');
+  await within(dialog).findByRole('list', { name: 'Backtest summary' }, { timeout: 3000 });
+  expect(fetchTargetPreview.mock.calls.map(([request]) => request.season)).toStrictEqual([season]);
+});
+
+/*
+ * A capture's pick of a retained season reads that season, named as is,
+ * whether the Matchup's season was linked or read by default.
+ */
+test.each([
+  ['', 'default'],
+  ['?season=2026-27', 'linked'],
+])('a capture from %s (%s) reads a picked 2024-25', async (query) => {
+  fetchSeasons.mockResolvedValue(unpublishedSeasons);
+  fetchMatchup.mockResolvedValue({
+    ...matchup,
+    asOfSeason: '2026-27',
+    seasonContext: { selectedSeason: '2026-27', publishedSeason: '2025-26' },
+  });
+  fetchTargetPreview.mockImplementation(async (request) => ({
+    ...capturePreview,
+    season: request.season,
+    seasonReason: 'requested',
+    publishedSeason: '2025-26',
+  }));
+  renderMatchup(`/matchups/0022600003${query}`);
+
+  const { dialog } = await openCapture('Transition');
+  await within(dialog).findByRole('list', { name: 'Backtest summary' }, { timeout: 3000 });
+  await userEvent.click(within(dialog).getByRole('button', { name: '2024-25' }));
+  await waitFor(() =>
+    expect(fetchTargetPreview.mock.calls.map(([request]) => request.season)).toStrictEqual([
+      '2026-27',
+      '2024-25',
+    ]),
+  );
+  expect(
+    await within(dialog).findByText('Lab · Backtest · 2024-25 season · vs BOS'),
+  ).toBeInTheDocument();
+  expect(within(dialog).getByRole('button', { name: '2024-25' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(screen.getByTestId('location')).toHaveTextContent(`/matchups/0022600003${query}`);
+});
+
+/*
+ * A capture's refused 2026-27 Backtest: read by default, as an unlinked
+ * Matchup reads it, it falls back to the backend's default and says so;
+ * linked, it is refused plainly, and its way back reads 2025-26 in the dialog
+ * while the Matchup keeps its link (crf04/statsplus#446).
+ */
+const refuseCapture2627 = () =>
+  fetchTargetPreview.mockImplementation(async ({ season }) => {
+    if (season === '2026-27')
+      throw Object.assign(new Error('Season unavailable'), {
+        response: {
+          status: 503,
+          data: {
+            error: {
+              code: 'season_unavailable',
+              message: 'Unavailable.',
+              details: {
+                season: '2026-27',
+                published_season: '2025-26',
+                stream: 'player_game_logs',
+              },
+            },
+          },
+        },
+      });
+    return { ...capturePreview, season: '2025-26', publishedSeason: '2025-26' };
+  });
+const capturePreviewSeasons = () =>
+  fetchTargetPreview.mock.calls.map(([request]) => request.season);
+
+test('a refused 2026-27 capture from an unlinked Matchup reads 2025-26 and says so', async () => {
+  fetchSeasons.mockResolvedValue(unpublishedSeasons);
+  fetchMatchup.mockResolvedValue({
+    ...matchup,
+    asOfSeason: '2025-26',
+    seasonContext: { selectedSeason: '2026-27', publishedSeason: '2025-26' },
+  });
+  refuseCapture2627();
+  renderMatchup('/matchups/0022600003');
+
+  const { dialog } = await openCapture('Transition');
+  await within(dialog).findByRole('list', { name: 'Backtest summary' }, { timeout: 3000 });
+  expect(capturePreviewSeasons()).toStrictEqual(['2026-27', undefined]);
+  expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
+  expect(
+    within(dialog).getByText('2026-27 isn’t offered, so this is 2025-26 evidence.'),
+  ).toBeVisible();
+  expect(
+    await within(dialog).findByText('Lab · Backtest · 2025-26 season to date · vs BOS'),
+  ).toBeInTheDocument();
+});
+
+test('a refused 2026-27 capture from a linked Matchup shows 2025-26 on request', async () => {
+  fetchSeasons.mockResolvedValue(unpublishedSeasons);
+  fetchMatchup.mockResolvedValue({
+    ...matchup,
+    asOfSeason: '2026-27',
+    seasonContext: { selectedSeason: '2026-27', publishedSeason: '2025-26' },
+  });
+  refuseCapture2627();
+  renderMatchup('/matchups/0022600003?season=2026-27');
+
+  const { dialog } = await openCapture('Transition');
+  const alert = await within(dialog).findByRole('alert', {}, { timeout: 3000 });
+  expect(alert.textContent).toBe(
+    "2026-27 isn't available yet. CourtAI still reads 2025-26 by default.Show 2025-26",
+  );
+  expect(capturePreviewSeasons()).toStrictEqual(['2026-27']);
+
+  await userEvent.click(within(dialog).getByRole('button', { name: 'Show 2025-26' }));
+  await within(dialog).findByRole('list', { name: 'Backtest summary' }, { timeout: 3000 });
+  expect(capturePreviewSeasons()).toStrictEqual(['2026-27', '2025-26']);
+  expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
+  expect(
+    await within(dialog).findByText('Lab · Backtest · 2025-26 season to date · vs BOS'),
+  ).toBeInTheDocument();
+  expect(screen.getByTestId('location')).toHaveTextContent('/matchups/0022600003?season=2026-27');
+  expect(fetchMatchup.mock.calls.map(([, options]) => options.season)).toStrictEqual(['2026-27']);
+});
+
 test('captures against whichever team’s sheet is open', async () => {
   createTarget.mockResolvedValue(storedTarget({ opponent: 'LAL' }));
   renderMatchup();

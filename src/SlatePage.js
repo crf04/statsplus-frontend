@@ -24,6 +24,7 @@ import { getStatusPresentation, getSurfaceFreshnessPresentation } from './slateS
 import { formatAge, useMinuteNow } from './freshness';
 import { SlateGameTargets } from './targets/TargetFits';
 import { useResolvedTargets, useTargetBacktests } from './targets/useTargets';
+import { backtestSeason } from './targets/backtestSample';
 import './SlatePage.css';
 import ErrorMessage from './feedback/ErrorMessage';
 
@@ -250,7 +251,11 @@ export default function SlatePage() {
     },
   );
   const liveEntries = resolvedTargets.entries.filter((entry) => entry.game);
-  const targetBacktests = useTargetBacktests(liveEntries.length > 0);
+  // The fit cards' leans read the Slate's season too; only its default falls back.
+  const targetBacktests = useTargetBacktests(liveEntries.length > 0, {
+    season: backtestSeason(evidence),
+    orDefault: !linked,
+  });
   const now = useMinuteNow(state.status === 'ready');
   const slateDate =
     state.status === 'ready'

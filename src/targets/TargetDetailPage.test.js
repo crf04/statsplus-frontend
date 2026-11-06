@@ -4,7 +4,7 @@ import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import TargetDetailPage from './TargetDetailPage';
 import TargetLab from './TargetLab';
 import { fetchSeasons } from '../seasonsApi';
-import { unpublishedSeasons } from '../seasonChoicesFixture';
+import { publishedOnlySeasons, unpublishedSeasons } from '../seasonChoicesFixture';
 import { targetToDraft } from './TargetForm';
 import {
   deleteTarget,
@@ -54,6 +54,7 @@ const target = {
  * for, so the shares are labelled by those Qualifiers rather than the page's.
  */
 const backtest = {
+  season: '2025-26',
   target,
   proxy: 'Outcomes are box-score proxies; there are no per-game slice splits.',
   statColumns: ['PTS', '3PM'],
@@ -100,7 +101,7 @@ const renderDetail = (path = '/targets/7', wrapper = Fragment) =>
 beforeEach(() => {
   jest.clearAllMocks();
   jest.useFakeTimers();
-  fetchSeasons.mockResolvedValue(unpublishedSeasons);
+  fetchSeasons.mockResolvedValue(publishedOnlySeasons);
   auth.isAuthenticated = true;
   auth.loading = false;
   fetchTargets.mockResolvedValue([target]);
@@ -114,6 +115,12 @@ beforeEach(() => {
   deleteTarget.mockResolvedValue(undefined);
 });
 afterEach(() => jest.useRealTimers());
+// Today's slate season is still 2025-26, so the Lab reads the default and
+// offers 2026-27 only as a pick.
+const beforeNewSeason = () => {
+  jest.setSystemTime(new Date('2026-04-09T18:00:00Z'));
+  fetchSeasons.mockResolvedValue(unpublishedSeasons);
+};
 const open = async () => {
   renderDetail();
   await screen.findByLabelText('Qualifier 1 threshold percent');
@@ -125,6 +132,9 @@ test('a newly composed valid Target retains its initial typing debounce', async 
       <TargetLab draft={targetToDraft(target)} />
     </MemoryRouter>,
   );
+  // The Lab reads nothing until /seasons names its season.
+  expect(fetchTargetPreview).not.toHaveBeenCalled();
+  await act(async () => {});
   await act(async () => jest.advanceTimersByTime(599));
   expect(fetchTargetPreview).not.toHaveBeenCalled();
   await act(async () => jest.advanceTimersByTime(1));
@@ -565,6 +575,7 @@ test.each([
     "2026-27 isn't available yet. CourtAI still reads 2025-26 by default.Show 2025-26",
   ],
 ])('a refused season never shows %s read before it', async (_, read, refused, heading, alert) => {
+  beforeNewSeason();
   fetchTargetPreview.mockImplementation(async ({ season }) => {
     if (season === refused)
       throw Object.assign(new Error('Request failed with status code 503'), {
@@ -605,6 +616,7 @@ test.each([
 });
 
 test('an incomplete draft does not bring back the season read before a refused one', async () => {
+  beforeNewSeason();
   fetchTargetPreview.mockResolvedValueOnce({
     ...backtest,
     season: '2025-26',

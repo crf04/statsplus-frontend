@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import TargetRecord from './TargetRecord';
-import { BacktestSeasonLabel } from './backtestSample';
+import { BacktestSeasonLabel, backtestSeason } from './backtestSample';
 import { deriveTargetTitle, formatQualifierParts } from './targetCatalog';
 import { useTargetPreview } from './useTargets';
 import ErrorMessage from '../feedback/ErrorMessage';
@@ -22,8 +22,23 @@ const samples = [
   },
 ];
 
-function SampleCard({ target, onAdd }) {
-  const { status, preview, error, retry } = useTargetPreview(target, { immediateInitial: true });
+// A sample reads the page's season, or the backend's default once that is refused.
+function SampleCard({ target, evidence, onAdd }) {
+  const [refusal, setRefusal] = useState(null);
+  const chosen = backtestSeason(evidence);
+  const season = refusal ? null : chosen;
+  const { status, preview, error, unavailable, retry } = useTargetPreview(
+    evidence.ready ? (season ? { ...target, season } : target) : null,
+    { immediateInitial: true },
+  );
+  useEffect(() => {
+    if (season && unavailable?.season === season) setRefusal(unavailable);
+  }, [season, unavailable]);
+  // The season's refusal, about to be or being read again without it; that
+  // read's own refusal is shown.
+  const seasonRefused =
+    Boolean(season && unavailable?.season === season) ||
+    Boolean(refusal && unavailable === refusal);
   const [preferences, setPreferences] = useState(null);
   const columns = preferences?.columns ?? preview?.statColumns ?? [];
   const gradedBy = preferences?.gradedBy ?? columns[0];
@@ -58,7 +73,7 @@ function SampleCard({ target, onAdd }) {
           <p className="target-backtest-proxy">
             <BacktestSeasonLabel backtest={preview} />
           </p>
-          {status === 'error' ? (
+          {status === 'error' && !seasonRefused ? (
             <p className="target-error" role="alert">
               <ErrorMessage message={error} />{' '}
               <button className="target-ghost" type="button" onClick={retry}>
@@ -82,7 +97,7 @@ function SampleCard({ target, onAdd }) {
   );
 }
 
-export default function SampleTargets({ onAdd }) {
+export default function SampleTargets({ evidence, onAdd }) {
   return (
     <section aria-labelledby="sample-targets-heading">
       <div className="sample-targets-intro">
@@ -90,7 +105,7 @@ export default function SampleTargets({ onAdd }) {
       </div>
       <ul className="target-grid">
         {samples.map((target) => (
-          <SampleCard key={target.opponent} target={target} onAdd={onAdd} />
+          <SampleCard key={target.opponent} target={target} evidence={evidence} onAdd={onAdd} />
         ))}
       </ul>
     </section>

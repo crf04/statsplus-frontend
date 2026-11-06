@@ -180,15 +180,22 @@ export const useResolvedTargets = (date, { season, orDefault = false, ...options
  * the league-wide scan on its own. A failed batch is the same as an empty one.
  */
 const NO_BACKTESTS = {};
-export const useTargetBacktests = (enabled) => {
+// The batch reads `season`; with `orDefault`, a refused one is read again
+// without it, as the Slate's fits are.
+export const useTargetBacktests = (enabled, { season = null, orDefault = false } = {}) => {
   const [backtests, setBacktests] = useState(NO_BACKTESTS);
   useEffect(() => {
     if (!enabled) return undefined;
     const controller = new AbortController();
+    const { signal } = controller;
     // Each read starts over: a refresh that fails shows no lean rather than
     // the last batch's.
     setBacktests(NO_BACKTESTS);
-    fetchTargetBacktests({ signal: controller.signal })
+    fetchTargetBacktests({ signal, season })
+      .catch((error) => {
+        if (!season || !orDefault || !isSeasonRefusal(error)) throw error;
+        return fetchTargetBacktests({ signal });
+      })
       .then((reads) => {
         if (controller.signal.aborted) return;
         setBacktests(
@@ -202,7 +209,7 @@ export const useTargetBacktests = (enabled) => {
       // The read already started from nothing, so a failure leaves nothing.
       .catch(() => {});
     return () => controller.abort();
-  }, [enabled]);
+  }, [enabled, season, orDefault]);
   return enabled ? backtests : NO_BACKTESTS;
 };
 

@@ -111,24 +111,23 @@ export default function TargetLab({
   children,
   preferences,
   onPreferencesChange,
-  newestUpTo = seasonOfDate(getTodaySlateDate()),
+  readSeason = null,
 }) {
   const [localPreferences, setLocalPreferences] = useState(null);
   // The page's Evidence season, newest offered up to today's slate season as
-  // the Slate's unless the host names its own ceiling (crf04/statsplus#446).
-  const evidenceSeason = useEvidenceSeason({ newestUpTo });
-  const chosenSeason = backtestSeason(evidenceSeason);
+  // the Slate's (crf04/statsplus#446), unless a link or the host names one.
+  const evidenceSeason = useEvidenceSeason({ newestUpTo: seasonOfDate(getTodaySlateDate()) });
+  const named = evidenceSeason.linked ?? readSeason;
+  const chosenSeason = backtestSeason({ ...evidenceSeason, reads: named ?? evidenceSeason.reads });
   // A backend that lists no Evidence seasons keeps the Lab's own pair, picked
   // in place and named when picked, as before crf04/statsplus#330.
   const ownPair = evidenceSeason.listsChoices === false;
   const [pairSeason, setPairSeason] = useState(null);
   // The page's own default, refused, reads the backend's default instead; a
-  // season the reader linked or picked, the refused default included, is
-  // refused plainly.
+  // season the reader linked or picked, or the host named, is refused plainly.
   const [defaultRefusal, setDefaultRefusal] = useState(null);
   const refusedDefault = defaultRefusal?.season ?? null;
-  const fellBack =
-    !ownPair && !evidenceSeason.linked && chosenSeason !== null && chosenSeason === refusedDefault;
+  const fellBack = !ownPair && !named && chosenSeason !== null && chosenSeason === refusedDefault;
   const season = ownPair ? pairSeason : fellBack ? null : chosenSeason;
   const defaultSeason = ownPair ? OWN_PAIR[0] : evidenceSeason.defaultSeason;
   const [published, setPublished] = useState(null);
@@ -149,9 +148,9 @@ export default function TargetLab({
     if (unavailable?.publishedSeason) setPublished(unavailable.publishedSeason);
   }, [unavailable]);
   useEffect(() => {
-    if (!ownPair && unavailable && !evidenceSeason.linked && unavailable.season === season)
+    if (!ownPair && unavailable && !named && unavailable.season === season)
       setDefaultRefusal(unavailable);
-  }, [ownPair, unavailable, evidenceSeason.linked, season]);
+  }, [ownPair, unavailable, named, season]);
   // The season the evidence is for, or is about to be for: what the form's
   // season-bound controls follow. Before any answer, the default.
   const shownSeason = season ?? preview?.season ?? defaultSeason;
@@ -224,7 +223,9 @@ export default function TargetLab({
             label="Evidence season"
             seasons={evidenceSeason.choices.map((choice) => choice.season)}
             shown={shownSeason}
-            onChange={(next) => evidenceSeason.choose(next, { keep: fellBack })}
+            onChange={(next) =>
+              evidenceSeason.choose(next, { keep: next !== evidenceSeason.defaultSeason })
+            }
           />
         )}
         {workbench && evidence && (

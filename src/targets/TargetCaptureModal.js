@@ -48,7 +48,7 @@ export const captureDraft = ({ opponent, base, sliceKey, leagueAverageShare }) =
  * the same row again — starts from its prefill with nothing left over from the
  * last, and a save that started under an earlier opening can tell.
  */
-function TargetCaptureContent({ capture, newestUpTo, onHide }) {
+function TargetCaptureContent({ capture, readSeason, onHide }) {
   const navigate = useNavigate();
   const [state, setState] = useState({
     opening: 0,
@@ -153,7 +153,7 @@ function TargetCaptureContent({ capture, newestUpTo, onHide }) {
               {/* A Target born from a Defense Sheet row is tuned right here,
                   against the season the row prompted a look at, with the
                   result beside the controls that move it. */}
-              <TargetLab draft={draft} newestUpTo={newestUpTo ?? undefined} />
+              <TargetLab draft={draft} readSeason={readSeason} />
             </div>
           </LabSeasonProvider>
         )}

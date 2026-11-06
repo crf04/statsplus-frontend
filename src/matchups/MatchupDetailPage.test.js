@@ -2124,13 +2124,43 @@ test.each([
 
   const { dialog } = await openCapture('Transition');
   await within(dialog).findByRole('list', { name: 'Backtest summary' }, { timeout: 3000 });
-  expect(fetchTargetPreview.mock.calls.map(([request]) => request.season)).toEqual([season]);
+  expect(fetchTargetPreview.mock.calls.map(([request]) => request.season)).toStrictEqual([season]);
   await waitFor(() =>
     expect(within(dialog).getByText(`Lab · Backtest · ${label} · vs BOS`)).toBeVisible(),
   );
-  expect(fetchMatchup.mock.calls.map(([, options]) => options.season)).toEqual([
+  expect(fetchMatchup.mock.calls.map(([, options]) => options.season)).toStrictEqual([
     season === '2026-27' ? season : undefined,
   ]);
+});
+
+/*
+ * After the cutover a 2025-26 game's Matchup reads the Published Season,
+ * 2026-27, unless the reader picks 2025-26; its capture names the same one.
+ */
+test.each([
+  ['', '2026-27', null],
+  ['?season=2025-26', '2025-26', { selectedSeason: '2025-26', publishedSeason: '2026-27' }],
+])('after the cutover a capture from %s names the Matchup’s %s', async (query, season, context) => {
+  fetchSeasons.mockResolvedValue({
+    seasons: ['2026-27', '2025-26'],
+    defaultSeason: '2026-27',
+    choices: [
+      { season: '2026-27', mode: 'published', families: {}, teamGames: null },
+      { season: '2025-26', mode: 'retained', families: {}, teamGames: null },
+    ],
+  });
+  fetchMatchup.mockResolvedValue({ ...matchup, asOfSeason: '2026-27', seasonContext: context });
+  fetchTargetPreview.mockImplementation(async (request) => ({
+    ...capturePreview,
+    season: request.season,
+    seasonReason: 'requested',
+    publishedSeason: '2026-27',
+  }));
+  renderMatchup(`/matchups/0022500584${query}`);
+
+  const { dialog } = await openCapture('Transition');
+  await within(dialog).findByRole('list', { name: 'Backtest summary' }, { timeout: 3000 });
+  expect(fetchTargetPreview.mock.calls.map(([request]) => request.season)).toStrictEqual([season]);
 });
 
 test('captures against whichever team’s sheet is open', async () => {

@@ -212,3 +212,10 @@
     font-size: 12px;
   }
 }
+
+/* The Opposing Team Profile's Evidence season and trailing-family notes. */
+.ps-evidence-season {
+  margin: 0 0 6px;
+  color: var(--ct-dim);
+  font-size: 0.82rem;
+}

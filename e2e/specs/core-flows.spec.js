@@ -500,7 +500,9 @@ test('the Log Workspace fits a phone and every control stays tappable', async ({
   // containers, which a finger cannot.)
   const readings = [
     page.getByText('Hit rate', { exact: true }),
-    ...['Playtypes', 'Zone Shooting', 'Shooting', 'Misc'].map((name) =>
+    page.getByRole('combobox', { name: 'Market' }),
+    page.getByText('Spot up', { exact: true }),
+    ...['Shooting', 'Misc'].map((name) =>
       page.locator('label').filter({ hasText: new RegExp(`^${name}$`) }),
     ),
   ];
@@ -1709,7 +1711,7 @@ test('the Log Workspace appears in one piece once every section has answered', a
 
   const othersAnswered = Promise.all([
     page.waitForResponse('**/api/games/game_logs**'),
-    page.waitForResponse('**/api/players/profile**'),
+    page.waitForResponse('**/api/matchups/unscheduled**'),
     page.waitForResponse('**/api/user/saved-filter-sets'),
   ]);
   await page.goto('/?player_name=LeBron+James');
@@ -1739,7 +1741,7 @@ test("the Log Workspace waits for the filter panel's saved sets", async ({
   // Everything else has answered, so only the held read can be keeping it back.
   const othersAnswered = Promise.all([
     page.waitForResponse('**/api/games/game_logs**'),
-    page.waitForResponse('**/api/players/profile**'),
+    page.waitForResponse('**/api/matchups/unscheduled**'),
     page.waitForResponse((response) => response.url().includes('category=Traditional')),
   ]);
   await page.goto('/?player_name=LeBron+James');
@@ -1760,7 +1762,7 @@ test('reopening the Log Workspace waits for every section again', async ({
   const held = new Promise((resolve) => {
     release = resolve;
   });
-  await page.route('**/api/players/profile**', async (route) => {
+  await page.route('**/api/matchups/unscheduled**', async (route) => {
     if (holdProfile) await held;
     await route.fallback();
   });
@@ -1771,7 +1773,7 @@ test('reopening the Log Workspace waits for every section again', async ({
   await expect(page.getByRole('heading', { name: 'Ask the box score' })).toBeVisible();
 
   holdProfile = true;
-  const profileAsked = page.waitForRequest('**/api/players/profile**');
+  const profileAsked = page.waitForRequest('**/api/matchups/unscheduled**');
   await page.goBack();
   await profileAsked;
   await expect(page.getByText('Loading game logs…')).toBeVisible();
@@ -1788,7 +1790,7 @@ test('returning to a player waits for that player again', async ({ authenticated
   const held = new Promise((resolve) => {
     release = resolve;
   });
-  await page.route('**/api/players/profile**', async (route) => {
+  await page.route('**/api/matchups/unscheduled**', async (route) => {
     if (holdProfiles) await held;
     await route.fallback();
   });
@@ -1803,7 +1805,8 @@ test('returning to a player waits for that player again', async ({ authenticated
   await expect(page.getByText('Loading game logs…')).toBeVisible();
 
   const profileAsked = page.waitForRequest(
-    (request) => request.url().includes('/api/players/profile') && request.url().includes('LeBron'),
+    (request) =>
+      request.url().includes('/api/matchups/unscheduled') && request.url().includes('LeBron'),
   );
   await page.goBack();
   await profileAsked;

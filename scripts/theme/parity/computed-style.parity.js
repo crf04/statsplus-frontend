@@ -45,21 +45,6 @@ const PROPERTIES = [
   'opacity',
 ];
 
-// A two-category Playtypes profile, so the Player Profile draws its chart.
-const PROFILE = {
-  '/api/players/profile': () => ({ body: { 'PRBallHandler%': 31.4, 'Isolation%': 17.8 } }),
-  '/api/teams/stats': () => ({
-    body: {
-      PRBallHandler: 9.6,
-      PRBallHandler_RANK: 27,
-      PRBallHandler_vs_avg_pct: 14,
-      Isolation: 4.1,
-      Isolation_RANK: 4,
-      Isolation_vs_avg_pct: -14,
-    },
-  }),
-};
-
 const open = async (page, url) => {
   await page.goto(url);
   await page.waitForLoadState('networkidle');
@@ -90,15 +75,10 @@ const ROUTES = {
   },
   'Log Workspace with charts': {
     visit: async (page, origin) => {
-      await installApiContract(page, PROFILE);
+      await installApiContract(page);
       await open(page, `${origin}/?player_name=LeBron+James`);
       await expect(page.locator('.chart-container canvas')).toBeVisible();
-      const playtypes = page.getByRole('img', {
-        name: 'Playtype frequency and team defense chart',
-      });
-      // WebKit sizes this canvas only once it has been on screen.
-      await playtypes.scrollIntoViewIfNeeded();
-      await expect(playtypes.locator('canvas')).toBeVisible({ timeout: 20_000 });
+      await expect(page.getByText('Where his PTS come from')).toBeVisible();
     },
   },
   Slate: {

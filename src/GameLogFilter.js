@@ -416,8 +416,8 @@ const GameLogFilter = ({ notice = null }) => {
       { replace: true },
     );
   }, [choices, linkedSeason, isRefusedLink, setSearchParams]);
-  // Both profiles read the Workspace's season as their Evidence season,
-  // named only when it is not the default.
+  // The Opposing Team Profile reads the Workspace's season as its Evidence
+  // season, named only when it is not the default.
   const workspaceChoice = choices?.find((choice) => choice.season === workspaceSeason);
   const profileChoice =
     workspaceChoice && workspaceSeason !== seasonChoices.defaultSeason ? workspaceChoice : null;
@@ -1031,14 +1031,14 @@ const GameLogFilter = ({ notice = null }) => {
           {access.openReads && (
             <Row className="mb-5">
               <Col md={6}>
-                {/* Its Evidence season choice is unknown until /seasons answers,
-                  even for a linked season. */}
+                {/* It shows beside the Opposing Team Profile, which waits for /seasons. */}
                 {!awaitingSeasonChoices && (
                   <Suspense fallback={null}>
                     <PlayerProfile
                       selectedPlayer={selectedPlayer}
                       selectedTeam={selectedTeam}
-                      seasonChoice={profileChoice}
+                      lineType={lineType}
+                      setLineType={setLineType}
                       onSettled={handleProfileSettled}
                     />
                   </Suspense>

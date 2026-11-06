@@ -35,13 +35,13 @@ jest.mock('./NaturalLanguageQuery', () => ({
   ),
 }));
 jest.mock('./PlayerSelector', () => ({ __esModule: true, default: () => null }));
-jest.mock('./PlayerProfile', () => ({
+jest.mock('./PlayerProfile', () => ({ __esModule: true, default: () => null }));
+jest.mock('./OpposingTeamProfile', () => ({
   __esModule: true,
   default: ({ seasonChoice }) => (
     <output aria-label="Profile season">{seasonChoice?.season ?? 'default'}</output>
   ),
 }));
-jest.mock('./OpposingTeamProfile', () => ({ __esModule: true, default: () => null }));
 jest.mock('./ChartComponent', () => ({ __esModule: true, default: () => null }));
 jest.mock('./PerformanceAverages', () => ({ __esModule: true, default: () => null }));
 jest.mock('./GameLogsTable', () => ({
@@ -345,20 +345,21 @@ test('a refusal names its published season and offers it when the seasons read f
   expect(await screen.findByText('Game list of 1')).toBeInTheDocument();
 });
 
-// The Player Profile reads the Workspace's season as its Evidence season
-// (crf04/statsplus#330), named only when it is not the default.
+// The Opposing Team Profile reads the Workspace's season as its Evidence season
+// (crf04/statsplus#330), named only when it is not the default. The Player
+// Profile reads CourtAI's default season, as MCP get_matchup does (crf04/statsplus#451).
 test.each([
   ['no season', '', '2026-27'],
   ['the Published Season', '&season_filter=2025-26', 'default'],
   ['2026-27', '&season_filter=2026-27', '2026-27'],
   ['a retained season', '&season_filter=2024-25', '2024-25'],
-])('with %s the Player Profile reads %s', async (_name, query, expected) => {
+])('with %s the Opposing Team Profile reads %s', async (_name, query, expected) => {
   renderAt(`/?player_name=LeBron+James${query}`);
   await screen.findByText('Game list of 1');
   await waitFor(() => expect(screen.getByLabelText('Profile season')).toHaveTextContent(expected));
 });
 
-test('without choices the Player Profile names no season', async () => {
+test('without choices the Opposing Team Profile names no season', async () => {
   fetchSeasons.mockResolvedValue({ seasons: ['2025-26', '2024-25'], defaultSeason: '2025-26' });
   renderAt('/?player_name=LeBron+James&season_filter=2024-25');
   await screen.findByText('Game list of 1');

@@ -64,27 +64,12 @@ const gameLogRoles = (canvas) =>
     return roles;
   });
 
-// A two-category Playtypes profile against the opponent's Team Defense.
-const profileOverrides = {
-  '/api/players/profile': () => ({ body: { 'PRBallHandler%': 31.4, 'Isolation%': 17.8 } }),
-  '/api/teams/stats': () => ({
-    body: {
-      PRBallHandler: 18.5,
-      PRBallHandler_RANK: 27,
-      PRBallHandler_vs_avg_pct: 14,
-      Isolation: 6.2,
-      Isolation_RANK: 4,
-      Isolation_vs_avg_pct: -14,
-    },
-  }),
-};
-
 test('charts paint the dark theme colours, part by part, and repaint in Chalk when the theme changes', async ({
   page,
 }) => {
   await page.addInitScript((key) => window.localStorage.setItem(key, 'true'), E2E_AUTH_STORAGE_KEY);
   await page.addInitScript(recordCanvasPaint);
-  await installApiContract(page, profileOverrides);
+  await installApiContract(page);
   await page.goto('/?player_name=LeBron+James');
 
   const gameLogChart = page.locator('.chart-container canvas');
@@ -110,31 +95,6 @@ test('charts paint the dark theme colours, part by part, and repaint in Chalk wh
       grid: 'rgba(255, 255, 255, 0.06)',
       tick: '#9b937f',
     });
-
-  const playtypes = page.getByRole('img', { name: 'Playtype frequency and team defense chart' });
-  const playtypesCanvas = playtypes.locator('canvas');
-  await playtypes.scrollIntoViewIfNeeded();
-  await expect(playtypes).toBeVisible();
-  await expect
-    .poll(() => paintOf(playtypesCanvas), { timeout: 20_000 })
-    .toEqual(expect.arrayContaining(['#e8a33d', '#7a8699']));
-  await expect
-    .poll(async () => {
-      await playtypes.hover({ position: { x: 90, y: 150 } });
-      return paintOf(playtypesCanvas);
-    })
-    .toEqual(
-      expect.arrayContaining([
-        '#666666', // axis and tick marks
-        '#7a8699', // Team Defense line
-        '#808080', // axis titles
-        '#9b937f', // tick labels
-        '#cccccc', // hover cursor
-        '#e8a33d', // frequency bars
-        '#ffffff', // line points
-        'rgba(255, 255, 255, 0.08)', // grid
-      ]),
-    );
 
   // A theme is a set of token values under html[data-theme]. This one exists
   // only for the test, and moves every token pair that is equal in dark but
@@ -177,14 +137,6 @@ test('charts paint the dark theme colours, part by part, and repaint in Chalk wh
   await expect
     .poll(() => paintOf(gameLogChart, { latestFrame: true }))
     .toEqual(expect.arrayContaining(['rgba(194, 78, 78, 0.72)', 'rgba(76, 175, 125, 0.78)']));
-  // The Team Defense line takes the new slate; its point centres stay white,
-  // lettering on the bars rather than page white.
-  await expect
-    .poll(async () => {
-      await playtypes.hover({ position: { x: 90, y: 150 } });
-      return paintOf(playtypesCanvas, { latestFrame: true });
-    })
-    .toEqual(expect.arrayContaining(['#456789', '#ffffff']));
 
   // Chalk, chosen in the Appearance menu: text and lines take the light
   // tokens, line alphas grow by 1.35, and the bars keep their colours.
@@ -214,21 +166,4 @@ test('charts paint the dark theme colours, part by part, and repaint in Chalk wh
   await expect
     .poll(() => paintOf(gameLogChart, { latestFrame: true }))
     .toEqual(expect.arrayContaining(['rgba(194, 78, 78, 0.72)', 'rgba(76, 175, 125, 0.78)']));
-  await expect
-    .poll(async () => {
-      await playtypes.hover({ position: { x: 90, y: 150 } });
-      return paintOf(playtypesCanvas, { latestFrame: true });
-    })
-    .toEqual(
-      expect.arrayContaining([
-        '#686e75', // axis and tick marks
-        '#686d77', // Team Defense line
-        '#676e77', // axis titles
-        '#5f6670', // tick labels
-        '#31363e', // hover cursor
-        '#e8a33d', // frequency bars
-        '#ffffff', // line points
-        'rgba(21, 24, 29, 0.11)', // grid
-      ]),
-    );
 });

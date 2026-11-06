@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import PlayerSelector from './PlayerSelector';
 import { decodeGameLogsResponse } from './gameLogsApi';
+import { lineTypeOptions } from './filterUtils';
 
 const decodePosted = (postedLine) =>
   decodeGameLogsResponse({ game_logs: [], posted_line: postedLine }).postedLine;
@@ -91,4 +92,24 @@ test('a provider or book the app does not know is offered under its own key', ()
     }),
   });
   expect(sourceLabels()).toEqual(['Acmepicks 25.5', 'Zebrabet 26.5, Over −105, Under −115']);
+});
+
+test('the Line Type select keeps every value, None first and the rest in the shared groups', () => {
+  renderSelector();
+  const select = screen.getByLabelText('Line Type:');
+  expect(select.firstElementChild).toHaveTextContent('None');
+  expect(
+    [...select.querySelectorAll('optgroup')].map((group) => [
+      group.label,
+      [...group.querySelectorAll('option')].map((option) => option.value),
+    ]),
+  ).toEqual([
+    ['Main', ['PTS', 'REB', 'AST', 'FG3M']],
+    ['Combos', ['PRA', 'PA', 'PR', 'RA', 'STKS']],
+    ['Shooting', ['FGM', 'FGA', 'FG2M', 'FG2A', 'FG3A', 'FTM', 'FTA']],
+    ['Other', ['STL', 'BLK', 'TOV', 'FD_PTS']],
+  ]);
+  expect([...select.querySelectorAll('option')].map((option) => option.value).sort()).toEqual(
+    [...lineTypeOptions].sort(),
+  );
 });

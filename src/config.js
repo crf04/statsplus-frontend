@@ -40,7 +40,6 @@ const config = {
     MATCHUP_SELECTION: '/api/games/matchup/selection',
     MATCHUP_UNSCHEDULED: '/api/matchups/unscheduled',
     NEXT_OPPONENT: '/api/players/next-opponent',
-    PLAYER_PROFILE: '/api/players/profile',
     TEAM_STATS: '/api/teams/stats',
     NL_QUERY: '/api/nl-query',
     USER_ATTRIBUTION: '/api/user/attribution',

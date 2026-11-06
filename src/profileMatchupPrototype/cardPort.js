@@ -1018,8 +1018,8 @@ function waterfallByStat(d, m, opp, open) {
     1e-6,
   );
   const accKey = [...open].find((k) => k.startsWith('acc:'));
-  const first = stats[0] && stats[0].bases[0] ? `${stats[0].key}|${stats[0].bases[0].base}` : null;
-  const expanded = accKey ? accKey.slice(4) : first;
+  // Compact: nothing opens into slices until tapped.
+  const expanded = accKey ? accKey.slice(4) : null;
   const bar = (v) => {
     const w = (Math.abs(v) / max) * 50;
     return `<span class="wbar"><i class="${v >= 0 ? 'wup' : 'wdown'}" style="${v >= 0 ? 'left:50%' : 'right:50%'};width:${w.toFixed(1)}%"></i></span>`;
@@ -1043,18 +1043,28 @@ function waterfallByStat(d, m, opp, open) {
   };
   const groups = stats
     .map((st) => {
-      const rows = st.bases
-        .map((x) => {
-          const id = `${st.key}|${x.base}`;
-          const isOpen = id === expanded;
-          return `<div class="wrow w3b${isOpen ? ' open' : ''}">
+      // Compact: the group's largest Base shows; the rest sit behind "+N more".
+      const grpKey = `grp:${st.key}`;
+      const grpOpen = open.has(grpKey);
+      const visible = grpOpen ? st.bases : st.bases.slice(0, 1);
+      const hidden = st.bases.length - visible.length;
+      const moreRow =
+        st.bases.length > 1
+          ? `<button type="button" class="w3more" data-more="${grpKey}">${grpOpen ? 'Show less' : `+${hidden} more`}</button>`
+          : '';
+      const rows =
+        visible
+          .map((x) => {
+            const id = `${st.key}|${x.base}`;
+            const isOpen = id === expanded;
+            return `<div class="wrow w3b${isOpen ? ' open' : ''}">
             <button type="button" class="whead" data-more="${isOpen ? 'acc:none' : `acc:${esc(id)}`}" aria-expanded="${isOpen}" title="${esc(`${x.base} in ${st.label}: ${pct1(x.value)} of the ${m.market} score`)}">
               <span class="wcar">${isOpen ? '▾' : '▸'}</span><span class="wname">${esc(x.base)}</span>${bar(x.value)}<span class="wval ${x.value >= 0 ? 'up' : 'down'}">${pct1(x.value)}</span>
             </button>
             ${isOpen ? `<div class="wbody">${slices(st, x.base)}</div>` : ''}
           </div>`;
-        })
-        .join('');
+          })
+          .join('') + moreRow;
       return `<div class="w3g">
           <div class="w3h"><span class="wcar"></span><span class="wname"><b>${esc(st.label)}</b> <i>· ${Math.round(st.weight * 100)}% of his ${esc(m.market)}</i></span>${bar(st.value)}<span class="wval ${st.value >= 0 ? 'up' : 'down'}">${pct1(st.value)}</span></div>
           ${rows}

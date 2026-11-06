@@ -51,7 +51,9 @@ export const useProto = () => {
   }, []);
   const active = PROTO_ENABLED && (PROTO_STANDALONE || hash.get('proto') === 'profile');
   const tab = hash.get('tab');
-  const combo = ['W', 'W2', 'C1', 'C2', 'C3'].includes(hash.get('combo')) ? hash.get('combo') : 'W';
+  const combo = ['W3', 'W', 'W2', 'C1', 'C2', 'C3'].includes(hash.get('combo'))
+    ? hash.get('combo')
+    : 'W3';
   const variant = ['F', 'G', 'H1', 'H2', 'H3', 'S1', 'S2', 'S3', 'S4'].includes(hash.get('v'))
     ? hash.get('v')
     : 'S4';

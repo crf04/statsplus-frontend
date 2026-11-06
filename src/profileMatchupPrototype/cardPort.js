@@ -796,13 +796,27 @@ const BASE_TAG = {
    add up to the combo score: the backend averages each stat's Bases, then weights the stats by his line.
    W2 bars are each Base's contribution to the score (its component divided by the Bases its stat averages),
    which do add up to it. */
-const BASE_STAT = {
-  'Play types': 'PTS',
-  'Shot zones': 'PTS',
-  'Shot types': 'PTS',
-  'Assist locations': 'AST',
-  Traditional: 'REB',
-  'Rebound types': 'REB',
+/* How the backend builds a combo score (checked on every sample player and combo): each stat's score is
+   the mean of its Bases' components, and the combo is the stats' scores weighted by his season averages.
+   So a Base's share of the combo is, summed over the stats it feeds, weight x component / Bases in that
+   stat. Traditional feeds PTS, REB and AST alike, so it is split per stat rather than mapped to one. */
+const decompose = (d, m) => {
+  const parts = COMBO_PARTS[m.market];
+  const avg = d.player.averages || {};
+  const total = parts.reduce((sum, k) => sum + (avg[k] || 0), 0) || 1;
+  return parts.map((key) => {
+    const single = d.markets.find((x) => x.market === key);
+    const comps = Object.entries((single && single.components) || {}).filter(([, c]) => c);
+    const weight = (avg[key] || 0) / total;
+    return {
+      key,
+      label: PART[key].label,
+      weight,
+      single,
+      value: single && single.season ? weight * single.season.value : 0,
+      bases: comps.map(([base, c]) => ({ base, value: (weight * c.value) / comps.length })),
+    };
+  });
 };
 
 // One decimal, so the bars read like the MCP components (+3.1, not +3%).
@@ -812,16 +826,18 @@ const pct1 = (v) => {
 };
 
 function waterfall(d, m, opp, combo, open) {
-  const perStat = (key) => {
-    const single = d.markets.find((x) => x.market === key);
-    return single ? Object.values(single.components).filter(Boolean).length : 1;
-  };
+  const share = {};
+  decompose(d, m).forEach((stat) =>
+    stat.bases.forEach((x) => {
+      share[x.base] = (share[x.base] || 0) + x.value;
+    }),
+  );
   const rows = Object.entries(m.components)
     .filter(([, c]) => c)
     .map(([base, c]) => ({
       base,
       component: c.value,
-      value: combo === 'W2' ? c.value / perStat(BASE_STAT[base]) : c.value,
+      value: combo === 'W2' ? (share[base] ?? 0) : c.value,
     }))
     .sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
   const total = m.season ? m.season.value : null;
@@ -933,6 +949,7 @@ function comboBody(d, m, opp, combo, open) {
         : '')
     );
   };
+  if (combo === 'W3') return waterfallByStat(d, m, opp, open);
   if (combo === 'W' || combo === 'W2') return waterfall(d, m, opp, combo, open);
   if (combo === 'C1') {
     const groups = parts
@@ -984,4 +1001,70 @@ function comboBody(d, m, opp, combo, open) {
     )
     .join('')}</div>`;
   return `${title}${seg}<div class="slist"><div class="sgrp">${partHead(picked, m)}${partRows(picked, 3)}</div>${toggle}</div>`;
+}
+
+/* W3: W2's contribution bars, grouped under the stats the combo is made of, on one shared scale. */
+function waterfallByStat(d, m, opp, open) {
+  const stats = decompose(d, m)
+    .map((st) => ({
+      ...st,
+      bases: [...st.bases].sort((a, b) => Math.abs(b.value) - Math.abs(a.value)),
+    }))
+    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
+  const total = m.season ? m.season.value : null;
+  const max = Math.max(
+    ...stats.flatMap((st) => [Math.abs(st.value), ...st.bases.map((x) => Math.abs(x.value))]),
+    total == null ? 0 : Math.abs(total),
+    1e-6,
+  );
+  const accKey = [...open].find((k) => k.startsWith('acc:'));
+  const first = stats[0] && stats[0].bases[0] ? `${stats[0].key}|${stats[0].bases[0].base}` : null;
+  const expanded = accKey ? accKey.slice(4) : first;
+  const bar = (v) => {
+    const w = (Math.abs(v) / max) * 50;
+    return `<span class="wbar"><i class="${v >= 0 ? 'wup' : 'wdown'}" style="${v >= 0 ? 'left:50%' : 'right:50%'};width:${w.toFixed(1)}%"></i></span>`;
+  };
+  const slices = (st, baseName) => {
+    const base = ((st.single && st.single.bases) || []).find((b) => b.base === baseName);
+    if (!base) return '<p class="sub">No rows.</p>';
+    if (baseName === 'Traditional') {
+      const t = base.slices[0];
+      return `<div class="srow"><span class="sn">${esc(opp)}: ${esc(t.metric)}</span><span class="ss"></span>${sPill(t)}<span class="sv">${esc(minus(t.vs_league))}</span></div>`;
+    }
+    const list = joined(d, base);
+    const allKey = `all:${st.key}|${baseName}`;
+    const showAll = open.has(allKey);
+    const shown = showAll ? list : list.slice(0, 3);
+    const more =
+      list.length > 3
+        ? `<button type="button" class="more" data-more="${esc(allKey)}">${showAll ? 'Show less' : `Show all ${list.length}`}</button>`
+        : '';
+    return `${list.every((x) => x.his_mix) ? '<div class="ssub">For his mix of 2s and 3s: no opponent rank.</div>' : ''}${shown.map(sRow).join('')}${more}`;
+  };
+  const groups = stats
+    .map((st) => {
+      const rows = st.bases
+        .map((x) => {
+          const id = `${st.key}|${x.base}`;
+          const isOpen = id === expanded;
+          return `<div class="wrow w3b${isOpen ? ' open' : ''}">
+            <button type="button" class="whead" data-more="${isOpen ? 'acc:none' : `acc:${esc(id)}`}" aria-expanded="${isOpen}" title="${esc(`${x.base} in ${st.label}: ${pct1(x.value)} of the ${m.market} score`)}">
+              <span class="wcar">${isOpen ? '▾' : '▸'}</span><span class="wname">${esc(x.base)}</span>${bar(x.value)}<span class="wval ${x.value >= 0 ? 'up' : 'down'}">${pct1(x.value)}</span>
+            </button>
+            ${isOpen ? `<div class="wbody">${slices(st, x.base)}</div>` : ''}
+          </div>`;
+        })
+        .join('');
+      return `<div class="w3g">
+          <div class="w3h"><span class="wcar"></span><span class="wname"><b>${esc(st.label)}</b> <i>· ${Math.round(st.weight * 100)}% of his ${esc(m.market)}</i></span>${bar(st.value)}<span class="wval ${st.value >= 0 ? 'up' : 'down'}">${pct1(st.value)}</span></div>
+          ${rows}
+        </div>`;
+    })
+    .join('');
+  const totalRow =
+    total != null
+      ? `<div class="wtotal"><span class="wcar"></span><span class="wname">${esc(m.market)} score</span>${bar(total)}<span class="wval ${total >= 0 ? 'up' : 'down'}">${pct1(total)}</span></div>`
+      : '';
+  return `<div class="wtitle">${esc(m.market)} vs ${esc(opp)} ${total != null ? `<span class="pill" style="${wash(total)}">${pct1(total)}</span>` : ''}</div>
+    <div class="wlist w3">${groups}${totalRow}</div><div class="wfoot">Bars are each Base's share of the ${esc(m.market)} score.</div>`;
 }

@@ -29,7 +29,7 @@ const Switcher = ({ proto, playerName }) => (
     ))}
     <span>{NAMES[proto.variant]}</span>
     {proto.variant === 'S4' &&
-      ['W', 'W2', 'C1', 'C2', 'C3'].map((c) => (
+      ['W3', 'W', 'W2', 'C1', 'C2', 'C3'].map((c) => (
         <button
           key={c}
           type="button"

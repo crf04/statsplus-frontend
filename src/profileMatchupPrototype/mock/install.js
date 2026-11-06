@@ -1,5 +1,5 @@
 /*
- * PROTOTYPE (throwaway). Production responses captured 2026-11-03 with
+ * PROTOTYPE (throwaway). Production responses captured 2026-11-06 with
  * `live-shots --record`, replayed so the public link needs no sign-in. Each
  * sample player's next opponent is pinned to the opponent the prototype reads.
  */

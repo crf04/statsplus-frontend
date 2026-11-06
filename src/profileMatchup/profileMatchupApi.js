@@ -1,5 +1,6 @@
 import { apiClient, getApiUrl } from '../config';
 import { isRecord } from '../decoding';
+import { seasonRefusalOr } from '../servingSeason';
 import { readMatchup } from './matchupReading';
 
 const invalid = () => new Error('The matchup API returned an invalid response.');
@@ -30,13 +31,19 @@ export const decodeProfileMatchup = (data, opponent) => {
 
 /*
  * The Unscheduled Matchup the MCP `get_matchup` card reads for this player against this
- * opponent, at CourtAI's default season (no `season` is sent, as MCP sends none).
+ * opponent, in the Workspace's Evidence season: `season` names it, and null (the default
+ * season) sends none, as MCP sends none.
  */
-export const fetchProfileMatchup = async (playerName, opponent, { signal } = {}) => {
-  const response = await apiClient.get(getApiUrl('MATCHUP_UNSCHEDULED'), {
-    params: { player_name: playerName, opponent },
-    signal,
-  });
+export const fetchProfileMatchup = async (playerName, opponent, { signal, season = null } = {}) => {
+  let response;
+  try {
+    response = await apiClient.get(getApiUrl('MATCHUP_UNSCHEDULED'), {
+      params: { player_name: playerName, opponent, ...(season && { season }) },
+      signal,
+    });
+  } catch (error) {
+    throw seasonRefusalOr(error);
+  }
   return decodeProfileMatchup(response.data, opponent);
 };
 

@@ -1,7 +1,7 @@
 /*
  * What the Player Profile's matchup card reads from an Unscheduled Matchup, chosen the way
  * the MCP `get_matchup` card chooses it (statsplus-mcp `tools/matchup_reading.py`:
- * `diet_slices`, `pick_slice_row`, `shot_mix`, `own_shot_shares`), so the web card and
+ * `diet_slices`, `pick_slice_row`, `own_shot_shares`), so the web card and
  * Claude state the same numbers. Everything here selects and relabels backend values; the
  * only arithmetic is the combo decomposition, which reproduces the backend's combo score.
  */
@@ -112,9 +112,8 @@ export const COMBO_STATS = {
 };
 const STAT_LABELS = { PTS: 'Points', REB: 'Rebounds', AST: 'Assists' };
 
-/* The markets whose own stat row is PTS, and the markets whose shot types read his own mix. */
+/* The markets whose own stat row is PTS. */
 const POINTS_MARKETS = new Set(['PTS', 'PA', 'PR', 'PRA']);
-const MIX_MARKETS = new Set(['PTS', 'PA', 'PR', 'PRA', 'FGA', 'FGM']);
 /* Single-stat shooting markets read his share of their kind of shot in each shot type. */
 const OWN_SHOT_KINDS = { FG3A: '3', '3PM': '3', FG2A: '2', FG2M: '2' };
 
@@ -131,31 +130,23 @@ const marketRows = (team, base, market) =>
       row.season?.percent_vs_league_average != null,
   );
 
-/* `pick_slice_row`: the market's own points row, else a scored row over POSS, furthest from league. */
-const pickSliceRow = (rows, market) => {
+/* The stat of a market's own overall row in a Base: PTS for a points market, a shot type's FGM or FGA. */
+const ownStat = (base, market) => {
+  if (POINTS_MARKETS.has(market)) return 'PTS';
+  if (base === 'shot_types' && (market === 'FGM' || market === 'FGA')) return market;
+  return null;
+};
+
+/* `pick_slice_row`: the market's own overall row, else a scored row over POSS, furthest from league. */
+const pickSliceRow = (rows, own) => {
   if (!rows.length) return null;
-  if (POINTS_MARKETS.has(market)) {
-    const own = rows.find((row) => splitRowKey(row.key)[1] === 'PTS');
-    if (own) return own;
-  }
+  const ownRow = own && rows.find((row) => splitRowKey(row.key)[1] === own);
+  if (ownRow) return ownRow;
   const scored = rows.filter((row) => splitRowKey(row.key)[1] !== 'POSS');
   return (scored.length ? scored : rows).reduce((best, row) =>
     Math.abs(row.season.percent_vs_league_average) > Math.abs(best.season.percent_vs_league_average)
       ? row
       : best,
-  );
-};
-
-/* `shot_mix`: each shot type's % vs league for his own mix of 2s and 3s, when the backend sends it. */
-const shotMix = (player, market) => {
-  if (!MIX_MARKETS.has(market)) return null;
-  const source = market === 'FGA' || market === 'FGM' ? market : 'PTS';
-  const slices = player.scores?.[source]?.season?.components?.shot_types?.slices;
-  if (!Array.isArray(slices) || !slices.length) return null;
-  return new Map(
-    slices
-      .filter((s) => s.key != null && s.percent_vs_league_average != null)
-      .map((s) => [s.key, s.percent_vs_league_average]),
   );
 };
 
@@ -181,35 +172,29 @@ const ownShotShares = (player, base, market) => {
   return new Map([...volumes].map(([key, volume]) => [key, volume / total]));
 };
 
-/*
- * `diet_slices`: every slice of his Diet in a Base, largest share first, against the opponent's
- * row for it. A shot type scored on his own mix carries that % vs league and no rank.
- */
+/* `diet_slices`: every slice of his Diet in a Base, largest share first, against the opponent's row for it. */
 export const dietSlices = (player, team, base, market) => {
-  const mix = base === 'shot_types' ? shotMix(player, market) : null;
   const rows = marketRows(team, base, market);
   const shares = ownShotShares(player, base, market) ?? dietShares(player, base);
   // Largest share first; ties keep the backend's order.
   const order = [...shares.keys()].sort((a, b) => shares.get(b) - shares.get(a));
   return order.map((key) => {
     const slice = { key, label: sliceLabel(base, key), share: shares.get(key) };
-    if (mix?.has(key)) return { ...slice, rank: null, vsLeague: mix.get(key), hisMix: true };
     const row = pickSliceRow(
       rows.filter((candidate) => splitRowKey(candidate.key)[0] === key),
-      market,
+      ownStat(base, market),
     );
     return {
       ...slice,
       rank: row ? row.season.rank : null,
       vsLeague: row ? row.season.percent_vs_league_average : null,
-      hisMix: false,
     };
   });
 };
 
 /* The Traditional row a market reads: the market-tagged row furthest from league average. */
 const traditionalRow = (team, market) => {
-  const row = pickSliceRow(marketRows(team, 'traditional', market), market);
+  const row = pickSliceRow(marketRows(team, 'traditional', market), ownStat('traditional', market));
   return row
     ? {
         metric: traditionalMetric(row.key),

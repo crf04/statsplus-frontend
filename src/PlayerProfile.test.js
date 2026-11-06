@@ -76,13 +76,13 @@ test('PTS reads S4: the Spot up row is 41% · 27th · +10% and the pill is the P
     ['Transition', '22%', '18th', '+1%'],
     ['Cut', '8%', '29th', '+16%'],
   ]);
-  // Shot types are scored on his own mix of 2s and 3s, so they have no opponent rank.
-  expect(screen.getByText('· for his mix of 2s and 3s')).toBeVisible();
+  // Each shot type reads DEN's overall points row (Catch and Shoot:PTS and so on).
   expect(rowsOf('Shot types')).toEqual([
-    ['Catch & shoot', '52%', '–', '+3%'],
-    ['Less Than 10 ft', '32%', '–', '−1%'],
-    ['Pull-ups', '14%', '–', '+2%'],
+    ['Catch & shoot', '52%', '19th', '+3%'],
+    ['Less Than 10 ft', '32%', '14th', '−1%'],
+    ['Pull-ups', '14%', '24th', '+6%'],
   ]);
+  expect(screen.queryByText(/his mix/)).not.toBeInTheDocument();
   expect(rowsOf('Traditional')).toEqual([['DEN: points allowed per 48', '', '18th', '+0.4%']]);
   expect(
     screen.getByRole('img', { name: 'Shot zones half court against DEN' }),
@@ -91,6 +91,38 @@ test('PTS reads S4: the Spot up row is 41% · 27th · +10% and the pill is the P
 
   fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
   expect(rowsOf('Play types')).toHaveLength(9);
+});
+
+const withShotTypeRow = (row) => ({
+  ...camaraVsDen,
+  teams: camaraVsDen.teams.map((team) => ({
+    ...team,
+    defense_sheet: {
+      ...team.defense_sheet,
+      shot_types: [...team.defense_sheet.shot_types, row],
+    },
+  })),
+});
+
+test("FGA reads a shot type's overall FGA row when DEN has one", async () => {
+  apiClient.get.mockResolvedValue({
+    data: withShotTypeRow({
+      key: 'Catch and Shoot:FGA',
+      markets: ['FGA'],
+      season: { rank: 3, percent_vs_league_average: -4.2 },
+    }),
+  });
+  await renderProfile({ lineType: 'FGA' });
+  expect(rowsOf('Shot types')[0]).toEqual(['Catch & shoot', '52%', '3rd', '−4%']);
+});
+
+test('FGA without an overall row reads the 2PT or 3PT row furthest from league, ranked', async () => {
+  await renderProfile({ lineType: 'FGA' });
+  expect(rowsOf('Shot types')).toEqual([
+    ['Catch & shoot', '52%', '25th', '+13%'],
+    ['Less Than 10 ft', '32%', '7th', '−5%'],
+    ['Pull-ups', '14%', '28th', '+13%'],
+  ]);
 });
 
 test('slice rows show no league share', async () => {

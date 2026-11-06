@@ -88,7 +88,7 @@ export const installParityApi = async (page) => {
       const category = url.searchParams.get('category');
       const team = url.searchParams.get('team');
       json =
-        category === 'Playtypes'
+        category === 'Playtype Points'
           ? teamPlaytypes
           : team === 'Charlotte Hornets'
             ? teamChaTraditional

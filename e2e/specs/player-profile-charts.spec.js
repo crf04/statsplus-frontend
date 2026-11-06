@@ -1,7 +1,7 @@
 import { E2E_AUTH_STORAGE_KEY, expect, installApiContract, test } from '../fixtures/courtai';
 
 // A Playtypes profile keys each frequency by `<playtype>%`; the opponent's
-// Team Defense multipliers and ranks are keyed by the bare playtype.
+// points allowed per 48, ranks and % vs league are keyed by the bare playtype.
 const playtypeProfile = {
   'PRBallHandler%': 31.4,
   'Isolation%': 17.8,
@@ -10,16 +10,21 @@ const playtypeProfile = {
   'Cut%': 5.1,
 };
 const playtypeDefense = {
-  PRBallHandler: 1.14,
+  PRBallHandler: 18.5,
   PRBallHandler_RANK: 27,
-  Isolation: 0.86,
+  PRBallHandler_vs_avg_pct: 14,
+  Isolation: 6.2,
   Isolation_RANK: 4,
-  Transition: 1.05,
+  Isolation_vs_avg_pct: -14,
+  Transition: 23.9,
   Transition_RANK: 20,
-  Spotup: 0.97,
+  Transition_vs_avg_pct: 5,
+  Spotup: 26.8,
   Spotup_RANK: 12,
-  Cut: 0.82,
+  Spotup_vs_avg_pct: -3,
+  Cut: 7.9,
   Cut_RANK: 1,
+  Cut_vs_avg_pct: -18,
 };
 const assistProfile = [
   {
@@ -63,12 +68,14 @@ const profileOverrides = {
         ? assistProfile
         : playtypeProfile,
   }),
-  '/api/teams/stats': (request) => ({
-    body:
-      new URL(request.url()).searchParams.get('category') === 'Assists'
-        ? assistDefense
-        : playtypeDefense,
-  }),
+  '/api/teams/stats': (request) => {
+    const category = new URL(request.url()).searchParams.get('category');
+    return category === 'Assists'
+      ? { body: assistDefense }
+      : category === 'Playtype Points'
+        ? { body: playtypeDefense }
+        : { status: 404, body: { error: `No ${category} team stats` } };
+  },
 };
 
 // Just inside the plot area's left edge, over the first (most frequent) category.

@@ -65,9 +65,11 @@ const PlayerProfile = ({ selectedPlayer, selectedTeam, seasonChoice = null, onSe
   const zoneOpponent =
     selectedProfile === 'Zone Shooting' ? (TEAM_CODES[selectedTeam] ?? null) : undefined;
   const hasPlayer = selectedPlayer !== 'None';
+  // Play-type defense is points allowed per 48 in each play type, as on the
+  // Matchup's Defense Sheet (crf04/statsplus#444), not points per possession.
   const teamCategory =
     selectedProfile === 'Playtypes'
-      ? 'Playtypes'
+      ? 'Playtype Points'
       : selectedProfile === 'assists'
         ? 'Assists'
         : null;

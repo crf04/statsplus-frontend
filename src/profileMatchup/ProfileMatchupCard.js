@@ -30,12 +30,9 @@ const tone = (value) => {
   return text === '0.0%' ? '' : text.startsWith('+') ? 'pmc-up' : 'pmc-down';
 };
 
-const RankPill = ({ rank, vsLeague, hisMix = false }) =>
+const RankPill = ({ rank, vsLeague }) =>
   rank === null ? (
-    <span
-      className="pmc-rank pmc-rank-none"
-      title={hisMix ? 'Scored on his mix of 2s and 3s: no opponent rank' : 'No opponent row'}
-    >
+    <span className="pmc-rank pmc-rank-none" title="No opponent row">
       –
     </span>
   ) : (
@@ -49,11 +46,11 @@ const RankPill = ({ rank, vsLeague, hisMix = false }) =>
   );
 
 /* One slice: name · his share · the opponent's rank · % vs league. */
-const SliceRow = ({ name, share = null, rank, vsLeague, hisMix }) => (
+const SliceRow = ({ name, share = null, rank, vsLeague }) => (
   <li className="pmc-row">
     <span className="pmc-row-name">{name}</span>
     <span className="pmc-row-share">{share === null ? '' : shareText(share)}</span>
-    <RankPill rank={rank} vsLeague={vsLeague} hisMix={hisMix} />
+    <RankPill rank={rank} vsLeague={vsLeague} />
     <span className="pmc-row-vs">{vsLeague === null ? '' : vsLeagueText(vsLeague)}</span>
   </li>
 );
@@ -61,8 +58,6 @@ const SliceRow = ({ name, share = null, rank, vsLeague, hisMix }) => (
 const TraditionalRow = ({ row, opponent }) => (
   <SliceRow name={`${opponent}: ${row.metric}`} rank={row.rank} vsLeague={row.vsLeague} />
 );
-
-const allMix = (base) => base.slices.every((slice) => slice.hisMix);
 
 const BaseRows = ({ base, limit = null }) => (
   <ul className="pmc-rows" aria-label={base.label}>
@@ -73,7 +68,6 @@ const BaseRows = ({ base, limit = null }) => (
         share={slice.share}
         rank={slice.rank}
         vsLeague={slice.vsLeague}
-        hisMix={slice.hisMix}
       />
     ))}
   </ul>
@@ -97,7 +91,6 @@ const LowConfidence = ({ reason }) => (
 const BaseHeading = ({ base }) => (
   <div className="pmc-base">
     {base.label}
-    {allMix(base) && <i> · for his mix of 2s and 3s</i>}
     {base.thin && <LowConfidence reason={thinReason([base.key])} />}
   </div>
 );
@@ -182,9 +175,6 @@ const BaseSlices = ({ reading, stat, baseKey, showAll, onShowAll }) => {
   if (!base) return <p className="pmc-empty">No opponent rows.</p>;
   return (
     <>
-      {allMix(base) && (
-        <div className="pmc-w3-sub">For his mix of 2s and 3s: no opponent rank.</div>
-      )}
       <BaseRows base={base} limit={showAll ? null : 3} />
       {base.slices.length > 3 && (
         <button type="button" className="pmc-toggle" onClick={onShowAll}>

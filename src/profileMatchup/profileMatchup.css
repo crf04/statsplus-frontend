@@ -151,12 +151,6 @@
   font-weight: 600;
   margin-bottom: 2px;
 }
-.pmc-base i {
-  font-style: normal;
-  text-transform: none;
-  letter-spacing: 0;
-  font-weight: 400;
-}
 .pmc-group + .pmc-group {
   margin-top: 8px;
 }
@@ -399,11 +393,6 @@
 .pmc-w3-body .pmc-toggle {
   margin: 4px 0 0;
   text-align: left;
-}
-.pmc-w3-sub {
-  font-size: 11.5px;
-  color: var(--ct-dim);
-  margin: 2px 0 4px;
 }
 .pmc-w3-more {
   all: unset;

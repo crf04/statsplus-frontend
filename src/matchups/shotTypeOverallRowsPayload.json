@@ -1,0 +1,1062 @@
+{
+  "as_of": {
+    "last_15_defense": null,
+    "player_diets": "2026-11-02",
+    "season": "2025-26",
+    "season_defense": "2026-11-06"
+  },
+  "coverage": {
+    "coverage_cutoffs": [
+      "2026-08-21T16:26:09+00:00",
+      "2026-08-24T19:37:25+00:00",
+      "2026-09-06T07:57:51+00:00",
+      "2026-11-02T09:45:00+00:00",
+      "2026-11-06T09:45:00+00:00"
+    ],
+    "mixed_cutoff": true,
+    "mixed_freshness": true,
+    "source": "database"
+  },
+  "experience": {
+    "mode": "current",
+    "player_source": "player_pool",
+    "sections": {
+      "injuries": {
+        "context": "current",
+        "source": "rotowire",
+        "status": "unavailable",
+        "unavailable_reason": "fetch_failed"
+      },
+      "last_15_defense": {
+        "context": null,
+        "season": null,
+        "source": null,
+        "status": "unavailable",
+        "unavailable_reason": "provider_window_unsupported",
+        "window_games": null
+      },
+      "participants": {
+        "context": null,
+        "source": "player_pool",
+        "status": "unavailable",
+        "unavailable_reason": "player_pool_unavailable"
+      },
+      "schedule": {
+        "collected_at": "2026-11-06T10:00:36.132696+00:00",
+        "context": "current_season_catalog",
+        "source": "event_catalog",
+        "status": "available",
+        "unavailable_reason": null
+      },
+      "season_defense": {
+        "context": "pregame",
+        "season": "2026-27",
+        "source": "team_matchup_publication",
+        "status": "available",
+        "unavailable_reason": null,
+        "window_games": null
+      }
+    }
+  },
+  "freshness": {
+    "injuries": {
+      "retrieved_at": null,
+      "status": "unavailable"
+    },
+    "player_diets": {
+      "retrieved_at": "2026-11-02T13:05:39.536924+00:00",
+      "status": "fresh",
+      "surfaces": {
+        "assist_locations": {
+          "retrieved_at": "2026-11-06T15:30:48.567190+00:00",
+          "status": "available",
+          "unavailable_reason": null
+        },
+        "play_types": {
+          "retrieved_at": "2026-11-06T13:05:37.800352+00:00",
+          "status": "available",
+          "unavailable_reason": null
+        },
+        "rebound_types": {
+          "retrieved_at": "2026-11-06T15:30:49.267454+00:00",
+          "status": "available",
+          "unavailable_reason": null
+        },
+        "shot_types": {
+          "retrieved_at": "2026-11-02T13:05:39.536924+00:00",
+          "status": "available",
+          "unavailable_reason": null
+        },
+        "shot_zones": {
+          "retrieved_at": "2026-11-06T11:35:29.009674+00:00",
+          "status": "available",
+          "unavailable_reason": null
+        }
+      }
+    },
+    "player_game_logs": {
+      "retrieved_at": "2026-11-06T15:30:48.853872+00:00",
+      "status": "stale"
+    },
+    "pool": {
+      "observed_at": null,
+      "providers": {
+        "dabble": {
+          "retrieved_at": null,
+          "status": "missing"
+        },
+        "kalshi": {
+          "retrieved_at": null,
+          "status": "missing"
+        },
+        "novig": {
+          "retrieved_at": null,
+          "status": "missing"
+        },
+        "polymarket": {
+          "retrieved_at": null,
+          "status": "missing"
+        },
+        "underdog": {
+          "retrieved_at": null,
+          "status": "missing"
+        }
+      },
+      "retrieved_at": null,
+      "state": "missing",
+      "status": "unavailable"
+    },
+    "schedule": {
+      "retrieved_at": "2026-11-06T10:00:36.132696+00:00",
+      "status": "stale"
+    },
+    "stats": {
+      "retrieved_at": "2026-11-06T16:19:03.427288+00:00",
+      "status": "fresh"
+    },
+    "team_matchups": {
+      "last_15": {
+        "retrieved_at": "2026-11-06T13:05:38.200172+00:00",
+        "status": "unavailable",
+        "surfaces": {
+          "assist_locations": {
+            "retrieved_at": null,
+            "status": "missing",
+            "unavailable_reason": "insufficient_governed_games"
+          },
+          "play_types": {
+            "retrieved_at": "2026-11-06T13:05:38.200172+00:00",
+            "status": "unavailable",
+            "unavailable_reason": "provider_window_unsupported"
+          },
+          "rebound_types": {
+            "retrieved_at": null,
+            "status": "missing",
+            "unavailable_reason": "insufficient_governed_games"
+          },
+          "shot_types": {
+            "retrieved_at": null,
+            "status": "missing",
+            "unavailable_reason": "insufficient_governed_games"
+          },
+          "shot_zones": {
+            "retrieved_at": null,
+            "status": "missing",
+            "unavailable_reason": "insufficient_governed_games"
+          },
+          "traditional": {
+            "retrieved_at": null,
+            "status": "missing",
+            "unavailable_reason": "insufficient_governed_games"
+          }
+        }
+      },
+      "season": {
+        "retrieved_at": "2026-11-02T13:10:17.191269+00:00",
+        "status": "fresh",
+        "surfaces": {
+          "assist_locations": {
+            "retrieved_at": "2026-11-06T15:30:47.347794+00:00",
+            "status": "available",
+            "unavailable_reason": null
+          },
+          "play_types": {
+            "retrieved_at": "2026-11-06T13:05:38.022697+00:00",
+            "status": "available",
+            "unavailable_reason": null
+          },
+          "rebound_types": {
+            "retrieved_at": "2026-11-06T15:30:47.347794+00:00",
+            "status": "available",
+            "unavailable_reason": null
+          },
+          "shot_types": {
+            "retrieved_at": "2026-11-02T13:10:17.191269+00:00",
+            "status": "available",
+            "unavailable_reason": null
+          },
+          "shot_zones": {
+            "retrieved_at": "2026-11-06T11:40:35.574428+00:00",
+            "status": "available",
+            "unavailable_reason": null
+          },
+          "traditional": {
+            "retrieved_at": "2026-11-06T15:30:47.347794+00:00",
+            "status": "available",
+            "unavailable_reason": null
+          }
+        }
+      }
+    }
+  },
+  "game": {
+    "away_team": {
+      "name": "New York Knicks",
+      "targetable_player_count": 0,
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    "classification": null,
+    "game_id": "0022600191",
+    "home_team": {
+      "name": "Cleveland Cavaliers",
+      "targetable_player_count": 0,
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    },
+    "preseason": false,
+    "scheduled_at": "2026-11-08T01:00:00+00:00",
+    "status": {
+      "label": "Scheduled",
+      "state": "scheduled"
+    }
+  },
+  "injuries": {
+    "retrieved_at": null,
+    "source": "nba_official",
+    "source_url": "https://official.nba.com/nba-injury-report-2025-26-season/",
+    "status": "unavailable",
+    "teams": [],
+    "unavailable_reason": "fetch_failed"
+  },
+  "league": {
+    "defense_sheet": {
+      "assist_locations": [],
+      "play_types": [],
+      "rebound_types": [],
+      "shot_types": [
+        {
+          "key": "Catch and Shoot:FG2A",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 1.823096,
+            "sigma": 0.83595
+          }
+        },
+        {
+          "key": "Catch and Shoot:FG2M",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 0.842253,
+            "sigma": 0.571466
+          }
+        },
+        {
+          "key": "Catch and Shoot:FG3A",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 26.562013,
+            "sigma": 2.922494
+          }
+        },
+        {
+          "key": "Catch and Shoot:FG3M",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 9.559671,
+            "sigma": 1.495562
+          }
+        },
+        {
+          "key": "Catch and Shoot:FGA",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 28.385108,
+            "sigma": 3.071318
+          }
+        },
+        {
+          "key": "Catch and Shoot:FGM",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 10.401924,
+            "sigma": 1.626527
+          }
+        },
+        {
+          "key": "Catch and Shoot:PTS",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 30.363518,
+            "sigma": 4.683003
+          }
+        },
+        {
+          "key": "Less Than 10 ft:FG2A",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 37.208071,
+            "sigma": 3.063501
+          }
+        },
+        {
+          "key": "Less Than 10 ft:FG2M",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 21.752224,
+            "sigma": 2.458782
+          }
+        },
+        {
+          "key": "Less Than 10 ft:FGA",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 37.213626,
+            "sigma": 3.060549
+          }
+        },
+        {
+          "key": "Less Than 10 ft:FGM",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 21.752224,
+            "sigma": 2.458782
+          }
+        },
+        {
+          "key": "Less Than 10 ft:PTS",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 43.504448,
+            "sigma": 4.917564
+          }
+        },
+        {
+          "key": "Pullups:FG2A",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 11.037129,
+            "sigma": 1.742867
+          }
+        },
+        {
+          "key": "Pullups:FG2M",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 4.613772,
+            "sigma": 1.156755
+          }
+        },
+        {
+          "key": "Pullups:FG3A",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 10.5461,
+            "sigma": 1.449957
+          }
+        },
+        {
+          "key": "Pullups:FG3M",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 3.368599,
+            "sigma": 0.922482
+          }
+        },
+        {
+          "key": "Pullups:FGA",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 21.583229,
+            "sigma": 2.353961
+          }
+        },
+        {
+          "key": "Pullups:FGM",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 7.982371,
+            "sigma": 1.512884
+          }
+        },
+        {
+          "key": "Pullups:PTS",
+          "last_15": null,
+          "season": {
+            "average_allowed_per_48": 19.333342,
+            "sigma": 3.689128
+          }
+        }
+      ],
+      "shot_zones": [],
+      "traditional": []
+    },
+    "defensive_columns": {
+      "OPP_BLK": {
+        "last_15": null,
+        "season": {
+          "average_per_48": 5.009156,
+          "sigma": 1.029542
+        }
+      },
+      "OPP_STL": {
+        "last_15": null,
+        "season": {
+          "average_per_48": 8.481973,
+          "sigma": 1.075165
+        }
+      },
+      "OPP_TOV": {
+        "last_15": null,
+        "season": {
+          "average_per_48": 15.858457,
+          "sigma": 1.800035
+        }
+      }
+    },
+    "surface_availability": {
+      "assist_locations": {
+        "last_15": {
+          "season": null,
+          "status": "missing",
+          "unavailable_reason": "insufficient_governed_games",
+          "window_games": null
+        },
+        "season": {
+          "season": "2026-27",
+          "status": "available",
+          "unavailable_reason": null,
+          "window_games": null
+        }
+      },
+      "play_types": {
+        "last_15": {
+          "season": null,
+          "status": "unavailable",
+          "unavailable_reason": "provider_window_unsupported",
+          "window_games": null
+        },
+        "season": {
+          "season": "2026-27",
+          "status": "available",
+          "unavailable_reason": null,
+          "window_games": null
+        }
+      },
+      "rebound_types": {
+        "last_15": {
+          "season": null,
+          "status": "missing",
+          "unavailable_reason": "insufficient_governed_games",
+          "window_games": null
+        },
+        "season": {
+          "season": "2026-27",
+          "status": "available",
+          "unavailable_reason": null,
+          "window_games": null
+        }
+      },
+      "shot_types": {
+        "last_15": {
+          "season": null,
+          "status": "missing",
+          "unavailable_reason": "insufficient_governed_games",
+          "window_games": null
+        },
+        "season": {
+          "season": "2026-27",
+          "status": "available",
+          "unavailable_reason": null,
+          "window_games": null
+        }
+      },
+      "shot_zones": {
+        "last_15": {
+          "season": null,
+          "status": "missing",
+          "unavailable_reason": "insufficient_governed_games",
+          "window_games": null
+        },
+        "season": {
+          "season": "2026-27",
+          "status": "available",
+          "unavailable_reason": null,
+          "window_games": null
+        }
+      },
+      "traditional": {
+        "last_15": {
+          "season": null,
+          "status": "missing",
+          "unavailable_reason": "insufficient_governed_games",
+          "window_games": null
+        },
+        "season": {
+          "season": "2026-27",
+          "status": "available",
+          "unavailable_reason": null,
+          "window_games": null
+        }
+      }
+    }
+  },
+  "players": [],
+  "season_context": {
+    "published_season": "2025-26",
+    "selected_season": "2026-27"
+  },
+  "teams": [
+    {
+      "defense_sheet": {
+        "assist_locations": [],
+        "play_types": [],
+        "rebound_types": [],
+        "shot_types": [
+          {
+            "key": "Catch and Shoot:FG2A",
+            "label": "Catch and Shoot FG2A",
+            "last_15": null,
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "allowed_per_48": 3.5,
+              "percent_vs_league_average": 91.981164,
+              "rank": 29,
+              "sigma_deviation": 2.005986
+            }
+          },
+          {
+            "key": "Catch and Shoot:FG2M",
+            "label": "Catch and Shoot FG2M",
+            "last_15": null,
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 1.833333,
+              "percent_vs_league_average": 117.670166,
+              "rank": 28,
+              "sigma_deviation": 1.734276
+            }
+          },
+          {
+            "key": "Catch and Shoot:FG3A",
+            "label": "Catch and Shoot FG3A",
+            "last_15": null,
+            "markets": ["FGA", "FG3A"],
+            "season": {
+              "allowed_per_48": 28.833333,
+              "percent_vs_league_average": 8.55101,
+              "rank": 26,
+              "sigma_deviation": 0.777186
+            }
+          },
+          {
+            "key": "Catch and Shoot:FG3M",
+            "label": "Catch and Shoot FG3M",
+            "last_15": null,
+            "markets": ["3PM", "PTS", "FGM", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 10.833333,
+              "percent_vs_league_average": 13.32329,
+              "rank": 22,
+              "sigma_deviation": 0.851628
+            }
+          },
+          {
+            "key": "Catch and Shoot:FGA",
+            "label": "Catch and Shoot FGA",
+            "last_15": null,
+            "markets": ["FGA"],
+            "season": {
+              "allowed_per_48": 32.333333,
+              "percent_vs_league_average": 13.909494,
+              "rank": 28,
+              "sigma_deviation": 1.285515
+            }
+          },
+          {
+            "key": "Catch and Shoot:FGM",
+            "label": "Catch and Shoot FGM",
+            "last_15": null,
+            "markets": ["FGM"],
+            "season": {
+              "allowed_per_48": 12.666667,
+              "percent_vs_league_average": 21.772348,
+              "rank": 28,
+              "sigma_deviation": 1.392379
+            }
+          },
+          {
+            "key": "Catch and Shoot:PTS",
+            "label": "Catch and Shoot PTS",
+            "last_15": null,
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 36.166667,
+              "percent_vs_league_average": 19.112241,
+              "rank": 27,
+              "sigma_deviation": 1.239194
+            }
+          },
+          {
+            "key": "Less Than 10 ft:FG2A",
+            "label": "Less Than 10 ft FG2A",
+            "last_15": null,
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "allowed_per_48": 30.666667,
+              "percent_vs_league_average": -17.580605,
+              "rank": 1,
+              "sigma_deviation": -2.13527
+            }
+          },
+          {
+            "key": "Less Than 10 ft:FG2M",
+            "label": "Less Than 10 ft FG2M",
+            "last_15": null,
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 18.333333,
+              "percent_vs_league_average": -15.71743,
+              "rank": 2,
+              "sigma_deviation": -1.390481
+            }
+          },
+          {
+            "key": "Less Than 10 ft:FGA",
+            "label": "Less Than 10 ft FGA",
+            "last_15": null,
+            "markets": ["FGA"],
+            "season": {
+              "allowed_per_48": 30.666667,
+              "percent_vs_league_average": -17.592909,
+              "rank": 1,
+              "sigma_deviation": -2.139146
+            }
+          },
+          {
+            "key": "Less Than 10 ft:FGM",
+            "label": "Less Than 10 ft FGM",
+            "last_15": null,
+            "markets": ["FGM"],
+            "season": {
+              "allowed_per_48": 18.333333,
+              "percent_vs_league_average": -15.71743,
+              "rank": 2,
+              "sigma_deviation": -1.390481
+            }
+          },
+          {
+            "key": "Less Than 10 ft:PTS",
+            "label": "Less Than 10 ft PTS",
+            "last_15": null,
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 36.666667,
+              "percent_vs_league_average": -15.71743,
+              "rank": 2,
+              "sigma_deviation": -1.390481
+            }
+          },
+          {
+            "key": "Pullups:FG2A",
+            "label": "Pullups FG2A",
+            "last_15": null,
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "allowed_per_48": 11.833333,
+              "percent_vs_league_average": 7.213871,
+              "rank": 21,
+              "sigma_deviation": 0.456836
+            }
+          },
+          {
+            "key": "Pullups:FG2M",
+            "label": "Pullups FG2M",
+            "last_15": null,
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 4.5,
+              "percent_vs_league_average": -2.465927,
+              "rank": 14,
+              "sigma_deviation": -0.098355
+            }
+          },
+          {
+            "key": "Pullups:FG3A",
+            "label": "Pullups FG3A",
+            "last_15": null,
+            "markets": ["FGA", "FG3A"],
+            "season": {
+              "allowed_per_48": 10.0,
+              "percent_vs_league_average": -5.178215,
+              "rank": 10,
+              "sigma_deviation": -0.376632
+            }
+          },
+          {
+            "key": "Pullups:FG3M",
+            "label": "Pullups FG3M",
+            "last_15": null,
+            "markets": ["3PM", "PTS", "FGM", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 3.0,
+              "percent_vs_league_average": -10.942208,
+              "rank": 11,
+              "sigma_deviation": -0.399573
+            }
+          },
+          {
+            "key": "Pullups:FGA",
+            "label": "Pullups FGA",
+            "last_15": null,
+            "markets": ["FGA"],
+            "season": {
+              "allowed_per_48": 21.833333,
+              "percent_vs_league_average": 1.158791,
+              "rank": 15,
+              "sigma_deviation": 0.106248
+            }
+          },
+          {
+            "key": "Pullups:FGM",
+            "label": "Pullups FGM",
+            "last_15": null,
+            "markets": ["FGM"],
+            "season": {
+              "allowed_per_48": 7.5,
+              "percent_vs_league_average": -6.042959,
+              "rank": 15,
+              "sigma_deviation": -0.318842
+            }
+          },
+          {
+            "key": "Pullups:PTS",
+            "label": "Pullups PTS",
+            "last_15": null,
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 18.0,
+              "percent_vs_league_average": -6.896593,
+              "rank": 13,
+              "sigma_deviation": -0.361425
+            }
+          }
+        ],
+        "shot_zones": [],
+        "traditional": []
+      },
+      "defensive_columns": {
+        "OPP_BLK": {
+          "last_15": null,
+          "season": {
+            "per_48": 6.625,
+            "percent_vs_league_average": 32.257803
+          }
+        },
+        "OPP_STL": {
+          "last_15": null,
+          "season": {
+            "per_48": 7.0,
+            "percent_vs_league_average": -17.47203
+          }
+        },
+        "OPP_TOV": {
+          "last_15": null,
+          "season": {
+            "per_48": 13.25,
+            "percent_vs_league_average": -16.448364
+          }
+        }
+      },
+      "name": "New York Knicks",
+      "team_id": 1610612752,
+      "tricode": "NYK"
+    },
+    {
+      "defense_sheet": {
+        "assist_locations": [],
+        "play_types": [],
+        "rebound_types": [],
+        "shot_types": [
+          {
+            "key": "Catch and Shoot:FG2A",
+            "label": "Catch and Shoot FG2A",
+            "last_15": null,
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "allowed_per_48": 0.819113,
+              "percent_vs_league_average": -55.07023,
+              "rank": 2,
+              "sigma_deviation": -1.201008
+            }
+          },
+          {
+            "key": "Catch and Shoot:FG2M",
+            "label": "Catch and Shoot FG2M",
+            "last_15": null,
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 0.327645,
+              "percent_vs_league_average": -61.098971,
+              "rank": 4,
+              "sigma_deviation": -0.900504
+            }
+          },
+          {
+            "key": "Catch and Shoot:FG3A",
+            "label": "Catch and Shoot FG3A",
+            "last_15": null,
+            "markets": ["FGA", "FG3A"],
+            "season": {
+              "allowed_per_48": 26.539249,
+              "percent_vs_league_average": -0.0857,
+              "rank": 15,
+              "sigma_deviation": -0.007789
+            }
+          },
+          {
+            "key": "Catch and Shoot:FG3M",
+            "label": "Catch and Shoot FG3M",
+            "last_15": null,
+            "markets": ["3PM", "PTS", "FGM", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 9.665529,
+              "percent_vs_league_average": 1.107342,
+              "rank": 15,
+              "sigma_deviation": 0.070782
+            }
+          },
+          {
+            "key": "Catch and Shoot:FGA",
+            "label": "Catch and Shoot FGA",
+            "last_15": null,
+            "markets": ["FGA"],
+            "season": {
+              "allowed_per_48": 27.358362,
+              "percent_vs_league_average": -3.617202,
+              "rank": 13,
+              "sigma_deviation": -0.334302
+            }
+          },
+          {
+            "key": "Catch and Shoot:FGM",
+            "label": "Catch and Shoot FGM",
+            "last_15": null,
+            "markets": ["FGM"],
+            "season": {
+              "allowed_per_48": 9.993174,
+              "percent_vs_league_average": -3.929558,
+              "rank": 13,
+              "sigma_deviation": -0.251302
+            }
+          },
+          {
+            "key": "Catch and Shoot:PTS",
+            "label": "Catch and Shoot PTS",
+            "last_15": null,
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 29.651877,
+              "percent_vs_league_average": -2.343737,
+              "rank": 15,
+              "sigma_deviation": -0.151962
+            }
+          },
+          {
+            "key": "Less Than 10 ft:FG2A",
+            "label": "Less Than 10 ft FG2A",
+            "last_15": null,
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "allowed_per_48": 41.774744,
+              "percent_vs_league_average": 12.273341,
+              "rank": 30,
+              "sigma_deviation": 1.490671
+            }
+          },
+          {
+            "key": "Less Than 10 ft:FG2M",
+            "label": "Less Than 10 ft FG2M",
+            "last_15": null,
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 23.262799,
+              "percent_vs_league_average": 6.944461,
+              "rank": 21,
+              "sigma_deviation": 0.614359
+            }
+          },
+          {
+            "key": "Less Than 10 ft:FGA",
+            "label": "Less Than 10 ft FGA",
+            "last_15": null,
+            "markets": ["FGA"],
+            "season": {
+              "allowed_per_48": 41.774744,
+              "percent_vs_league_average": 12.25658,
+              "rank": 30,
+              "sigma_deviation": 1.490294
+            }
+          },
+          {
+            "key": "Less Than 10 ft:FGM",
+            "label": "Less Than 10 ft FGM",
+            "last_15": null,
+            "markets": ["FGM"],
+            "season": {
+              "allowed_per_48": 23.262799,
+              "percent_vs_league_average": 6.944461,
+              "rank": 21,
+              "sigma_deviation": 0.614359
+            }
+          },
+          {
+            "key": "Less Than 10 ft:PTS",
+            "label": "Less Than 10 ft PTS",
+            "last_15": null,
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 46.525597,
+              "percent_vs_league_average": 6.944461,
+              "rank": 21,
+              "sigma_deviation": 0.614359
+            }
+          },
+          {
+            "key": "Pullups:FG2A",
+            "label": "Pullups FG2A",
+            "last_15": null,
+            "markets": ["FGA", "FG2A"],
+            "season": {
+              "allowed_per_48": 10.484642,
+              "percent_vs_league_average": -5.005717,
+              "rank": 11,
+              "sigma_deviation": -0.316999
+            }
+          },
+          {
+            "key": "Pullups:FG2M",
+            "label": "Pullups FG2M",
+            "last_15": null,
+            "markets": ["PTS", "FGM", "FG2M", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 4.914676,
+              "percent_vs_league_average": 6.521854,
+              "rank": 18,
+              "sigma_deviation": 0.260127
+            }
+          },
+          {
+            "key": "Pullups:FG3A",
+            "label": "Pullups FG3A",
+            "last_15": null,
+            "markets": ["FGA", "FG3A"],
+            "season": {
+              "allowed_per_48": 12.122867,
+              "percent_vs_league_average": 14.951188,
+              "rank": 27,
+              "sigma_deviation": 1.087458
+            }
+          },
+          {
+            "key": "Pullups:FG3M",
+            "label": "Pullups FG3M",
+            "last_15": null,
+            "markets": ["3PM", "PTS", "FGM", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 3.604096,
+              "percent_vs_league_average": 6.990931,
+              "rank": 20,
+              "sigma_deviation": 0.255286
+            }
+          },
+          {
+            "key": "Pullups:FGA",
+            "label": "Pullups FGA",
+            "last_15": null,
+            "markets": ["FGA"],
+            "season": {
+              "allowed_per_48": 22.607509,
+              "percent_vs_league_average": 4.74572,
+              "rank": 20,
+              "sigma_deviation": 0.43513
+            }
+          },
+          {
+            "key": "Pullups:FGM",
+            "label": "Pullups FGM",
+            "last_15": null,
+            "markets": ["FGM"],
+            "season": {
+              "allowed_per_48": 8.518771,
+              "percent_vs_league_average": 6.719807,
+              "rank": 18,
+              "sigma_deviation": 0.354555
+            }
+          },
+          {
+            "key": "Pullups:PTS",
+            "label": "Pullups PTS",
+            "last_15": null,
+            "markets": ["PTS", "PA", "PR", "PRA"],
+            "season": {
+              "allowed_per_48": 20.641638,
+              "percent_vs_league_average": 6.767047,
+              "rank": 20,
+              "sigma_deviation": 0.354636
+            }
+          }
+        ],
+        "shot_zones": [],
+        "traditional": []
+      },
+      "defensive_columns": {
+        "OPP_BLK": {
+          "last_15": null,
+          "season": {
+            "per_48": 3.825193,
+            "percent_vs_league_average": -23.635985
+          }
+        },
+        "OPP_STL": {
+          "last_15": null,
+          "season": {
+            "per_48": 6.910026,
+            "percent_vs_league_average": -18.532801
+          }
+        },
+        "OPP_TOV": {
+          "last_15": null,
+          "season": {
+            "per_48": 13.079692,
+            "percent_vs_league_average": -17.522293
+          }
+        }
+      },
+      "name": "Cleveland Cavaliers",
+      "team_id": 1610612739,
+      "tricode": "CLE"
+    }
+  ],
+  "trailing": [
+    {
+      "family": "last_15",
+      "rule": "its first window of the season is composed",
+      "serving_season": "2025-26",
+      "team_games": {
+        "max": 82,
+        "min": 82
+      }
+    }
+  ]
+}

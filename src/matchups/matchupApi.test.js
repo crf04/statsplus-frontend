@@ -2,6 +2,7 @@ import { apiClient } from '../config';
 import { closingPoolSlatePayload } from '../slateClosingPoolFixture';
 import { payload } from './matchupPayloadFixture';
 import backendMixedTraditional from './backendMixedTraditionalPayload.json';
+import shotTypeOverallRows from './shotTypeOverallRowsPayload.json';
 import { decodeMatchup, decodeMatchupSelection, fetchMatchupSelection } from './matchupApi';
 
 jest.mock('../config', () => ({
@@ -3378,6 +3379,66 @@ test('rejects a shot-type Points row with the wrong markets', () => {
   ]) {
     expect(() => decodeMatchup(withShotTypePointsRow(markets))).toThrow('invalid response');
   }
+});
+
+// A staging Matchup response (NYK @ CLE, 2026-11-08) from a statsplus#454
+// backend, trimmed to its Shot types rows.
+describe('statsplus#454: overall shot-type FGM and FGA rows', () => {
+  const copy = () => JSON.parse(JSON.stringify(shotTypeOverallRows));
+  const shownRows = (sheet) => sheet.shotTypes.map((row) => [row.key, row.markets]);
+  const SHOWN = [
+    ['Catch and Shoot:FG2A', ['FGA', 'FG2A']],
+    ['Catch and Shoot:FG2M', ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA']],
+    ['Catch and Shoot:FG3A', ['FGA', 'FG3A']],
+    ['Catch and Shoot:FG3M', ['3PM', 'PTS', 'FGM', 'PA', 'PR', 'PRA']],
+    ['Less Than 10 ft:FG2A', ['FGA', 'FG2A']],
+    ['Less Than 10 ft:FG2M', ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA']],
+    ['Pullups:FG2A', ['FGA', 'FG2A']],
+    ['Pullups:FG2M', ['PTS', 'FGM', 'FG2M', 'PA', 'PR', 'PRA']],
+    ['Pullups:FG3A', ['FGA', 'FG3A']],
+    ['Pullups:FG3M', ['3PM', 'PTS', 'FGM', 'PA', 'PR', 'PRA']],
+  ];
+
+  test('decodes the staging response and keeps the overall rows out of the sheet', () => {
+    const decoded = decodeMatchup(copy());
+    expect(decoded.teams.map((team) => shownRows(team.defenseSheet))).toEqual([SHOWN, SHOWN]);
+    expect(decoded.league.defenseSheet.shotTypes.map((row) => row.key)).toEqual(
+      SHOWN.map(([key]) => key),
+    );
+  });
+
+  test('the same response from a backend without the rows decodes to the same sheet', () => {
+    const candidate = copy();
+    const older = (rows) => rows.filter((row) => !/:(FGM|FGA)$/.test(row.key));
+    [...candidate.teams, candidate.league].forEach((sheetOwner) => {
+      sheetOwner.defense_sheet.shot_types = older(sheetOwner.defense_sheet.shot_types);
+    });
+    expect(candidate.teams[0].defense_sheet.shot_types).toHaveLength(13);
+    const decoded = decodeMatchup(candidate);
+    expect(decoded.teams.map((team) => shownRows(team.defenseSheet))).toEqual([SHOWN, SHOWN]);
+  });
+
+  const sheetRows = (candidate, key) =>
+    [...candidate.teams, candidate.league].map((owner) =>
+      owner.defense_sheet.shot_types.find((row) => row.key === key),
+    );
+  test.each([
+    ['an FGM row listed under FGA', (c) => (sheetRows(c, 'Pullups:FGM')[0].markets = ['FGA'])],
+    [
+      'an FGA row listed under FGA and FG2A',
+      (c) => (sheetRows(c, 'Pullups:FGA')[0].markets = ['FGA', 'FG2A']),
+    ],
+    [
+      'an unknown shot-type stat',
+      (c) => sheetRows(c, 'Pullups:FGM').forEach((row) => (row.key = 'Pullups:FTM')),
+    ],
+  ])('refuses %s', (_name, mutate) => {
+    const candidate = copy();
+    mutate(candidate);
+    expect(() => decodeMatchup(candidate)).toThrow(
+      'The matchup endpoint returned an invalid response.',
+    );
+  });
 });
 
 describe('statsplus#395: last five games and season averages on a player row', () => {

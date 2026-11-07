@@ -1064,19 +1064,23 @@ const decodeScoreWindow = (window, market, historical) => {
   };
 };
 
+// The Matchup scores every market it can, a superset of the categories it
+// holds a line for (statsplus#457), so a posted market always has a score row.
 function decodeScores(scores, statCategories, historical) {
+  if (!isRecord(scores)) throw invalid();
+  const markets = Object.keys(scores);
   if (
-    !isRecord(scores) ||
-    Object.keys(scores).sort().join() !== [...statCategories].sort().join() ||
-    statCategories.some(
+    statCategories.some((category) => !Object.hasOwn(scores, category)) ||
+    markets.some(
       (category) =>
+        !MARKET_CATEGORIES.has(category) ||
         !isRecord(scores[category]) ||
         Object.keys(scores[category]).sort().join() !== ['season', 'last_15'].sort().join(),
     )
   ) {
     throw invalid();
   }
-  const windows = statCategories.map((category) => [
+  const windows = markets.map((category) => [
     category,
     {
       season: decodeScoreWindow(scores[category].season, category, historical),

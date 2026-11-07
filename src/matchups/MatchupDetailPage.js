@@ -178,6 +178,13 @@ function MatchupSummary({ matchup, now }) {
 
 /* --------------------------------- Rail -------------------------------- */
 
+// A player belongs under every market he holds a line in or has a Matchup
+// Score for: the Matchup scores markets CourtAI has no line for (statsplus#457).
+const listsUnder = (player, market) =>
+  market === 'All' ||
+  player.statCategories.includes(market) ||
+  Object.hasOwn(player.scores, market);
+
 // A score is unavailable, not zero, when the contract could not compute it.
 // A Blend withheld alongside named missing inputs is an incomplete score, so
 // no single component may stand in for it. A defensive category from a backend
@@ -535,7 +542,7 @@ function PlayerRail({
     injuries.teams.flatMap((team) => team.entries).map((entry) => [entry.id, entry]),
   );
   const scoped = players
-    .filter((player) => market === 'All' || player.statCategories.includes(market))
+    .filter((player) => listsUnder(player, market))
     .sort((a, b) => {
       if ((a.seasonScoring === null) !== (b.seasonScoring === null)) {
         return a.seasonScoring === null ? 1 : -1;
@@ -717,7 +724,7 @@ const sliceLeagueAverageShare = (players, base, sliceKey) => {
 const leansFor = (players, base, sliceKey, shotValue, market) =>
   SHARE_LABELS[base]
     ? players
-        .filter((player) => market === 'All' || player.statCategories.includes(market))
+        .filter((player) => listsUnder(player, market))
         .flatMap((player) => {
           const share = getDisplayableDietShare(player, base, sliceKey, shotValue);
           if (!share || share.sigmaDeviation <= 0) return [];
@@ -1176,7 +1183,14 @@ function Detail({ matchup, gameId, evidence }) {
   const markets = useMemo(
     () => [
       'All',
-      ...orderCategories([...new Set(opposingPlayers.flatMap((player) => player.statCategories))]),
+      ...orderCategories([
+        ...new Set(
+          opposingPlayers.flatMap((player) => [
+            ...player.statCategories,
+            ...Object.keys(player.scores),
+          ]),
+        ),
+      ]),
     ],
     [opposingPlayers],
   );

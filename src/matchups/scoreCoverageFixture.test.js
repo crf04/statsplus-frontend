@@ -112,3 +112,13 @@ describe('the statsplus#416 browser fixture decodes', () => {
     });
   });
 });
+
+test('the statsplus#457 browser fixture scores BLK with no BLK line', () => {
+  const lebron = decodeMatchup(readFixture('everyMarketMatchupPayload')).players.find(
+    (candidate) => candidate.name === 'LeBron James',
+  );
+
+  expect(lebron.postedMarkets).not.toContain('BLK');
+  expect(lebron.bookLines.BLK).toBeUndefined();
+  expect(lebron.scores.BLK.season.blend).toEqual({ value: 0.25, thin: false });
+});

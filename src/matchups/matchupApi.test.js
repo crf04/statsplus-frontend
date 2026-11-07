@@ -1313,6 +1313,37 @@ test('decodes the complete governed backend market set and both score encodings'
   expect(Object.keys(decodeMatchup(candidate).players[0].scores)).toEqual(markets);
 });
 
+// The Matchup scores every market, while CourtAI holds lines in only some
+// (statsplus#457).
+const blockScore = (season, last15) => ({
+  season: { components: { traditional: { value: season, thin: false } } },
+  last_15: { components: { traditional: { value: last15, thin: false } } },
+});
+
+test('decodes scores for markets with no posted line beside the posted ones', () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.players[0].scores.BLK = blockScore(0.07, 0.05);
+  candidate.players[0].scores.REB = candidate.players[0].scores.FGA;
+
+  const player = decodeMatchup(candidate).players[0];
+
+  expect(player.statCategories).toEqual(['PTS', 'FGA']);
+  expect(player.postedMarkets).toEqual(['PTS', 'FGA']);
+  expect(Object.keys(player.scores)).toEqual(['PTS', 'FGA', 'BLK', 'REB']);
+  expect(player.scores.BLK.season).toEqual({
+    components: { traditional: { value: 0.07, thin: false } },
+    blend: null,
+    missingInputs: [],
+  });
+});
+
+test('still decodes scores that cover exactly the posted markets', () => {
+  const player = decodeMatchup(payload).players[0];
+
+  expect(Object.keys(player.scores)).toEqual(['PTS', 'FGA']);
+  expect(player.scores.FGA.season.blend).toEqual({ value: 0.04, thin: false });
+});
+
 // The backend's window for a category the Matchup does not score (statsplus#370).
 const unscoredWindow = { components: {}, blend: null, missing_inputs: [] };
 const withShootingLines = () => {
@@ -1500,9 +1531,18 @@ test('still requires a score entry for every unscored category it posts', () => 
 
 test.each([
   [
-    'an unposted score row',
+    'a score row for an unknown market',
     (candidate) => {
-      candidate.players[0].scores.REB = candidate.players[0].scores.PTS;
+      candidate.players[0].scores.FANTASY = candidate.players[0].scores.PTS;
+    },
+  ],
+  [
+    'an unposted score row with an invalid window',
+    (candidate) => {
+      candidate.players[0].scores.BLK = {
+        season: { components: { shot_zones: { value: 0.08, thin: false } } },
+        last_15: { components: { traditional: { value: 0.05, thin: false } } },
+      };
     },
   ],
   [

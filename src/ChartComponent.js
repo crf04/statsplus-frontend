@@ -247,9 +247,7 @@ const ChartComponent = ({
               const ranking = opponentRanks?.[lineType];
               const rank = ranking?.ranks[opponent];
               const lines = [
-                rank
-                  ? `OPP: ${opponent} · ${ordinal(rank)} of 30 ${ranking.label}`
-                  : `OPP: ${opponent}`,
+                `OPP: ${opponent}`,
                 `MIN: ${numericOrZero(gameLogs[index]?.MIN)}`,
                 `${lineType}: ${numericOrZero(value)}`,
               ];
@@ -270,6 +268,7 @@ const ChartComponent = ({
                         chances > 0 ? ` · ${percentText(made / chances)}` : ''
                       }`;
               }
+              if (rank) lines.splice(1, 0, `${ordinal(rank)} of 30 ${ranking.label}`);
               return lines;
             },
           },

@@ -41,6 +41,7 @@ export const HELP_TIPS = {
     body: [
       'Each cell crosses how this player gets the stat with how much this defense allows of it, against the league average. Positive is more of the stat than usual.',
       'Blend combines the columns. Thin marks a cell with too few games or too little volume to lean on.',
+      'No line marks a market with no line in CourtAI’s books. CourtAI does not carry every book, so the market may still be offered.',
     ],
   },
   targets: {

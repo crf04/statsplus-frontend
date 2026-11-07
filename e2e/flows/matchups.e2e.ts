@@ -4,6 +4,8 @@ import {
   historicalMatchupPayload,
   playTypeTurnoverMatchupPayload,
   postCutoverHistoricalMatchupPayload,
+  everyMarketMatchupPayload,
+  everyMarketSelectionPayload,
   scoreCoverageMatchupPayload,
   scoreCoverageSelectionPayload,
   servingSeasonMatchupPayload,
@@ -239,6 +241,32 @@ signedInTest(
     await expect(screen.getByRole('article', 'FG made')).toBeVisible();
     await screen.getByRole('article', 'Restricted area').scrollIntoView();
     await app.screenshot('defense-sheet-fgm');
+  },
+);
+
+signedInTest(
+  'the Score Matrix scores a market CourtAI holds no line for (statsplus#457)',
+  async ({ app, screen, browser, api }) => {
+    await api.override({
+      '/api/games/matchup': { body: everyMarketMatchupPayload },
+      '/api/games/matchup/selection': { body: everyMarketSelectionPayload },
+    });
+    await app.open('/matchups/0022500584?player=2544');
+    const matrix = screen.getByRole('table', 'LeBron James Score Matrix');
+    await expect(matrix.getByRole('row', { name: /^BLK / })).toHaveText(
+      'BLK no line — — — +25% +25%',
+    );
+    await expect(matrix.getByRole('row', { name: /^STL / })).not.toContainText('no line');
+    expect(await overflowsHorizontally(browser)).toBe(false);
+    await matrix.scrollIntoView();
+    await app.screenshot('selection-unposted-market');
+
+    await matrix.getByRole('button', 'BLK').tap();
+    await expect(screen.getByRole('region', 'Games vs this opponent')).toContainText(
+      'Games vs this opponent covers the markets with a line in CourtAI’s books, so it has no BLK log.',
+    );
+    await screen.getByRole('group', 'Market').getByRole('button', 'BLK').tap();
+    await expect(screen.getByRole('article', 'LeBron James player')).toBeVisible();
   },
 );
 

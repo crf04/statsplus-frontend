@@ -1065,7 +1065,8 @@ button.selection-strip-tile:focus-visible {
   color: var(--ct-dim);
 }
 
-.selection-table-wrap .thin-flag {
+.selection-table-wrap .thin-flag,
+.selection-matrix-no-line {
   margin-left: 4px;
   color: var(--ct-dim);
   font-family: var(--ct-sans);

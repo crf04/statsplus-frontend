@@ -361,29 +361,37 @@ export default function SelectionCard({
     () => statChoices(player.statCategories, player.bookLines),
     [player.statCategories, player.bookLines],
   );
+  // The Matchup scores markets CourtAI has no line for (statsplus#457), and a
+  // Score Matrix row picks one the strip does not offer.
+  const scoredMarkets = useMemo(() => orderCategories(Object.keys(player.scores)), [player.scores]);
+  const pickable = useMemo(() => [...stats, ...scoredMarkets], [stats, scoredMarkets]);
   const [activeStat, setActiveStat] = useState(
-    stats.includes(sheetMarket) ? sheetMarket : stats[0],
+    pickable.includes(sheetMarket) ? sheetMarket : stats[0],
   );
   useEffect(() => panelRef.current?.focus(), [player.id]);
   useEffect(() => {
     const playerChanged = previousPlayerId.current !== player.id;
     const sheetMarketChanged = previousSheetMarket.current !== sheetMarket;
-    const ordered = stats;
     setActiveStat((current) => {
       if (playerChanged) {
-        return ordered.includes(sheetMarket) ? sheetMarket : ordered[0];
+        return pickable.includes(sheetMarket) ? sheetMarket : stats[0];
       }
-      if (sheetMarketChanged && sheetMarket !== 'All' && ordered.includes(sheetMarket)) {
+      if (sheetMarketChanged && sheetMarket !== 'All' && pickable.includes(sheetMarket)) {
         return sheetMarket;
       }
-      return ordered.includes(current) ? current : ordered[0];
+      return pickable.includes(current) ? current : stats[0];
     });
     previousPlayerId.current = player.id;
     previousSheetMarket.current = sheetMarket;
-  }, [player.id, stats, sheetMarket]);
-  const rows = categories
-    .filter((market) => Object.hasOwn(player.scores, market))
-    .map((market) => ({ market, score: player.scores[market][windowKey] }));
+  }, [player.id, stats, pickable, sheetMarket]);
+  const rows = scoredMarkets.map((market) => ({
+    market,
+    score: player.scores[market][windowKey],
+    noLine:
+      !historical &&
+      !player.postedMarkets.includes(market) &&
+      !player.bookLines?.[market]?.books.length,
+  }));
   const unscored = categories.filter((market) => !Object.hasOwn(player.scores, market));
   const baseRank = (base) => {
     const index = BASE_ORDER.indexOf(base);
@@ -458,7 +466,7 @@ export default function SelectionCard({
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(({ market, score }) => (
+                  {rows.map(({ market, score, noLine }) => (
                     <tr
                       key={market}
                       className={market === activeStat ? 'active-market-row' : undefined}
@@ -476,6 +484,12 @@ export default function SelectionCard({
                         >
                           {market}
                         </button>
+                        {noLine && (
+                          <>
+                            {' '}
+                            <small className="selection-matrix-no-line">no line</small>
+                          </>
+                        )}
                       </th>
                       {bases.map((base) => (
                         <td key={base} style={washStyle(score.components[base])}>
@@ -509,7 +523,10 @@ export default function SelectionCard({
             </p>
           )}
           {status === 'ready' && !categories.includes(activeStat) && (
-            <p className="honest-empty">No games vs this opponent log is kept for {activeStat}.</p>
+            <p className="honest-empty">
+              Games vs this opponent covers the markets with a line in CourtAI’s books, so it has no{' '}
+              {activeStat} log.
+            </p>
           )}
           {status === 'ready' && categories.includes(activeStat) && (
             <OpponentLog

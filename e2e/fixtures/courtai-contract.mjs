@@ -1040,6 +1040,19 @@ export const scoreCoverageMatchupPayload = (() => {
   return candidate;
 })();
 
+// The same game once the Matchup scores every market (crf04/statsplus#457):
+// no source in CourtAI's data posts LeBron's blocks, yet he keeps his BLK score.
+export const everyMarketMatchupPayload = (() => {
+  const candidate = JSON.parse(JSON.stringify(scoreCoverageMatchupPayload));
+  const lebron = candidate.players.find((player) => player.canonical_id === 2544);
+  const posted = (market) => market !== 'BLK';
+  lebron.posted_markets = lebron.posted_markets.filter(posted);
+  lebron.provenance.prizepicks = lebron.provenance.prizepicks.filter(posted);
+  delete lebron.season_averages.BLK;
+  lebron.last_five_games.forEach((game) => delete game.stats.BLK);
+  return candidate;
+})();
+
 // The same game once the backend scores TOV, FTA and FTM from play types too
 // (crf04/statsplus#416). Each team lists play-type turnovers forced and
 // free-throw trips allowed, Misc included, which this build does not show. Play
@@ -1607,6 +1620,15 @@ export const scoreCoverageSelectionPayload = (() => {
   [...candidate.h2h.rows, ...candidate.archetype.rows].forEach((row) => {
     Object.assign(row.stats, { FGM: 11, FTA: 7, FTM: 6 });
     Object.assign(row.deltas, { FGM: 0.012, FTA: -0.021, FTM: -0.015 });
+  });
+  return candidate;
+})();
+
+export const everyMarketSelectionPayload = (() => {
+  const candidate = JSON.parse(JSON.stringify(scoreCoverageSelectionPayload));
+  [...candidate.h2h.rows, ...candidate.archetype.rows].forEach((row) => {
+    delete row.stats.BLK;
+    delete row.deltas.BLK;
   });
   return candidate;
 })();

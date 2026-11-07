@@ -412,6 +412,35 @@ test('lists who leans on a slice above league, most first, and leaves off those 
   expect(within(leans).queryByText('LeBron James')).not.toBeInTheDocument();
 });
 
+test('lists who leans on a slice in a market they are scored in with no line (statsplus#457)', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  candidate.players.forEach((player, index) => {
+    player.teamId = 1;
+    player.statCategories = ['REB'];
+    player.scores.PTS = matchup.players[0].scores.PTS;
+    player.dietShares.playTypes = [
+      {
+        key: 'Transition',
+        season: {
+          share: [0.31, 0.05, 0.37][index],
+          volumePerGame: 1,
+          leagueAverageShare: 0.25,
+          sigmaDeviation: [0.6, -2, 1.2][index],
+        },
+      },
+    ];
+  });
+  fetchMatchup.mockResolvedValueOnce(candidate);
+  renderMatchup();
+
+  const leans = await screen.findByRole('list', { name: 'Players leaning on Transition' });
+  expect(
+    within(leans)
+      .getAllByRole('listitem')
+      .map((item) => item.textContent),
+  ).toEqual(['Jayson Tatum 37%', 'Austin Reaves 31%']);
+});
+
 test('a selection highlights only the slices his delivered Season Diet Share leans on', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.players.find((player) => player.id === 2544).dietShares.playTypes[0].season = {
@@ -2630,6 +2659,7 @@ test('AC3: the page opens on All when the other side has no points', async () =>
     .filter((player) => player.teamId === 1)
     .forEach((player) => {
       player.statCategories = player.statCategories.filter((stat) => stat !== 'PTS');
+      delete player.scores.PTS;
     });
   fetchMatchup.mockResolvedValueOnce(candidate);
   renderMatchup();
@@ -3437,7 +3467,11 @@ test('a category only sportsbooks quote is reachable from the strip without beco
   expect(screen.getByText(/Markets posted by PrizePicks and Underdog\./)).toBeVisible();
   const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
   expect(within(matrix).queryByRole('button', { name: 'AST' })).not.toBeInTheDocument();
-  expect(await screen.findByText('No games vs this opponent log is kept for AST.')).toBeVisible();
+  expect(
+    await screen.findByText(
+      'Games vs this opponent covers the markets with a line in CourtAI’s books, so it has no AST log.',
+    ),
+  ).toBeVisible();
 });
 
 test('names every allowlisted sportsbook', async () => {
@@ -4737,4 +4771,104 @@ test('reads play-type turnovers forced and FT trips allowed under their own mark
   ).toBeVisible();
   expect(within(playTypes()).queryAllByRole('article')).toEqual([]);
   expect(screen.queryByText('No Defense Sheet rows match these controls.')).not.toBeInTheDocument();
+});
+
+describe('markets scored with no line in CourtAI’s books (statsplus#457)', () => {
+  const openUnpostedBlocks = async (path = '/matchups/0022500584?player=2544') => {
+    const raw = JSON.parse(JSON.stringify(rawMatchupPayload));
+    raw.players[0].scores.BLK = {
+      season: { components: { traditional: { value: 0.07, thin: false } } },
+      last_15: { components: { traditional: { value: 0.05, thin: false } } },
+    };
+    fetchMatchup.mockResolvedValueOnce(jest.requireActual('./matchupApi').decodeMatchup(raw));
+    renderMatchup(path);
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+  };
+  const matrixRow = (market) =>
+    within(screen.getByRole('table', { name: 'LeBron James Score Matrix' }))
+      .getByRole('button', { name: market })
+      .closest('tr');
+
+  test('lists the unposted market in the Score Matrix, marked no line', async () => {
+    await openUnpostedBlocks();
+
+    const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
+    expect(
+      within(matrix)
+        .getAllByRole('row')
+        .slice(1)
+        .map((row) => row.textContent),
+    ).toEqual(['PTS+8%—+12%', 'BLK no line—+7%—', 'FGA+4%—+4%']);
+    expect(within(matrixRow('PTS')).queryByText('no line')).not.toBeInTheDocument();
+  });
+
+  test('a sportsbook quote for the unposted market is a line, so its row is not marked', async () => {
+    const raw = JSON.parse(JSON.stringify(rawMatchupPayload));
+    raw.players[0].scores.BLK = {
+      season: { components: { traditional: { value: 0.07, thin: false } } },
+      last_15: { components: { traditional: { value: 0.05, thin: false } } },
+    };
+    const decoded = jest.requireActual('./matchupApi').decodeMatchup(raw);
+    decoded.players[0].bookLines = { BLK: quote([bookRow('fanduel', 0.5, 120, -150)]) };
+    fetchMatchup.mockResolvedValueOnce(decoded);
+    renderMatchup('/matchups/0022500584?player=2544');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+
+    expect(matrixRow('BLK').textContent).toBe('BLK—+7%—');
+  });
+
+  test('picking the unposted row keeps the card and says what the opponent log covers', async () => {
+    await openUnpostedBlocks();
+
+    await userEvent.click(
+      within(screen.getByRole('table', { name: 'LeBron James Score Matrix' })).getByRole('button', {
+        name: 'BLK',
+      }),
+    );
+
+    expect(
+      within(screen.getByRole('table', { name: 'LeBron James Score Matrix' })).getByRole('button', {
+        name: 'BLK',
+      }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(
+      await screen.findByText(
+        'Games vs this opponent covers the markets with a line in CourtAI’s books, so it has no BLK log.',
+      ),
+    ).toBeVisible();
+  });
+
+  test('the market filter offers the unposted market and lists him under it', async () => {
+    await openUnpostedBlocks();
+    const filter = screen.getByRole('group', { name: 'Market' });
+
+    expect(
+      within(filter)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label') ?? button.textContent),
+    ).toEqual(['All', 'PTS', 'BLK', 'FGA']);
+
+    await userEvent.click(within(filter).getByRole('button', { name: 'BLK' }));
+
+    expect(screen.getByRole('heading', { level: 2, name: /BLK/ })).toBeVisible();
+    const row = screen.getByRole('article', { name: 'LeBron James player' });
+    expect(within(row).getByRole('img', { name: 'Matchup Score +7%' })).toBeVisible();
+  });
+
+  test('a card opened under the unposted market starts on it', async () => {
+    await openUnpostedBlocks('/matchups/0022500584');
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Market' })).getByRole('button', { name: 'BLK' }),
+    );
+
+    await userEvent.click(
+      within(screen.getByRole('article', { name: 'LeBron James player' })).getByRole('img', {
+        name: 'Matchup Score +7%',
+      }),
+    );
+
+    expect(await screen.findByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
+    expect(matrixRow('BLK')).toHaveClass('active-market-row');
+    expect(matrixRow('PTS')).not.toHaveClass('active-market-row');
+  });
 });

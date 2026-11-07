@@ -130,6 +130,7 @@ const GameLogFilter = ({ notice = null }) => {
   const [playerId, setPlayerId] = useState(null);
   // The player's posted lines for his next game, which the line defaults to.
   const [postedLine, setPostedLine] = useState(null);
+  const [opponentRanks, setOpponentRanks] = useState({});
   const [isGameLogsLoading, setIsGameLogsLoading] = useState(false); // Track game logs API loading
   const line = useLineSelection({
     player: selectedPlayer,
@@ -451,6 +452,7 @@ const GameLogFilter = ({ notice = null }) => {
       setAverages([]);
       setPlayerId(null);
       setPostedLine(null);
+      setOpponentRanks({});
       setSampleSize(null);
 
       // Only an admitted account's answer carries prices, so an answer read in
@@ -471,6 +473,7 @@ const GameLogFilter = ({ notice = null }) => {
           setAverages(data.averages);
           setPlayerId(data.playerId ?? null);
           setPostedLine(data.postedLine ?? null);
+          setOpponentRanks(data.opponentRanks ?? {});
           setSampleSize({
             filtered: data.gameLogs.length,
             season: data.seasonGameCount ?? null,
@@ -565,6 +568,7 @@ const GameLogFilter = ({ notice = null }) => {
     setAverages([]);
     setPlayerId(null);
     setPostedLine(null);
+    setOpponentRanks({});
     setSampleSize(null);
     clearSelectedTeam();
     setGameLogsError(null);
@@ -647,6 +651,7 @@ const GameLogFilter = ({ notice = null }) => {
       setAverages([]);
       setPlayerId(null);
       setPostedLine(null);
+      setOpponentRanks({});
       setSampleSize(null);
       setAppliedFilters({});
       setGameLogsError(
@@ -671,6 +676,7 @@ const GameLogFilter = ({ notice = null }) => {
       setAverages([]);
       setPlayerId(null);
       setPostedLine(null);
+      setOpponentRanks({});
       setSampleSize(null);
       clearSelectedTeam();
       return undefined;
@@ -995,6 +1001,7 @@ const GameLogFilter = ({ notice = null }) => {
                       lineValue={line.lineValue}
                       averages={averages}
                       postedLine={postedLine}
+                      opponentRanks={opponentRanks}
                       lineSource={line.lineSource}
                       appliedFilters={appliedFilters}
                     />

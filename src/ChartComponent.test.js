@@ -82,6 +82,59 @@ test('the points tooltip adds the shot attempts behind the points', () => {
   expect(tooltipFor('FGA')).toEqual(['OPP: BOS', 'MIN: 34', 'FGA: 19']);
 });
 
+describe('the opponent line names its rank in the charted stat', () => {
+  const tooltipFor = (lineType, opponentRanks, MATCHUP = 'LAL vs. BOS') => {
+    const logs = [
+      { GAME_DATE: '2026-01-01', MATCHUP, MIN: 34, PTS: 31, FGA: 20, FG3A: 8, PRA: 45 },
+    ];
+    render(
+      <ChartComponent
+        gameLogs={logs}
+        lineType={lineType}
+        lineValue=""
+        averages={averages}
+        opponentRanks={opponentRanks}
+      />,
+    );
+    const { callbacks } = barProps.options.plugins.tooltip;
+    return callbacks.label({ dataIndex: 0, raw: barProps.data.datasets[0].data[0] });
+  };
+  const ranks = (BOS) => ({ PTS: { label: 'Points Allowed', ranks: { BOS } } });
+
+  test("a PTS chart reads the opponent's Points Allowed rank", () => {
+    expect(tooltipFor('PTS', ranks(27))).toEqual([
+      'OPP: BOS',
+      '27th of 30 Points Allowed',
+      'MIN: 34',
+      'PTS: 31',
+      'FGA: 20',
+      '3PA: 8',
+    ]);
+  });
+
+  test('ranks read as ordinals', () => {
+    expect(tooltipFor('PTS', ranks(1)).slice(0, 2)).toEqual([
+      'OPP: BOS',
+      '1st of 30 Points Allowed',
+    ]);
+    expect(tooltipFor('PTS', ranks(22)).slice(0, 2)).toEqual([
+      'OPP: BOS',
+      '22nd of 30 Points Allowed',
+    ]);
+  });
+
+  test('a line type with no ranking keeps the plain opponent', () => {
+    expect(tooltipFor('PRA', ranks(27))).toEqual(['OPP: BOS', 'MIN: 34', 'PRA: 45']);
+  });
+
+  test('without rankings, or for an unranked opponent, the opponent stays plain', () => {
+    const plain = (opponent) => [`OPP: ${opponent}`, 'MIN: 34', 'PTS: 31', 'FGA: 20', '3PA: 8'];
+    expect(tooltipFor('PTS', undefined)).toEqual(plain('BOS'));
+    expect(tooltipFor('PTS', {})).toEqual(plain('BOS'));
+    expect(tooltipFor('PTS', ranks(27), 'LAL @ DEN')).toEqual(plain('DEN'));
+  });
+});
+
 describe('tracking ghost bars', () => {
   const logs = [
     {
@@ -145,6 +198,24 @@ describe('tracking ghost bars', () => {
     const ast = draw('AST');
     expect(tooltipLines(ast, 0)[2]).toBe('AST 7 · 13 potential · 54%');
     expect(tooltipLines(ast, 1)[2]).toBe('AST 7 · not tracked');
+  });
+
+  test('a REB rank line sits under the opponent and leaves the tracked stat line intact', () => {
+    const reb = draw('REB', {
+      opponentRanks: { REB: { label: 'Rebounds Allowed', ranks: { BOS: 22, DEN: 4 } } },
+    });
+    expect(tooltipLines(reb, 0)).toEqual([
+      'OPP: BOS',
+      '22nd of 30 Rebounds Allowed',
+      'MIN: 30',
+      'REB 8 · 15 chances · 53%',
+    ]);
+    expect(tooltipLines(reb, 1)).toEqual([
+      'OPP: DEN',
+      '4th of 30 Rebounds Allowed',
+      'MIN: 28',
+      'REB 8 · not tracked',
+    ]);
   });
 
   test('the tooltip lists a game once, from the main bar', () => {

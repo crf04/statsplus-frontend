@@ -8,6 +8,7 @@ import { postedLineFor } from './gameLogsApi';
 import { bookName } from './matchups/displayConfig';
 import { shortSlateDay } from './home/homeFormat';
 import { useThemeColors } from './theme/useThemeColors';
+import { ordinal } from './profileMatchup/matchupReading';
 
 // Canvas paint, resolved from the theme tokens, each with the role it plays.
 const CHART_COLORS = {
@@ -111,6 +112,7 @@ const ChartComponent = ({
   lineValue,
   averages,
   postedLine,
+  opponentRanks,
   lineSource,
   appliedFilters,
 }) => {
@@ -242,6 +244,8 @@ const ChartComponent = ({
               const value = tooltipItem.raw;
               const matchup = gameLogs[index]?.MATCHUP;
               const opponent = typeof matchup === 'string' ? matchup.split(' ')[2] || 'N/A' : 'N/A';
+              const ranking = opponentRanks?.[lineType];
+              const rank = ranking?.ranks[opponent];
               const lines = [
                 `OPP: ${opponent}`,
                 `MIN: ${numericOrZero(gameLogs[index]?.MIN)}`,
@@ -264,6 +268,7 @@ const ChartComponent = ({
                         chances > 0 ? ` · ${percentText(made / chances)}` : ''
                       }`;
               }
+              if (rank) lines.splice(1, 0, `${ordinal(rank)} of 30 ${ranking.label}`);
               return lines;
             },
           },
@@ -296,7 +301,7 @@ const ChartComponent = ({
         },
       },
     }),
-    [gameLogs, lineType, lineLabel, numericLineValue, tracking, colors],
+    [gameLogs, lineType, lineLabel, numericLineValue, tracking, colors, opponentRanks],
   );
 
   const { player_name: _player, ...withoutPlayer } = appliedFilters || {};

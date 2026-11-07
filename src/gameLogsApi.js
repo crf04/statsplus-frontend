@@ -129,6 +129,24 @@ export const postedLineFor = (posted, lineType, sourceId) => {
   return source ? { ...source, gameDate: posted.gameDate, matchup: posted.matchup } : null;
 };
 
+const isRank = (value) => Number.isInteger(value) && value >= 1 && value <= 30;
+
+/* Each line type's opponent ranking, keeping only well-formed labels and 1-30 ranks. */
+const opponentRanks = (value) =>
+  Object.fromEntries(
+    Object.entries(isRecord(value) ? value : {})
+      .filter(([, entry]) => isRecord(entry) && typeof entry.label === 'string' && entry.label)
+      .map(([lineType, { label, ranks }]) => [
+        lineType,
+        {
+          label,
+          ranks: Object.fromEntries(
+            Object.entries(isRecord(ranks) ? ranks : {}).filter(([, rank]) => isRank(rank)),
+          ),
+        },
+      ]),
+  );
+
 const { decodeSeasonContext } = servingSeasonDecoders(
   () => new Error('The game logs API returned an invalid season context.'),
 );
@@ -154,6 +172,7 @@ export const decodeGameLogsResponse = (payload = {}) => {
     nextGame: payload.next_game || null,
     playerId: playerId(payload.player_id),
     postedLine: postedLine(payload.posted_line),
+    opponentRanks: opponentRanks(payload.opponent_ranks),
     seasonContext: decodeSeasonContext(payload.season_context),
   };
 };

@@ -82,6 +82,51 @@ test('the points tooltip adds the shot attempts behind the points', () => {
   expect(tooltipFor('FGA')).toEqual(['OPP: BOS', 'MIN: 34', 'FGA: 19']);
 });
 
+describe('the opponent line names its rank in the charted stat', () => {
+  const tooltipFor = (lineType, opponentRanks, MATCHUP = 'LAL vs. BOS') => {
+    const logs = [
+      { GAME_DATE: '2026-01-01', MATCHUP, MIN: 34, PTS: 31, FGA: 20, FG3A: 8, PRA: 45 },
+    ];
+    render(
+      <ChartComponent
+        gameLogs={logs}
+        lineType={lineType}
+        lineValue=""
+        averages={averages}
+        opponentRanks={opponentRanks}
+      />,
+    );
+    const { callbacks } = barProps.options.plugins.tooltip;
+    return callbacks.label({ dataIndex: 0, raw: barProps.data.datasets[0].data[0] });
+  };
+  const ranks = (BOS) => ({ PTS: { label: 'Points Allowed', ranks: { BOS } } });
+
+  test("a PTS chart reads the opponent's Points Allowed rank", () => {
+    expect(tooltipFor('PTS', ranks(27))).toEqual([
+      'OPP: BOS · 27th of 30 Points Allowed',
+      'MIN: 34',
+      'PTS: 31',
+      'FGA: 20',
+      '3PA: 8',
+    ]);
+  });
+
+  test('ranks read as ordinals', () => {
+    expect(tooltipFor('PTS', ranks(1))[0]).toBe('OPP: BOS · 1st of 30 Points Allowed');
+    expect(tooltipFor('PTS', ranks(22))[0]).toBe('OPP: BOS · 22nd of 30 Points Allowed');
+  });
+
+  test('a line type with no ranking keeps the plain opponent', () => {
+    expect(tooltipFor('PRA', ranks(27))).toEqual(['OPP: BOS', 'MIN: 34', 'PRA: 45']);
+  });
+
+  test('without rankings, or for an unranked opponent, the opponent stays plain', () => {
+    expect(tooltipFor('PTS', undefined)[0]).toBe('OPP: BOS');
+    expect(tooltipFor('PTS', {})[0]).toBe('OPP: BOS');
+    expect(tooltipFor('PTS', ranks(27), 'LAL @ DEN')[0]).toBe('OPP: DEN');
+  });
+});
+
 describe('tracking ghost bars', () => {
   const logs = [
     {

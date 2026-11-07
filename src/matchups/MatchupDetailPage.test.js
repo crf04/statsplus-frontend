@@ -4802,6 +4802,21 @@ describe('markets scored with no line in CourtAI’s books (statsplus#457)', () 
     expect(within(matrixRow('PTS')).queryByText('no line')).not.toBeInTheDocument();
   });
 
+  test('a sportsbook quote for the unposted market is a line, so its row is not marked', async () => {
+    const raw = JSON.parse(JSON.stringify(rawMatchupPayload));
+    raw.players[0].scores.BLK = {
+      season: { components: { traditional: { value: 0.07, thin: false } } },
+      last_15: { components: { traditional: { value: 0.05, thin: false } } },
+    };
+    const decoded = jest.requireActual('./matchupApi').decodeMatchup(raw);
+    decoded.players[0].bookLines = { BLK: quote([bookRow('fanduel', 0.5, 120, -150)]) };
+    fetchMatchup.mockResolvedValueOnce(decoded);
+    renderMatchup('/matchups/0022500584?player=2544');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+
+    expect(matrixRow('BLK').textContent).toBe('BLK—+7%—');
+  });
+
   test('picking the unposted row keeps the card and says what the opponent log covers', async () => {
     await openUnpostedBlocks();
 

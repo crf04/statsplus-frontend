@@ -77,6 +77,47 @@ describe('gameLogsApi', () => {
       nextGame: 'Boston Celtics',
       playerId: null,
       postedLine: null,
+      opponentRanks: {},
+    });
+  });
+
+  test('reads each line type opponent ranking', () => {
+    expect(
+      decodeGameLogsResponse({
+        game_logs: [],
+        opponent_ranks: {
+          PTS: { label: 'Points Allowed', ranks: { BOS: 27, LAL: 3 } },
+          FG3M: { label: '3s Allowed', ranks: { BOS: 12, LAL: 30 } },
+        },
+      }).opponentRanks,
+    ).toEqual({
+      PTS: { label: 'Points Allowed', ranks: { BOS: 27, LAL: 3 } },
+      FG3M: { label: '3s Allowed', ranks: { BOS: 12, LAL: 30 } },
+    });
+  });
+
+  // An older backend sends no rankings, and the chart must still draw.
+  test.each([undefined, null, [], 'PTS', 27])('reads opponent_ranks of %p as none', (value) => {
+    expect(decodeGameLogsResponse({ game_logs: [], opponent_ranks: value }).opponentRanks).toEqual(
+      {},
+    );
+  });
+
+  test('drops unlabelled rankings and ranks outside 1-30', () => {
+    expect(
+      decodeGameLogsResponse({
+        game_logs: [],
+        opponent_ranks: {
+          PTS: { label: 'Points Allowed', ranks: { BOS: 0, LAL: 31, DEN: 2.5, MIA: '4', NYK: 1 } },
+          REB: { label: '', ranks: { BOS: 5 } },
+          AST: { ranks: { BOS: 5 } },
+          STL: null,
+          TOV: { label: 'Turnovers Forced', ranks: null },
+        },
+      }).opponentRanks,
+    ).toEqual({
+      PTS: { label: 'Points Allowed', ranks: { NYK: 1 } },
+      TOV: { label: 'Turnovers Forced', ranks: {} },
     });
   });
 

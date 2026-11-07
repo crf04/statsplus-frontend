@@ -70,6 +70,12 @@ export const gameLogs = [
   },
 ];
 
+// The tooltip's opponent ranks (crf04/statsplus#456): 30 allows the most.
+export const opponentRanks = {
+  PTS: { label: 'Points Allowed', ranks: { ATL: 27, DAL: 3 } },
+  REB: { label: 'Rebounds Allowed', ranks: { ATL: 22, DAL: 11 } },
+};
+
 export const averages = {
   MIN: 35,
   PTS: 29,
@@ -3711,6 +3717,7 @@ export const installApiContract = async (page, overrides = {}, { waitlisted = fa
           next_game: 'Atlanta Hawks',
           player_id: playerIdsByName[playerName] ?? null,
           posted_line: posted && !priced ? withoutPrices(posted) : posted,
+          opponent_ranks: opponentRanks,
         },
       });
       return;

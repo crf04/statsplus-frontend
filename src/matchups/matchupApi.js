@@ -206,6 +206,8 @@ const canonicalSheetMarkets = (base, sliceKey, statKey) => {
       FG2A: ['FGA', 'FG2A'],
       FG3M: ['3PM', 'PTS', 'PA', 'PR', 'PRA'],
       FG3A: ['FGA', 'FG3A'],
+      FGM: ['FGM'],
+      FGA: ['FGA'],
     }[statKey];
   }
   if (base === 'assist_locations') return ['AST', 'PA', 'RA', 'PRA'];
@@ -238,6 +240,9 @@ const expectedSheetMarkets = (base, sliceKey, statKey) =>
     scoreCoverageSheetMarkets(base, sliceKey, statKey),
   ].filter(Boolean);
 
+const OVERALL_SHOT_TYPE_STATS = ['PTS', 'FGM', 'FGA'];
+const SHOT_TYPE_STATS = [...OVERALL_SHOT_TYPE_STATS, 'FG2M', 'FG2A', 'FG3M', 'FG3A'];
+
 const decodeSheetIdentity = (base, key) => {
   let sliceKey;
   let statKey;
@@ -264,7 +269,7 @@ const decodeSheetIdentity = (base, key) => {
     (base === 'shot_zones' && SHOT_ZONE_SLICES.has(sliceKey) && ['FGA', 'FGM'].includes(statKey)) ||
     (base === 'shot_types' &&
       SHOT_TYPE_SLICES.has(sliceKey) &&
-      ['PTS', 'FG2M', 'FG2A', 'FG3M', 'FG3A'].includes(statKey)) ||
+      SHOT_TYPE_STATS.includes(statKey)) ||
     (base === 'assist_locations' && ASSIST_LOCATION_SLICES.has(sliceKey)) ||
     (base === 'rebound_types' && REBOUND_TYPE_SLICES.has(sliceKey)) ||
     (base === 'traditional' && TRADITIONAL_SLICES.has(sliceKey));
@@ -272,9 +277,10 @@ const decodeSheetIdentity = (base, key) => {
   return {
     sliceKey,
     acceptedMarkets: expectedSheetMarkets(base, sliceKey, statKey),
-    // The `<slice>:PTS` shot-type row (crf04/statsplus#315) is validated but
-    // never shown: the Matchup sheet renders makes and attempts only.
-    hidden: base === 'shot_types' && statKey === 'PTS',
+    // The overall shot-type rows, `<slice>:PTS` (crf04/statsplus#315) and
+    // `<slice>:FGM|FGA` (crf04/statsplus#454), are validated but never shown:
+    // the Matchup sheet renders the 2PT and 3PT makes and attempts only.
+    hidden: base === 'shot_types' && OVERALL_SHOT_TYPE_STATS.includes(statKey),
   };
 };
 

@@ -104,7 +104,7 @@ describe('the opponent line names its rank in the charted stat', () => {
   test("a PTS chart reads the opponent's Points Allowed rank", () => {
     expect(tooltipFor('PTS', ranks(27))).toEqual([
       'OPP: BOS',
-      '27th of 30 Points Allowed',
+      '27th PTS Allowed',
       'MIN: 34',
       'PTS: 31',
       'FGA: 20',
@@ -113,14 +113,15 @@ describe('the opponent line names its rank in the charted stat', () => {
   });
 
   test('ranks read as ordinals', () => {
-    expect(tooltipFor('PTS', ranks(1)).slice(0, 2)).toEqual([
-      'OPP: BOS',
-      '1st of 30 Points Allowed',
-    ]);
-    expect(tooltipFor('PTS', ranks(22)).slice(0, 2)).toEqual([
-      'OPP: BOS',
-      '22nd of 30 Points Allowed',
-    ]);
+    expect(tooltipFor('PTS', ranks(1)).slice(0, 2)).toEqual(['OPP: BOS', '1st PTS Allowed']);
+    expect(tooltipFor('PTS', ranks(22)).slice(0, 2)).toEqual(['OPP: BOS', '22nd PTS Allowed']);
+  });
+
+  test('the rank keeps a Forced verb and drops a label with neither verb', () => {
+    const rankLine = (lineType, label) =>
+      tooltipFor(lineType, { [lineType]: { label, ranks: { BOS: 17 } } })[1];
+    expect(rankLine('TOV', 'Turnovers Forced')).toBe('17th TOV Forced');
+    expect(rankLine('STL', 'Steals')).toBe('17th STL');
   });
 
   test('a line type with no ranking keeps the plain opponent', () => {
@@ -206,13 +207,13 @@ describe('tracking ghost bars', () => {
     });
     expect(tooltipLines(reb, 0)).toEqual([
       'OPP: BOS',
-      '22nd of 30 Rebounds Allowed',
+      '22nd REB Allowed',
       'MIN: 30',
       'REB 8 · 15 chances · 53%',
     ]);
     expect(tooltipLines(reb, 1)).toEqual([
       'OPP: DEN',
-      '4th of 30 Rebounds Allowed',
+      '4th REB Allowed',
       'MIN: 28',
       'REB 8 · not tracked',
     ]);

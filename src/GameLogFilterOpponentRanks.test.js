@@ -78,7 +78,7 @@ test("the chart tooltip reads the response's opponent rank for the chosen Line T
   await waitFor(() =>
     expect(tooltip()).toEqual([
       'OPP: BOS',
-      '27th of 30 Points Allowed',
+      '27th PTS Allowed',
       'MIN: 34',
       'PTS: 31',
       'FGA: 20',
@@ -91,12 +91,7 @@ test("the chart tooltip reads the response's opponent rank for the chosen Line T
   });
 
   await waitFor(() =>
-    expect(tooltip()).toEqual([
-      'OPP: BOS',
-      '9th of 30 Rebounds Allowed',
-      'MIN: 34',
-      'REB 6 · not tracked',
-    ]),
+    expect(tooltip()).toEqual(['OPP: BOS', '9th REB Allowed', 'MIN: 34', 'REB 6 · not tracked']),
   );
   expect(gameLogReads()).toHaveLength(1);
 });

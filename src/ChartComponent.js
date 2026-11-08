@@ -268,7 +268,9 @@ const ChartComponent = ({
                         chances > 0 ? ` · ${percentText(made / chances)}` : ''
                       }`;
               }
-              if (rank) lines.splice(1, 0, `${ordinal(rank)} of 30 ${ranking.label}`);
+              // The charted stat's code stands in for the label's stat words.
+              const verb = ranking?.label.match(/ (Allowed|Forced)$/)?.[1];
+              if (rank) lines.splice(1, 0, `${ordinal(rank)} ${lineType}${verb ? ` ${verb}` : ''}`);
               return lines;
             },
           },

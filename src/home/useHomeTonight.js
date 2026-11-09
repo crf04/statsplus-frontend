@@ -30,7 +30,9 @@ import { isRequestCancelled } from '../gameLogsApi';
  *
  * The last public result (games, spotlight, date, fallback; never Targets) is kept
  * in localStorage and painted on mount before any read answers, then replaced
- * by the fresh one. An unreadable entry is ignored and removed.
+ * by the fresh one. An unreadable entry is ignored and removed. An entry from
+ * before games carried `leaders` (crf04/statsplus#470) still paints, with the
+ * PTS effects.
  *
  * The Slate and Edges read today's season, signed in or not, so the home page
  * shows the Matchup Scores the Matchups page does. When the backend refuses
@@ -58,6 +60,23 @@ const isInstant = (value) => isText(value) && !Number.isNaN(new Date(value).getT
 const isEffect = (effect) =>
   isObject(effect) && isNumber(effect.canonicalId) && isText(effect.name) && isNumber(effect.value);
 
+const LEADER_MARKETS = new Set([
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  'PRA',
+  'PR',
+  'PA',
+  'RA',
+  'FGA',
+  'FGM',
+  'FG2A',
+  'FG2M',
+  'FG3A',
+]);
+const isLeader = (leader) => isEffect(leader) && LEADER_MARKETS.has(leader.market);
+
 const isGame = (game) =>
   isObject(game) &&
   isText(game.gameId) &&
@@ -66,6 +85,7 @@ const isGame = (game) =>
   isText(game.home?.tricode) &&
   Array.isArray(game.effects) &&
   game.effects.every(isEffect) &&
+  (game.leaders == null || (Array.isArray(game.leaders) && game.leaders.every(isLeader))) &&
   Array.isArray(game.scores) &&
   game.scores.every(
     (pair) => Array.isArray(pair) && pair.length === 2 && isNumber(pair[0]) && isNumber(pair[1]),
@@ -114,7 +134,11 @@ const readCache = () => {
     }
     return {
       ...EMPTY,
-      games: entry.games.map((game) => ({ ...game, scores: new Map(game.scores) })),
+      games: entry.games.map((game) => ({
+        ...game,
+        leaders: game.leaders ?? null,
+        scores: new Map(game.scores),
+      })),
       spotlight: entry.spotlight,
       slateDate: entry.slateDate,
       fallback: entry.fallback,
@@ -152,6 +176,7 @@ const joinGames = (slate, edges) => {
     .map((game) => ({
       ...game,
       effects: byId.get(game.gameId)?.effects ?? [],
+      leaders: byId.get(game.gameId)?.leaders ?? null,
       scores: byId.get(game.gameId)?.scores ?? new Map(),
     }));
 };

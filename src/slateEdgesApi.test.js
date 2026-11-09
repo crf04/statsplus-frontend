@@ -91,6 +91,88 @@ test('decodes games, scores by canonical id, and both picks', () => {
   expect(edges.spotlight.toughest.name).toBe('Miles Bridges');
 });
 
+const leader = {
+  canonical_id: 1629029,
+  name: 'Luka Dončić',
+  tricode: 'LAL',
+  season_scoring: 40.1,
+  market: '3PM',
+  value: -0.18,
+  thin: false,
+};
+const withLeaders = (leaders) => ({ ...payload, games: [{ ...payload.games[0], leaders }] });
+
+test('decodes each game leaders across stats, with their market', () => {
+  const edges = decodeSlateEdges(
+    withLeaders([
+      leader,
+      {
+        ...leader,
+        canonical_id: 1630559,
+        name: 'Austin Reaves',
+        market: 'REB',
+        value: 0.12,
+        thin: true,
+      },
+    ]),
+  );
+
+  expect(edges.games[0].leaders).toEqual([
+    {
+      canonicalId: 1629029,
+      name: 'Luka Dončić',
+      tricode: 'LAL',
+      seasonScoring: 40.1,
+      market: '3PM',
+      value: -0.18,
+      thin: false,
+    },
+    {
+      canonicalId: 1630559,
+      name: 'Austin Reaves',
+      tricode: 'LAL',
+      seasonScoring: 40.1,
+      market: 'REB',
+      value: 0.12,
+      thin: true,
+    },
+  ]);
+});
+
+test('a leader decodes for each player-level market', () => {
+  const markets = [
+    'PTS',
+    'REB',
+    'AST',
+    '3PM',
+    'PRA',
+    'PR',
+    'PA',
+    'RA',
+    'FGA',
+    'FGM',
+    'FG2A',
+    'FG2M',
+    'FG3A',
+  ];
+  const decoded = markets.map(
+    (market) => decodeSlateEdges(withLeaders([{ ...leader, market }])).games[0].leaders[0].market,
+  );
+
+  expect(decoded).toEqual(markets);
+});
+
+test('a backend that sends no leaders decodes them as null, keeping the effects', () => {
+  const edges = decodeSlateEdges(payload);
+
+  expect(edges.games[0].leaders).toBeNull();
+  expect(edges.games[0].effects.map((effect) => effect.name)).toEqual(['Miles Bridges']);
+});
+
+test('a game whose Matchup could not be read decodes no leaders', () => {
+  expect(decodeSlateEdges(withLeaders([])).games[0].leaders).toEqual([]);
+});
+
 test('a pick whose reason could not be read keeps the pick', () => {
   const edges = decodeSlateEdges({
     ...payload,
@@ -142,6 +224,13 @@ test.each([
       games: [{ ...payload.games[0], effects: Array(4).fill(payload.games[0].effects[0]) }],
     },
   ],
+  ['six leaders', withLeaders(Array(6).fill(leader))],
+  ...['STL', 'BLK', 'STKS', 'TOV', 'FTA', 'FTM', 'FG3M', 'pts'].map((market) => [
+    `a leader for the left-out market ${market}`,
+    withLeaders([{ ...leader, market }]),
+  ]),
+  ['a leader without a market', withLeaders([{ ...leader, market: undefined }])],
+  ['leaders that are not a list', withLeaders({ 0: leader })],
   [
     'a rank above 30',
     {

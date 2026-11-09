@@ -53,7 +53,7 @@ test('signed out, the page shows the ticker, live answers and Tonight with a sig
 
   const ticker = await screen.findByRole('navigation', { name: "Today's games" });
   expect(within(ticker).getByRole('link', { name: /MIA at WAS Matchup/ })).toHaveTextContent(
-    'Ware+11%',
+    'WareREB+14%',
   );
   const firstRung = screen.getByRole('button', { name: /Start with a player/ });
   expect(firstRung).toHaveTextContent('22.4');

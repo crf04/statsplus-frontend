@@ -136,7 +136,7 @@ const openPublicHome = async (page, request) => {
   const effectsByGame = (body) =>
     Object.fromEntries(
       body.games
-        .map((game) => [game.game_id, game.effects.map(({ name, value }) => [name, value])])
+        .map((game) => [game.game_id, tickerRows(game).map(({ name, value }) => [name, value])])
         .sort(([a], [b]) => (a < b ? -1 : 1)),
     );
   expect(effectsByGame(replayedEdges), 'the configured API serves the page its edges').toEqual(
@@ -157,10 +157,14 @@ const openPublicHome = async (page, request) => {
   expect(slate.games.length, 'the page was served at least one game').toBeGreaterThan(0);
   const slateGame = (id) => slate.games.find((game) => game.game_id === id);
   const edgeGames = edges.games.filter(
-    (game) => game.effects.length > 0 && slateGame(game.game_id),
+    (game) => tickerRows(game).length > 0 && slateGame(game.game_id),
   );
   return { slate, edgeGames, slateGame };
 };
+
+// The rows the ticker shows: the leaders across stats when the backend sends
+// them (crf04/statsplus#470), otherwise the PTS effects.
+const tickerRows = (game) => game.leaders ?? game.effects;
 
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const lastName = (name) => {
@@ -187,7 +191,7 @@ test('@smoke public home Slate renders the games and edges the page was served',
   }
   // Edges only exist once lines are posted; with none served, none may be shown.
   await expect(page.locator('.home-tick-effects li')).toHaveCount(
-    edgeGames.reduce((total, game) => total + game.effects.length, 0),
+    edgeGames.reduce((total, game) => total + tickerRows(game).length, 0),
   );
   for (const edgeGame of edgeGames.slice(0, 3)) {
     const { away_team: away, home_team: home } = slateGame(edgeGame.game_id);
@@ -195,11 +199,11 @@ test('@smoke public home Slate renders the games and edges the page was served',
     await expect(cell).toContainText(`${away.tricode} @ ${home.tricode}`);
     // Each effect's own name and percentage sit together in one list item.
     const items = cell.locator('.home-tick-effects li');
-    await expect(items).toHaveCount(edgeGame.effects.length);
-    for (const [index, effect] of edgeGame.effects.entries()) {
+    await expect(items).toHaveCount(tickerRows(edgeGame).length);
+    for (const [index, effect] of tickerRows(edgeGame).entries()) {
       await expect(items.nth(index)).toHaveText(
         new RegExp(
-          `^${escapeRegExp(lastName(effect.name))}\\s*${escapeRegExp(signedPercent(effect.value))}$`,
+          `^${escapeRegExp(lastName(effect.name))}\\s*${effect.market ? `${effect.market}\\s*` : ''}${escapeRegExp(signedPercent(effect.value))}$`,
         ),
       );
     }

@@ -4,9 +4,19 @@ import { dayName, lastName, matchupsPath, shortSlateDay, signedPercent } from '.
 
 /*
  * The scoreboard under the header: every game today, in tip-off order, with
- * its three biggest points Matchup effects either way, a thin sample underlined
- * dotted as on the Matchup rail. Each cell opens the game's Matchup.
+ * its five biggest Matchup effects either way across the player-level stats
+ * (PTS, REB, AST, 3PM, combos and field goals), each tagged with its stat
+ * (crf04/statsplus#470). A backend that does not send those leaders yet
+ * leaves the game's three biggest points effects, untagged. A thin sample is underlined dotted as on the Matchup rail. Each
+ * cell opens the game's Matchup.
  */
+const rowsOf = (game) => game.leaders ?? game.effects;
+
+const rowLabel = (row) =>
+  `, ${lastName(row.name)}${row.market ? ` ${row.market}` : ''} ${signedPercent(row.value)}${
+    row.thin ? ' thin sample' : ''
+  }`;
+
 const HomeTicker = ({ slateDate, games, fallback = null }) => (
   <nav
     className="home-ticker"
@@ -21,29 +31,25 @@ const HomeTicker = ({ slateDate, games, fallback = null }) => (
         <Link
           key={game.gameId}
           to={`/matchups/${game.gameId}`}
-          className="home-tick"
+          className={`home-tick${game.leaders ? ' has-stat' : ''}`}
           aria-label={`${game.away.tricode} at ${game.home.tricode} Matchup, ${formatTip(
             game.scheduledAt,
-          )}${game.effects
-            .map(
-              (effect) =>
-                `, ${lastName(effect.name)} ${signedPercent(effect.value)}${effect.thin ? ' thin sample' : ''}`,
-            )
-            .join('')}`}
+          )}${rowsOf(game).map(rowLabel).join('')}`}
         >
           <span className="home-tick-teams">
             {game.away.tricode} @ {game.home.tricode}
           </span>
           <span className="home-tick-time">{formatTip(game.scheduledAt)}</span>
           <ul className="home-tick-effects">
-            {game.effects.map((effect) => (
-              <li key={effect.canonicalId}>
-                <span>{lastName(effect.name)}</span>
+            {rowsOf(game).map((row) => (
+              <li key={row.canonicalId}>
+                <span className="home-tick-name">{lastName(row.name)}</span>
+                {row.market && <span className="home-tick-stat">{row.market}</span>}
                 <span
-                  className={`${effect.value >= 0 ? 'is-up' : 'is-down'}${effect.thin ? ' thin' : ''}`}
-                  title={effect.thin ? 'Thin sample' : undefined}
+                  className={`${row.value >= 0 ? 'is-up' : 'is-down'}${row.thin ? ' thin' : ''}`}
+                  title={row.thin ? 'Thin sample' : undefined}
                 >
-                  {signedPercent(effect.value)}
+                  {signedPercent(row.value)}
                 </span>
               </li>
             ))}

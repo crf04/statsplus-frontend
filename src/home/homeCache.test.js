@@ -1,4 +1,4 @@
-import { render, renderHook, screen, waitFor, act } from '@testing-library/react';
+import { render, renderHook, screen, waitFor, act, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { useHomeTonight } from './useHomeTonight';
 import HomeTicker from './HomeTicker';
@@ -97,6 +97,18 @@ test.each([
   [
     'an effect without a value',
     (e) => ({ ...e, games: [{ ...e.games[0], effects: [{ canonicalId: 7, name: 'A B' }] }] }),
+  ],
+  [
+    'a leader for a left-out market (TOV)',
+    (e) => ({
+      ...e,
+      games: [
+        {
+          ...e.games[0],
+          leaders: [{ canonicalId: 7, name: 'Austin Reaves', market: 'TOV', value: 0.3 }],
+        },
+      ],
+    }),
   ],
   ['a slate date that is not a date', (e) => ({ ...e, slateDate: 'soon' })],
   [
@@ -322,4 +334,51 @@ test('a new day that replaces the cached day is the one stored for the next visi
     slateDate: '2026-04-11',
     games: [{ gameId: 'n' }],
   });
+});
+
+const tickerRows = () =>
+  within(screen.getByRole('link', { name: /LAL at BOS Matchup/ }))
+    .getAllByRole('listitem')
+    .map((row) => row.textContent);
+
+test('an entry stored before leaders existed still paints its PTS effects', () => {
+  window.localStorage.setItem(CACHE_KEY, JSON.stringify(stored));
+  render(<Home />);
+
+  expect(tickerRows()).toEqual(['Reaves+24%']);
+});
+
+test('the leaders of a fresh read are stored and painted on the next visit', async () => {
+  const slateGame = {
+    gameId: 'g1',
+    scheduledAt: '2026-04-10T23:00:00Z',
+    away: { tricode: 'LAL' },
+    home: { tricode: 'BOS' },
+  };
+  fetchSlate.mockResolvedValue({ slateDate: '2026-04-10', games: [slateGame], fallback: null });
+  fetchSlateEdges.mockResolvedValue({
+    slateDate: '2026-04-10',
+    games: [
+      {
+        gameId: 'g1',
+        effects: [{ canonicalId: 7, name: 'Austin Reaves', value: 0.24, thin: false }],
+        leaders: [
+          { canonicalId: 7, name: 'Austin Reaves', market: 'REB', value: 0.27, thin: false },
+          { canonicalId: 9, name: 'Jayson Tatum', market: 'PRA', value: -0.18, thin: true },
+        ],
+        scores: new Map([[7, 0.24]]),
+      },
+    ],
+    spotlight: { best: null, toughest: null },
+  });
+  const { unmount } = render(<Home />);
+  await waitFor(() => expect(window.localStorage.getItem(CACHE_KEY)).not.toBeNull());
+  unmount();
+
+  // The next visit paints from the cache alone, before any read answers.
+  fetchSlate.mockReturnValue(pending());
+  fetchSlateEdges.mockReturnValue(pending());
+  render(<Home />);
+
+  expect(tickerRows()).toEqual(['ReavesREB+27%', 'TatumPRA−18%']);
 });

@@ -1,0 +1,39 @@
+/* PROTOTYPE — throwaway. Floating variant bar; ← / → step through variants. */
+import { useEffect } from 'react';
+import { VARIANTS, VARIANT_KEYS } from './mode';
+
+const Switcher = ({ variant, goTo, step }) => {
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.target.closest?.('input, textarea, select, [contenteditable]')) return;
+      if (event.key === 'ArrowLeft') step(-1);
+      if (event.key === 'ArrowRight') step(1);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [step]);
+  return (
+    <div className="ticker-proto-switcher" role="toolbar" aria-label="Ticker variants">
+      <button type="button" onClick={() => step(-1)} aria-label="Previous variant">
+        ‹
+      </button>
+      {VARIANT_KEYS.map((key) => (
+        <button
+          key={key}
+          type="button"
+          aria-pressed={key === variant}
+          className={key === variant ? 'is-on' : ''}
+          onClick={() => goTo(key)}
+        >
+          {key}
+        </button>
+      ))}
+      <span>{VARIANTS[variant]}</span>
+      <button type="button" onClick={() => step(1)} aria-label="Next variant">
+        ›
+      </button>
+    </div>
+  );
+};
+
+export default Switcher;

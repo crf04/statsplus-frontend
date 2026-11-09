@@ -15,6 +15,15 @@ import { reportRenderError } from './errorReporting';
 import { isReloadingForMissingAsset } from './staleBuild';
 import { filterQueryString, filterSetFromSearchParams } from './filterUtils';
 import './App.css';
+// PROTOTYPE (throwaway, branch prototype/ticker-all-stats): the standalone
+// build replays captured home-page data with no sign-in.
+import { PROTO_STANDALONE } from './home/tickerStatsPrototype/mode';
+import { installMockApi } from './home/tickerStatsPrototype/mock/install';
+
+if (PROTO_STANDALONE) {
+  installMockApi();
+  if (!window.location.hash) window.history.replaceState(null, '', '/#proto=ticker&v=A');
+}
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
 const SlatePage = lazy(() => import('./SlatePage'));

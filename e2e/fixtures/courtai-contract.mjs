@@ -1121,14 +1121,59 @@ const HISTORICAL_LAST_15_MISSING = [
  * Blends at 12+ PPG, and the play-type slice whose opponent reading pushes
  * hardest in the score's direction.
  */
-const seasonPoints = (player) => {
-  const season = player.scores?.PTS?.season;
+const seasonCell = (player, market) => {
+  const season = player.scores?.[market]?.season;
   if (!season) return null;
   if (season.blend) return { value: season.blend.value, thin: season.blend.thin, blend: true };
   const components = Object.values(season.components || {});
   if ((season.missing_inputs || []).length > 0 || components.length !== 1) return null;
   return { value: components[0].value, thin: components[0].thin, blend: false };
 };
+const seasonPoints = (player) => seasonCell(player, 'PTS');
+
+// Leaders (crf04/statsplus#470): each 8+ PPG player's largest cell across
+// the player-level markets (ties in this order), the five largest by size, then by
+// scoring, then by canonical id.
+const LEADER_MARKETS = [
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  'PRA',
+  'PR',
+  'PA',
+  'RA',
+  'FGA',
+  'FGM',
+  'FG2A',
+  'FG2M',
+  'FG3A',
+];
+const leadersFromMatchup = (matchup) =>
+  matchup.players
+    .filter((player) => player.season_scoring >= 8)
+    .flatMap((player) => {
+      const [best] = LEADER_MARKETS.map((market) => ({ market, cell: seasonCell(player, market) }))
+        .filter(({ cell }) => cell !== null)
+        .sort((a, b) => Math.abs(b.cell.value) - Math.abs(a.cell.value));
+      return best ? [{ player, ...best }] : [];
+    })
+    .sort(
+      (a, b) =>
+        Math.abs(b.cell.value) - Math.abs(a.cell.value) ||
+        b.player.season_scoring - a.player.season_scoring ||
+        a.player.canonical_id - b.player.canonical_id,
+    )
+    .slice(0, 5)
+    .map(({ player, market, cell }) => ({
+      canonical_id: player.canonical_id,
+      name: player.name,
+      tricode: player.tricode,
+      season_scoring: player.season_scoring,
+      market,
+      value: cell.value,
+      thin: cell.thin,
+    }));
 
 const edgesFromMatchup = (matchup) => {
   const tricodeOf = (teamId) => matchup.teams.find((team) => team.team_id === teamId)?.tricode;
@@ -1194,6 +1239,7 @@ const edgesFromMatchup = (matchup) => {
   };
   return {
     effects,
+    leaders: leadersFromMatchup(matchup),
     scores: scored.map(({ player, points }) => ({
       canonical_id: player.canonical_id,
       value: points.value,
@@ -1212,6 +1258,7 @@ export const slateEdgesPayload = (date, games) => {
     games: games.map((game) => ({
       game_id: game.game_id,
       effects: game.game_id === matchupPayload.game.game_id ? scheduled.effects : [],
+      leaders: game.game_id === matchupPayload.game.game_id ? scheduled.leaders : [],
       scores: game.game_id === matchupPayload.game.game_id ? scheduled.scores : [],
     })),
     spotlight: { best: scheduled?.best ?? null, toughest: scheduled?.toughest ?? null },

@@ -3,9 +3,24 @@
 // above and around the Query Prompt (crf04/statsplus#204). The games, Tonight
 // and the ladder are public, so a signed-out visitor sees them too, with a
 // sign-up card where Targets would be (crf04/statsplus#211).
+import type { Browser } from '@e2e-dev/web';
 import { expect } from 'e2e';
 import { slateEdgesPayload, slateGame, slatePayload } from '../fixtures/courtai.js';
 import { overflowsHorizontally, signedInTest, signedOutTest } from './support/courtai.ts';
+
+// Whether any part of a ticker row (name, stat tag or value) sticks out past
+// the right edge of its cell.
+const tickerRowsOverflow = (browser: Browser) =>
+  browser.evaluate(() =>
+    [...document.querySelectorAll('.home-tick-effects li')].some((row) => {
+      const cellBox = row.closest('.home-tick')!.getBoundingClientRect();
+      return [...row.children].some(
+        (part) =>
+          part.getBoundingClientRect().right > cellBox.right + 0.5 ||
+          part.scrollWidth > part.clientWidth + 0.5,
+      );
+    }),
+  );
 
 signedInTest(
   'the home page previews today and answers the ladder',
@@ -13,14 +28,18 @@ signedInTest(
   async ({ app, screen, api, browser }) => {
     await app.open('/');
 
-    // The ticker: one cell per game with its biggest points effects.
+    // The ticker: one cell per game with its biggest effects across the
+    // player-level stats, each tagged with its stat (crf04/statsplus#470).
     const ticker = screen.getByRole('navigation', "Today's games");
     const cell = ticker.getByRole('link', { name: 'LAL at BOS Matchup', exact: false });
     await expect(cell).toHaveAttribute('href', '/matchups/0022500584');
     // Derived from the game's Matchup fixture: the same scores the Matchup shows.
-    await expect(cell).toContainText('Reaves +24%');
-    await expect(cell).toContainText('Tatum +15%');
-    await expect(cell).toContainText('James +12%');
+    await expect(cell).toHaveAttribute(
+      'aria-label',
+      /, Reaves REB \+27%, James RA \+22%, Tatum REB \+18%$/,
+    );
+    await expect(cell).toContainText('REB');
+    expect(await tickerRowsOverflow(browser)).toBe(false);
     expect(api.sent('/api/games/slate/edges', 'GET')).toHaveLength(1);
     await expect(screen.getByRole('heading', 'Your Targets')).toBeVisible();
     // Each home read asks for the next game day itself and names no date.
@@ -60,6 +79,42 @@ signedInTest(
 
     await expect(screen.getByRole('heading', 'Your Targets')).toBeVisible();
     await app.screenshot('home-today');
+  },
+);
+
+signedInTest(
+  'five leaders with the longest stat tags fit inside the ticker cell',
+  async ({ app, screen, api, browser }) => {
+    const leader = (id: number, name: string, market: string, value: number) => ({
+      canonical_id: id,
+      name,
+      tricode: 'LAL',
+      season_scoring: 12,
+      market,
+      value,
+      thin: false,
+    });
+    const edges = slateEdgesPayload('2026-01-15', [slateGame]);
+    edges.games[0].leaders = [
+      leader(1, 'Giannis Antetokounmpo', 'FG3A', -0.31),
+      leader(2, 'Shai Gilgeous-Alexander', 'FG2A', 0.28),
+      leader(3, 'Nickeil Alexander-Walker', 'FG2M', -0.24),
+      leader(4, 'Kentavious Caldwell-Pope', 'PRA', 0.19),
+      leader(5, 'Jonas Valančiūnas', '3PM', -0.12),
+    ];
+    await api.override({
+      '/api/games/slate': { body: slatePayload('2026-01-15', [slateGame]) },
+      '/api/games/slate/edges': { body: edges },
+    });
+    await app.open('/');
+
+    const cell = screen
+      .getByRole('navigation', "Today's games")
+      .getByRole('link', { name: 'LAL at BOS Matchup', exact: false });
+    await expect(cell).toHaveAttribute('aria-label', /, Antetokounmpo FG3A −31%, /);
+    await expect(cell).toContainText('FG2M');
+    expect(await tickerRowsOverflow(browser)).toBe(false);
+    await app.screenshot('home-ticker-long-tags');
   },
 );
 

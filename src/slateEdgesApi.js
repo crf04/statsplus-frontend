@@ -6,7 +6,9 @@ import { seasonRefusalOr, servingSeasonDecoders } from './servingSeason';
 /*
  * Slate Edges (crf04/statsplus#204): one read for the home page in place of a
  * Matchup per game. Each game carries its three biggest season PTS Matchup
- * effects and every player's PTS score; the spotlight names the slate's most
+ * effects, its five biggest across the player-level stats (`leaders`,
+ * crf04/statsplus#470; null from a backend that does not send them yet), and
+ * every player's PTS score; the spotlight names the slate's most
  * and least favourable points Matchup and the one play-type slice behind it.
  * The backend composes it from the same Slate and Matchup documents those
  * pages serve, so the home page and a Matchup cannot disagree.
@@ -34,6 +36,29 @@ const decodeEffect = (effect) => {
   };
 };
 
+// STL, BLK, STKS, TOV, FTA and FTM are left out: they score the opponent's team
+// rate, so a whole team carries the same value.
+const LEADER_MARKETS = new Set([
+  'PTS',
+  'REB',
+  'AST',
+  '3PM',
+  'PRA',
+  'PR',
+  'PA',
+  'RA',
+  'FGA',
+  'FGM',
+  'FG2A',
+  'FG2M',
+  'FG3A',
+]);
+
+const decodeLeader = (leader) => {
+  if (!isRecord(leader) || !LEADER_MARKETS.has(leader.market)) throw createInvalidEdgesError();
+  return { ...decodeEffect(leader), market: leader.market };
+};
+
 const decodeScore = (score) => {
   if (!isRecord(score)) throw createInvalidEdgesError();
   return [requireNumber(score.canonical_id), requireNumber(score.value)];
@@ -42,6 +67,7 @@ const decodeScore = (score) => {
 // The contract's bounds, refused rather than rendered: a rank outside 1-30
 // would read as "the 0th most".
 const MAX_EFFECTS = 3;
+const MAX_LEADERS = 5;
 const requireRank = (value) => {
   if (!Number.isInteger(value) || value < 1 || value > 30) throw createInvalidEdgesError();
   return value;
@@ -56,13 +82,16 @@ const decodeGame = (game) => {
     !isRecord(game) ||
     !Array.isArray(game.effects) ||
     game.effects.length > MAX_EFFECTS ||
-    !Array.isArray(game.scores)
+    !Array.isArray(game.scores) ||
+    (game.leaders !== undefined &&
+      (!Array.isArray(game.leaders) || game.leaders.length > MAX_LEADERS))
   ) {
     throw createInvalidEdgesError();
   }
   return {
     gameId: requireString(game.game_id),
     effects: game.effects.map(decodeEffect),
+    leaders: game.leaders === undefined ? null : game.leaders.map(decodeLeader),
     // Keyed by canonical id: a Target's fit is looked up by the same id.
     scores: new Map(game.scores.map(decodeScore)),
   };

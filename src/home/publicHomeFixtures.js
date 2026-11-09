@@ -42,6 +42,11 @@ const edges = {
         effect(1, 'Kel’el Ware', 'MIA', 0.11),
         effect(2, 'Wendell Carter Jr.', 'WAS', -0.08),
       ],
+      // The ticker shows these, each tagged with its stat (crf04/statsplus#470).
+      leaders: [
+        { ...effect(1, 'Kel’el Ware', 'MIA', 0.14), market: 'REB' },
+        { ...effect(2, 'Wendell Carter Jr.', 'WAS', -0.09), market: 'AST' },
+      ],
       scores: [],
     },
   ],

@@ -44,8 +44,8 @@ Deploy the backend changes before the frontend:
    Existing component fields, authentication, and publication/error behavior stay
    intact. Missing/zero-mean comparisons are unavailable rather than fabricated.
 
-This work is implemented locally, not deployed. If the frontend is released
-before its backend prerequisite, the affected context will show unavailable.
+This shipped with its backend prerequisites; a frontend served against an older
+backend shows the affected context as unavailable.
 The production frontend retains its normal same-origin API routing; the local
 read-only API used for verification is not shipped in frontend code.
 

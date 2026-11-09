@@ -4,9 +4,10 @@ The design reference for the Log Workspace filter panel is the prototype's
 verdict J, frozen at tag `prototype/filter-panel-j` and deployed (no login) at
 https://statsplus-frontend-5ta7mptdv-chris-fus-projects.vercel.app/?player_name=Jalen+Johnson&players_off%5B%5D=Trae+Young&game_filter=10#proto=filters&v=J
 
-The real build is done when `e2e/specs/filter-panel-parity.spec.js` passes
-against it with the committed baselines unchanged. Copy these into the build
-branch:
+The build started from this kit. Since the season match strip was removed
+(crf04/statsplus#431), the committed baselines of
+`e2e/specs/filter-panel-parity.spec.js` follow the build, not the reference.
+Copy these into the build branch:
 
 - `e2e/filterPanelParity/` (this fixture and its captured data)
 - `e2e/specs/filter-panel-parity.spec.js` and its `-snapshots/` directory
@@ -48,9 +49,9 @@ PARITY_TARGET=prototype E2E_BASE_URL=<deployment above> \
   npx playwright test filter-panel-parity --project=chromium
 ```
 
-The baselines are `chromium-darwin`. On another OS, generate that platform's
-baselines from the reference deployment (the second command plus
-`--update-snapshots`), never from the build.
+The baselines are `chromium-darwin` and `chromium-linux`, regenerated from the
+build (`--update-snapshots`) when the panel's design changes on purpose. The
+second command records the original reference capture.
 
 ## Proof the check is sensitive (2026-09-30)
 

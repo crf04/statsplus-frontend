@@ -10,7 +10,7 @@ CourtAI sits in front of an NBA game-log API and gives the same data three ways:
 
 1. **Structured filtering** for users who know exactly what slice they want (player, team, matchup, season, date range, stat thresholds).
 2. **Natural language queries** for plain-English questions like _"Giannis at home since November without Khris Middleton shooting 15+ times"_. The frontend forwards the prompt to a backend endpoint that resolves it into a structured filter set and returns matching game logs.
-3. **Player and team profiles** with summaries, rolling averages, opponent breakdowns, and chart-based views of assist patterns, playstyle, shooting zones, and performance trends.
+3. **Player and team profiles**: the Player Profile reads the player's Matchup against the opponent chosen in the Opposing Team card, beside that team's defensive profile.
 
 The natural-language path is the one I cared most about — the structured filters are the fallback when the prompt is ambiguous.
 
@@ -63,7 +63,7 @@ A few decisions worth calling out:
 - Multi-dimensional filtering (player, team, matchup, season, date, stat thresholds, teammates on/off court, home/away)
 - Natural language query box, with a guided ladder on the landing page and a linkable query reference at `/help`
 - The Log Workspace's Filtered vs Season card states its sample against the season: "12 of 71 games", or "0 of 71 games" when the filters leave nothing. Without a valid `season_game_count` from `/api/games/game_logs` (an older backend or a cached response) it reads "12 games". It shows no count while a request is loading or when the season has no games.
-- Player profile pages with summaries, averages, recent game logs, assist profiles, and 2-vs-3 distribution charts
+- Player Profile: the player's Matchup against the opponent chosen in the Opposing Team card, with Matchup Scores per market and a market picker tied to the Line Type
 - Matchups: the day's Slate, a per-game Matchup sheet with posted lines, and a DFS odds panel and best-price rail odds when the backend supplies them
 - Targets: saved, backtested conditions that resolve against the day's games
 - Saved Filter Sets in the filter panel's Saved tab; the Game Logs default to the posted line when one exists, and list every provider and book posting it to pick from
@@ -119,7 +119,7 @@ This repo is the frontend only. It expects a backend serving the following; the 
 - `GET  /api/teams`
 - `GET  /api/games/game_logs`
 - `GET  /api/games/slate?date=YYYY-MM-DD`
-- `GET  /api/players/profile`
+- `GET  /api/matchups/unscheduled` (the Player Profile's matchup card)
 - `GET  /api/teams/stats`
 - `POST /api/nl-query`
 - `GET  /api/games/slate/edges`, `/api/games/ladder`, `/api/games/matchup`, `/api/games/seasons`
@@ -135,7 +135,8 @@ In production the deployed host (Vercel) rewrites `/api/*` to the backend origin
 
 The frontend is on Vercel. A merge to `master` deploys to the staging site (staging.courtai.app), whose
 `vercel.ts` rewrites `/api/*` to the staging backend through `STATSPLUS_API_ORIGIN`. Production goes live
-only when the owner promotes that deployment in Vercel. Configuration:
+only when that deployment is promoted in Vercel: by an agent once its live checks pass, or by the owner
+for a high-risk range (see the coordination repository's AGENTS.md). Configuration:
 
 - Build command: `npm run build`
 - Output directory: `build`

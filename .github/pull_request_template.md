@@ -24,7 +24,10 @@ exact frontend/backend revisions and commands; explain any omitted check.
 For boundary changes, attach desktop and phone screenshots from the local
 frontend connected to production Railway, or to staging when the change needs a
 merged backend change that is not released yet; name it on an
-`Unreleased backend: crf04/statsplus-backend#N` line. User-visible changes need labelled
+`Unreleased backend: crf04/statsplus-backend#N` line. Name a backend change that must
+wait for this one on a `Frontend first: crf04/statsplus-backend#N` line, and declare
+the production check in a `prod-check` block or a `Prod check: none — <reason>` line
+(see verify-statsplus). User-visible changes need labelled
 desktop and phone screenshots from QA or production. Label QA screenshots
 separately. Include video or other action/result evidence where relevant.
 

@@ -49,23 +49,36 @@ test('a game with leaders lists each row with its stat tag and names the stat al
         { canonicalId: 1629029, name: 'Luka Dončić', market: '3PM', value: -0.18, thin: false },
         { canonicalId: 1630559, name: 'Austin Reaves', market: 'REB', value: 0.12, thin: true },
         { canonicalId: 1628983, name: 'Jalen Johnson', market: 'FG3A', value: 0.1, thin: false },
+        { canonicalId: 1631094, name: 'Walker Kessler', market: 'PRA', value: 0.08, thin: false },
+        {
+          canonicalId: 1627936,
+          name: 'Dorian Finney-Smith',
+          market: 'FG2M',
+          value: -0.07,
+          thin: false,
+        },
       ],
     },
   ]);
 
   const cell = screen.getByRole('link', { name: /LAL at ATL Matchup/ });
   expect(cell.getAttribute('aria-label')).toMatch(
-    /, Dončić 3PM −18%, Reaves REB \+12% thin sample, Johnson FG3A \+10%$/,
+    /, Dončić 3PM −18%, Reaves REB \+12% thin sample, Johnson FG3A \+10%, Kessler PRA \+8%, Finney-Smith FG2M −7%$/,
   );
   const rows = within(cell).getAllByRole('listitem');
   expect(rows.map((row) => row.textContent)).toEqual([
     'Dončić3PM−18%',
     'ReavesREB+12%',
     'JohnsonFG3A+10%',
+    'KesslerPRA+8%',
+    'Finney-SmithFG2M−7%',
   ]);
   expect(within(rows[0]).getByText('3PM')).toHaveClass('home-tick-stat');
   expect(within(rows[0]).getByText('−18%')).toHaveClass('is-down');
   expect(within(rows[1]).getByText('+12%')).toHaveAttribute('title', 'Thin sample');
+  // The dotted underline is the `thin` class; a sample that is not thin has none.
+  expect(within(rows[1]).getByText('+12%')).toHaveClass('thin');
+  expect(within(rows[0]).getByText('−18%')).not.toHaveClass('thin');
 });
 
 test('a game without leaders (null) shows its PTS effects untagged, as before', () => {

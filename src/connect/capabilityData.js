@@ -1,7 +1,9 @@
 // Everything the connector can do, one real prompt and one real answer each.
 // Answers are production connector results captured 2026-10-19 and re-checked
-// 2026-10-20 on the completed 2025-26 season. `card` marks answers drawn as a
-// card where the chat app supports it; `writes` marks the two create-only tools.
+// 2026-10-20 on the completed 2025-26 season; Season stats, Board, Defense
+// ranks and Publish report were captured 2026-11-09. `card` marks answers drawn
+// as a card where the chat app supports it; `writes` marks the three
+// create-only tools.
 
 export const GROUPS = [
   { id: 'night', label: 'Read a night' },
@@ -43,6 +45,15 @@ export const CAPABILITIES = [
     card: true,
   },
   {
+    group: 'night',
+    tool: 'Board',
+    title: 'Every posted line',
+    what: 'Each DFS app, prediction market and sportsbook’s line and price in one market across a slate, or every market in one game. It never picks a side.',
+    prompt: 'Where do the books disagree on points in WAS @ DET tonight?',
+    answer:
+      'All 8 players with lines. Cade Cunningham is 25.5 everywhere but Polymarket’s 24.5; Alex Sarr runs from 11.5 down to 9.5 at Novig.',
+  },
+  {
     group: 'matchup',
     tool: 'Matchup',
     title: 'Any stat, not just points',
@@ -70,6 +81,15 @@ export const CAPABILITIES = [
     prompt: "What does Cade Cunningham's shot diet look like against Charlotte?",
     answer:
       'On the completed 2025-26 season: pick-and-roll ball handler on 37% of his plays (league 18%); pull-ups are 40% of his shots (league 24%).',
+  },
+  {
+    group: 'matchup',
+    tool: 'Defense ranks',
+    title: 'Rank every defense',
+    what: 'Every team’s rank, value and % vs league in one Defense Sheet base, most allowed first.',
+    prompt: 'Who allowed the most Restricted Area makes in 2025-26?',
+    answer:
+      'Washington, 21.07 per 48 (30th, +24.7% vs league); Detroit allowed the second fewest, 13.45 (2nd, −20.4%).',
   },
   {
     group: 'history',
@@ -114,6 +134,15 @@ export const CAPABILITIES = [
     prompt:
       'Has Jaime Jaquez beaten his closing lines against the 10 worst transition defenses last season?',
     answer: 'Over his DraftKings closing line in 17 of 27 games (25 had a line); 4 of his last 5.',
+  },
+  {
+    group: 'history',
+    tool: 'Season stats',
+    title: 'A whole past season',
+    what: 'Per-game averages, shooting, TS%, usage and totals for 2023-24 or 2024-25. No playoffs or career totals.',
+    prompt: 'How did Jokić do in 2024-25?',
+    answer:
+      '70 games for Denver: 29.6 points, 12.8 rebounds and 10.2 assists on 66.3% true shooting and 28.5% usage.',
   },
   {
     group: 'roles',
@@ -208,6 +237,16 @@ export const CAPABILITIES = [
     what: 'Save the filters from a game-log answer so they open in the web app’s Log Workspace.',
     prompt: 'Save these filters as "Duren at home vs bad rebounding".',
     answer: 'Saved to your account under that name. It only creates; it never edits or deletes.',
+    writes: true,
+  },
+  {
+    group: 'ideas',
+    tool: 'Publish report',
+    title: 'Publish your research',
+    what: 'Turn a finished answer into a page with CourtAI’s own cards, unlisted unless you ask to list it in the Research feed.',
+    prompt: 'Publish this as a report and list it in the Research feed.',
+    answer:
+      '“OG Anunoby Over 5.5 Rebounds — NYK @ CLE (Hart out)” is one: 3 cards at courtai.app/reports/xNAGaFDsn7.',
     writes: true,
   },
 ];

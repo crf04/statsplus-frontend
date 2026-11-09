@@ -214,7 +214,7 @@ test('a Copy button puts exactly its prompt on the clipboard', async () => {
   expect(ask.getAllByRole('button', { name: 'Copy' })).toHaveLength(3);
 });
 
-test('All opens on the first two jobs, and Show all reveals all 21 capabilities', async () => {
+test('All opens on the first two jobs, and Show all reveals all 25 capabilities', async () => {
   await renderConnectRoute();
 
   const tools = within(screen.getByRole('region', { name: 'Everything it can do' }));
@@ -222,12 +222,12 @@ test('All opens on the first two jobs, and Show all reveals all 21 capabilities'
     tools.getAllByRole('heading', { level: 4 }).map((heading) => heading.textContent);
 
   expect(tools.getByRole('button', { name: /^All/ })).toHaveAttribute('aria-pressed', 'true');
-  expect(cardTitles()).toHaveLength(6);
+  expect(cardTitles()).toHaveLength(8);
   expect(cardTitles()[0]).toBe('Scan a whole night');
 
-  fireEvent.click(tools.getByRole('button', { name: 'Show all 21 (15 more)' }));
+  fireEvent.click(tools.getByRole('button', { name: 'Show all 25 (17 more)' }));
 
-  expect(cardTitles()).toHaveLength(21);
+  expect(cardTitles()).toHaveLength(25);
   expect(tools.queryByRole('button', { name: /^Show all/ })).not.toBeInTheDocument();
 
   fireEvent.click(tools.getByRole('button', { name: /^Check the history/ }));
@@ -236,8 +236,8 @@ test('All opens on the first two jobs, and Show all reveals all 21 capabilities'
     'aria-pressed',
     'true',
   );
-  expect(cardTitles()).toHaveLength(5);
-  expect(cardTitles()).toContain('Against defenses like tonight’s');
+  expect(cardTitles()).toHaveLength(6);
+  expect(cardTitles()).toContain('A whole past season');
 });
 
 test('the recorded runs stay folded until opened', async () => {

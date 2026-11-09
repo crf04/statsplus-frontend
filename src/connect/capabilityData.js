@@ -1,8 +1,9 @@
 // Everything the connector can do, one real prompt and one real answer each.
 // Answers are production connector results captured 2026-10-19 and re-checked
-// 2026-10-20 on the completed 2025-26 season; Season stats, Board and Publish
-// report were captured 2026-11-09. `card` marks answers drawn as a card where the
-// chat app supports it; `writes` marks the three create-only tools.
+// 2026-10-20 on the completed 2025-26 season; Season stats, Board, Defense
+// ranks and Publish report were captured 2026-11-09. `card` marks answers drawn
+// as a card where the chat app supports it; `writes` marks the three
+// create-only tools.
 
 export const GROUPS = [
   { id: 'night', label: 'Read a night' },
@@ -80,6 +81,15 @@ export const CAPABILITIES = [
     prompt: "What does Cade Cunningham's shot diet look like against Charlotte?",
     answer:
       'On the completed 2025-26 season: pick-and-roll ball handler on 37% of his plays (league 18%); pull-ups are 40% of his shots (league 24%).',
+  },
+  {
+    group: 'matchup',
+    tool: 'Defense ranks',
+    title: 'Rank every defense',
+    what: 'Every team’s rank, value and % vs league in one Defense Sheet base, most allowed first.',
+    prompt: 'Who allowed the most Restricted Area makes in 2025-26?',
+    answer:
+      'Washington, 21.07 per 48 (30th, +24.7% vs league); Detroit allowed the second fewest, 13.45 (2nd, −20.4%).',
   },
   {
     group: 'history',

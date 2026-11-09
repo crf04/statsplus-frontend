@@ -140,7 +140,7 @@ signedOutTest(
 );
 
 signedOutTest(
-  'the guide links its six lessons, folds its replays and opens all 24 capabilities',
+  'the guide links its six lessons, folds its replays and opens all 25 capabilities',
   async ({ app, screen, browser }) => {
     await app.open('/connect');
 
@@ -178,10 +178,10 @@ signedOutTest(
     await contents.getByRole('link', 'Everything it can do').tap();
     await expect(browser).toHaveURL(/#guide-tools$/);
     const tools = screen.getByRole('region', 'Everything it can do');
-    await expect(tools.getByRole('heading', { level: 4 })).toHaveCount(7);
-    await tools.getByRole('button', 'Show all 24 (17 more)').tap();
-    await expect(tools.getByRole('heading', { level: 4 })).toHaveCount(24);
-    await expect(tools.getByRole('button', 'Show all 24 (17 more)')).toHaveCount(0);
+    await expect(tools.getByRole('heading', { level: 4 })).toHaveCount(8);
+    await tools.getByRole('button', 'Show all 25 (17 more)').tap();
+    await expect(tools.getByRole('heading', { level: 4 })).toHaveCount(25);
+    await expect(tools.getByRole('button', 'Show all 25 (17 more)')).toHaveCount(0);
   },
 );
 

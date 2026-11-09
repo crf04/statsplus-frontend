@@ -214,7 +214,7 @@ test('a Copy button puts exactly its prompt on the clipboard', async () => {
   expect(ask.getAllByRole('button', { name: 'Copy' })).toHaveLength(3);
 });
 
-test('All opens on the first two jobs, and Show all reveals all 24 capabilities', async () => {
+test('All opens on the first two jobs, and Show all reveals all 25 capabilities', async () => {
   await renderConnectRoute();
 
   const tools = within(screen.getByRole('region', { name: 'Everything it can do' }));
@@ -222,12 +222,12 @@ test('All opens on the first two jobs, and Show all reveals all 24 capabilities'
     tools.getAllByRole('heading', { level: 4 }).map((heading) => heading.textContent);
 
   expect(tools.getByRole('button', { name: /^All/ })).toHaveAttribute('aria-pressed', 'true');
-  expect(cardTitles()).toHaveLength(7);
+  expect(cardTitles()).toHaveLength(8);
   expect(cardTitles()[0]).toBe('Scan a whole night');
 
-  fireEvent.click(tools.getByRole('button', { name: 'Show all 24 (17 more)' }));
+  fireEvent.click(tools.getByRole('button', { name: 'Show all 25 (17 more)' }));
 
-  expect(cardTitles()).toHaveLength(24);
+  expect(cardTitles()).toHaveLength(25);
   expect(tools.queryByRole('button', { name: /^Show all/ })).not.toBeInTheDocument();
 
   fireEvent.click(tools.getByRole('button', { name: /^Check the history/ }));

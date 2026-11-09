@@ -69,6 +69,8 @@ Matchup deep links from that Slate resolving to the Matchup route with the API a
 game, MCP OAuth authorization-server metadata with a matching issuer, and `/mcp` refusing an
 unauthenticated request with a protected-resource challenge. A Matchup itself is a signed-in
 read, so logged out the check proves its route and its API answer, not the signed-in document.
+A sampled Sentry trace (a telemetry-only envelope) is aborted like any write but does not fail the
+check; an error event or any other write does.
 
 ```bash
 E2E_BASE_URL=https://staging.courtai.app \
@@ -195,8 +197,10 @@ journey never sees one route call a pool unavailable while the other lists playe
 
 Targets without saved stat preferences use these default `stat_columns`, in Qualifier order with
 duplicates removed: any play type uses `PTS`, `FGA`, `PTS/36`, `FGA/36`; a two-point shot zone uses
-`PTS`, `PTS/36`, `FG2A`, `FG2A/36`; a three-point shot zone uses `PTS`, `PTS/36`, `3PA`, `3PA/36`;
-any shot type uses `PTS`, `PTS/36`, `FGA`, `FGA/36`; and any assist location uses `AST`, `AST/36`.
+`FG2A`, `FG2A/36`, `PTS`, `PTS/36`; a three-point shot zone uses `3PA`, `3PA/36`, `PTS`, `PTS/36`;
+any shot type uses `FGA`, `FGA/36`, `PTS`, `PTS/36`; and any assist location uses `AST`, `AST/36`.
+A Position Qualifier adds no column and an Average Qualifier adds its own stat where it reads per
+game; a Target left with none uses `PTS`, `PTS/36`. An unsaved Target is graded by the first column.
 The `FG2A` value is two-point attempts (`FGA - 3PA`), and `/36` values use the player's total
 production divided by total minutes. Saved explicit preferences continue to control the displayed
 columns and grading column.
@@ -250,7 +254,9 @@ Branch protection on `master` requires `validate`, `E2E`, `e2e flows`, `qa-evide
 aggregate jobs over matrix legs (Playwright shards `1/7` to `7/7`; three e2e flows slices per
 target, `1/3` to `3/3`): each passes only when every leg passed, so the required names are
 unchanged. `playwright-evidence` is the merged HTML report; `e2e-flow-evidence-<target>-<slice>` and
-`playwright-test-results-<shard>` hold per-leg evidence.
+`playwright-test-results-<shard>` hold per-leg evidence. The `Update auto-merge branches` workflow
+updates every non-draft auto-merge pull request after each push to `master`, using the
+`AUTO_UPDATE_TOKEN` secret; the update invalidates QA evidence taken before it.
 
 The `QA evidence` workflow holds a ready pull request that changes runtime files (anything outside
 tests, docs, CI and tooling) to its `Live checks:` line: `user-visible` needs a passed QA

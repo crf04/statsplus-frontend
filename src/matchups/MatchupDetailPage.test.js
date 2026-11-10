@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
+import { MemoryRouter as Router, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createTarget, fetchDietBaselines, fetchTargetPreview } from '../targets/targetsApi';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
@@ -11,6 +11,11 @@ import MatchupDetailPage from './MatchupDetailPage';
 import { fetchSeasons } from '../seasonsApi';
 import { legacySeasons, publishedOnlySeasons, unpublishedSeasons } from '../seasonChoicesFixture';
 import { seasonRefusalOr } from '../servingSeason';
+
+// The Matchup settings ride the URL, and a router renders each navigation in a
+// transition. user-event 13 fires its clicks outside act, so a transition
+// would land after the assertions that follow a click.
+const MemoryRouter = (props) => <Router useTransitions={false} {...props} />;
 
 jest.mock('../contexts/AuthContext');
 jest.mock('./matchupApi');
@@ -2403,7 +2408,7 @@ test('a save that resolves after the dialog was dismissed does not navigate', as
   fireEvent.change(thresholdField(next), { target: { value: '32' } });
   await act(async () => settle());
 
-  expect(screen.getByTestId('location')).toHaveTextContent(/^\/matchups\/game-1$/);
+  expect(screen.getByTestId('location')).toHaveTextContent(/^\/matchups\/game-1\?stat=All$/);
   expect(screen.queryByText('One Target')).not.toBeInTheDocument();
   expect(screen.getByRole('dialog')).toBeVisible();
   expect(thresholdField(screen.getByRole('dialog'))).toHaveValue('32');
@@ -4993,5 +4998,127 @@ describe('the player sheet reads like the Player Profile matchup card (statsplus
     ).toBeVisible();
     expect(card().queryByRole('region', { name: 'Points' })).not.toBeInTheDocument();
     expect(card().queryByText('Where his PRA come from')).not.toBeInTheDocument();
+  });
+});
+
+describe('statsplus#479: the Matchup settings live in its URL', () => {
+  const BrowserBack = () => {
+    const navigate = useNavigate();
+    return (
+      <button type="button" onClick={() => navigate(-1)}>
+        Browser back
+      </button>
+    );
+  };
+  const renderAfterSlate = (path) =>
+    render(
+      <MemoryRouter initialEntries={['/matchups', path]} initialIndex={1}>
+        <Routes>
+          <Route path="/matchups" element={<p>The Slate</p>} />
+          <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
+          <Route path="/" element={<p>Game Logs</p>} />
+        </Routes>
+        <LocationProbe />
+        <BrowserBack />
+      </MemoryRouter>,
+    );
+  const location = () => screen.getByTestId('location').textContent;
+  const pressed = (group) =>
+    within(screen.getByRole('group', { name: group }))
+      .getAllByRole('button')
+      .filter((button) => button.getAttribute('aria-pressed') === 'true')
+      .map((button) => button.textContent);
+  const settings = () => ({
+    team: pressed('Defense team'),
+    window: pressed('Stat window'),
+    deviation: pressed('Deviation filter'),
+    market: pressed('Market'),
+  });
+  const click = (group, name) =>
+    userEvent.click(
+      within(screen.getByRole('group', { name: group })).getByRole('button', { name }),
+    );
+
+  test('Back from Game Logs reopens the Matchup with every setting and the open card', async () => {
+    fetchMatchupSelection.mockImplementation(() => new Promise(() => {}));
+    renderAfterSlate('/matchups/game-1?player=2544');
+    await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+
+    await click('Defense team', /^LAL defense/);
+    await click('Stat window', 'Last 15');
+    await click('Deviation filter', 'At least 2 sigma');
+    await click('Market', 'REB');
+    expect(location()).toBe(
+      '/matchups/game-1?player=2544&team=1&window=last15&deviation=2&stat=REB',
+    );
+
+    await userEvent.click(screen.getByRole('link', { name: 'Jayson Tatum game logs' }));
+    expect(await screen.findByText('Game Logs')).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Browser back' }));
+
+    expect(await screen.findByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
+    expect(location()).toBe(
+      '/matchups/game-1?player=2544&team=1&window=last15&deviation=2&stat=REB',
+    );
+    expect(settings()).toEqual({
+      team: ['LAL defensevs BOS players'],
+      window: ['Last 15'],
+      deviation: ['At least 2 sigma'],
+      market: ['REB'],
+    });
+
+    // The settings replaced the Matchup's entry rather than stacking their own.
+    await userEvent.click(screen.getByRole('button', { name: 'Browser back' }));
+    expect(await screen.findByText('The Slate')).toBeVisible();
+  });
+
+  test('a link carrying the settings opens with them', async () => {
+    renderAfterSlate('/matchups/game-1?team=1&window=last15&deviation=0&stat=REB');
+    await screen.findByRole('heading', { name: 'What LAL allows' });
+    expect(settings()).toEqual({
+      team: ['LAL defensevs BOS players'],
+      window: ['Last 15'],
+      deviation: ['All deviations'],
+      market: ['REB'],
+    });
+  });
+
+  test('unknown values open on the defaults', async () => {
+    renderAfterSlate('/matchups/game-1?team=99&window=last99&deviation=7&stat=NOPE');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(settings()).toEqual({
+      team: ['BOS defensevs LAL players'],
+      window: ['Season'],
+      deviation: ['At least 1 sigma'],
+      market: ['PTS'],
+    });
+  });
+
+  test('a stat the selected side lacks falls back to its opening stat', async () => {
+    renderAfterSlate('/matchups/game-1?team=1&stat=PTS');
+    await screen.findByRole('heading', { name: 'What LAL allows' });
+    expect(pressed('Market')).toEqual(['All']);
+
+    await click('Defense team', /^BOS defense/);
+    expect(pressed('Market')).toEqual(['PTS']);
+    expect(location()).toBe('/matchups/game-1?stat=PTS');
+  });
+
+  test('default settings leave the URL bare', async () => {
+    renderAfterSlate('/matchups/game-1');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    expect(location()).toBe('/matchups/game-1');
+
+    await click('Stat window', 'Last 15');
+    await click('Deviation filter', 'All deviations');
+    await click('Market', 'All');
+    await click('Defense team', /^LAL defense/);
+    expect(location()).toBe('/matchups/game-1?window=last15&deviation=0&stat=All&team=1');
+
+    await click('Defense team', /^BOS defense/);
+    await click('Market', 'PTS');
+    await click('Deviation filter', 'At least 1 sigma');
+    await click('Stat window', 'Season');
+    expect(location()).toBe('/matchups/game-1');
   });
 });

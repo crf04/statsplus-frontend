@@ -859,11 +859,14 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   await expect(page).toHaveURL(/context=kept.*player=2544|player=2544.*context=kept/);
   const sheetPts = page.getByRole('group', { name: 'Market' }).getByRole('button', { name: 'PTS' });
   await expect(sheetPts).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
-  await page
-    .getByRole('article', { name: 'LeBron James player' })
-    .getByRole('button', { name: 'Selected' })
-    .click();
+  // The card is a dialog over the page, and the Defense Sheet stays behind it.
+  await expect(page.getByRole('dialog', { name: 'LeBron James' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'What BOS allows' })).toBeAttached();
+  await expect(
+    page
+      .getByRole('article', { name: 'LeBron James player' })
+      .getByRole('button', { name: 'Selected' }),
+  ).toHaveAttribute('aria-expanded', 'true');
   const scoreCard = page.getByRole('region', { name: 'Matchup Score' });
   await expect(scoreCard.getByTitle('PTS Season Matchup Score')).toHaveText('+12.0%');
   await expect(scoreCard).toContainText('Where his PTS come from');
@@ -874,10 +877,7 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   // The slices his diet leans on are the ones the card points at.
   const transition = page.getByRole('article', { name: 'Transition' });
   await expect(transition).toContainText('LeBron James 19%');
-  await expect(page.getByRole('article', { name: 'Post up' })).toBeVisible();
-  await page.getByRole('button', { name: 'Last 15', exact: true }).click();
-  await expect(page.getByRole('article', { name: 'Post up' })).toHaveCount(0);
-  await expect(sheetPts).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('article', { name: 'Post up' })).toBeAttached();
   await page
     .getByRole('group', { name: 'Selection log stat' })
     .getByRole('button', { name: 'PRA' })
@@ -901,6 +901,10 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   await expect(
     page.getByRole('article', { name: 'LeBron James player' }).getByRole('button'),
   ).toBeFocused();
+  // The page behind the card takes clicks again once it closes.
+  await page.getByRole('button', { name: 'Last 15', exact: true }).click();
+  await expect(page.getByRole('article', { name: 'Post up' })).toHaveCount(0);
+  await expect(sheetPts).toHaveAttribute('aria-pressed', 'true');
 
   await page.goto('/matchups/0022500584?player=1630559');
   await expect(page.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
@@ -920,54 +924,57 @@ test('@critical selection card supports selection, deep links, and tab flips wit
   await page.screenshot({ path: testInfo.outputPath('selection-card-narrow.png'), fullPage: true });
 });
 
-test('selection card lists sportsbook lines per book, starring the best price only among equal lines', async ({
+test('selection card lists apps then sportsbooks in one table, starring the best price only among equal lines', async ({
   authenticatedPage: page,
 }, testInfo) => {
   await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
   await page.goto('/matchups/0022500584?player=2544');
-  const books = page.getByRole('region', { name: 'Sportsbooks' });
-  const table = books.getByRole('table', { name: 'PTS sportsbook lines' });
+  const lines = page.getByRole('dialog', { name: 'LeBron James' }).getByRole('region', {
+    name: 'Lines',
+  });
+  const table = lines.getByRole('table', { name: 'PTS lines' });
 
+  // Every app that numbers his points comes first; Underdog and Dabble price
+  // theirs at their own lines.
+  await expect(table.getByRole('row', { name: /^Underdog/ })).toContainText('26.5-112-112');
+  await expect(table.getByRole('row', { name: /^Dabble/ })).toContainText('27.5-122-122');
   // Five books: the first four, the fifth behind an expander.
-  await expect(table.getByRole('row')).toHaveCount(5);
   await expect(table.getByRole('row', { name: /^FanDuel/ })).toContainText('26.5-135+110');
   await expect(table.getByRole('row', { name: /^BetMGM/ })).toContainText('27.5-110 ★-120');
   await expect(table.getByRole('row', { name: /^DraftKings/ })).toContainText('27.5-110 ★-115');
   await expect(table.getByRole('row', { name: /^BetRivers/ })).toContainText('27.5-115-105 ★');
+  await expect(table.getByRole('row', { name: /^Caesars/ })).toHaveCount(0);
   await expect(table.getByRole('img', { name: 'best price' })).toHaveCount(3);
   await expect(table.getByRole('row', { name: /^FanDuel/ }).getByRole('img')).toHaveCount(0);
-  // Every app and market that numbers his points is listed; Underdog and
-  // Dabble price theirs at their own lines.
-  const dfs = page
-    .getByRole('region', { name: 'Apps' })
-    .getByRole('table', { name: 'PTS app lines' });
-  await expect(dfs.getByRole('row', { name: /^Underdog/ })).toContainText('26.5-112-112');
-  await expect(dfs.getByRole('row', { name: /^Dabble/ })).toContainText('27.5-122-122');
-  await page.screenshot({ path: testInfo.outputPath('book-lines-desktop.png'), fullPage: true });
+  const groups = await table
+    .getByRole('columnheader')
+    .filter({ hasText: /^(Apps|Sportsbooks)$/ })
+    .allTextContents();
+  expect(groups).toEqual(['Apps', 'Sportsbooks']);
+  await page.screenshot({ path: testInfo.outputPath('book-lines-desktop.png') });
 
   await page.setViewportSize({ width: 393, height: 852 });
-  await books.scrollIntoViewIfNeeded();
+  await lines.scrollIntoViewIfNeeded();
   // The table wrapper scrolls sideways when its table is wider than the card,
   // which the document width alone would not show.
   const fits = () =>
-    books.locator('.selection-table-wrap').evaluate((wrap) => wrap.scrollWidth <= wrap.clientWidth);
+    lines.locator('.selection-table-wrap').evaluate((wrap) => wrap.scrollWidth <= wrap.clientWidth);
   expect(await fits()).toBe(true);
-  await books.getByRole('button', { name: '+1 more' }).click();
+  await lines.getByRole('button', { name: '+1 more' }).click();
   await expect(table.getByRole('row', { name: /^Caesars/ })).toContainText('28.5+105-125');
   expect(await fits()).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
-  await page.screenshot({ path: testInfo.outputPath('book-lines-phone.png'), fullPage: true });
+  await page.screenshot({ path: testInfo.outputPath('book-lines-phone.png') });
 
-  // No books for Austin Reaves: no panel at all.
+  // No app or book numbers Austin Reaves: no panel at all.
   await page.goto('/matchups/0022500584?player=1630559');
   await expect(page.getByRole('heading', { name: 'Austin Reaves', level: 2 })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Sportsbooks' })).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Apps' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'Lines' })).toHaveCount(0);
 });
 
-test('selection clamps on an in-app player switch and leaves the team toggle operative', async ({
+test('selection clamps on a player switch, and the team toggle works once the card closes', async ({
   authenticatedPage: page,
 }, testInfo) => {
   let selectionRequests = 0;
@@ -996,6 +1003,7 @@ test('selection clamps on an in-app player switch and leaves the team toggle ope
     path: testInfo.outputPath('selection-sheet-pts-card-pra.png'),
     fullPage: true,
   });
+  await page.getByRole('button', { name: 'Close selection card' }).click();
   await page
     .getByRole('article', { name: 'Austin Reaves player' })
     .getByRole('button', { name: 'Open selection card' })
@@ -1004,11 +1012,14 @@ test('selection clamps on an in-app player switch and leaves the team toggle ope
   await expect(
     page.getByRole('group', { name: 'Selection log stat' }).getByRole('button', { name: 'PTS' }),
   ).toHaveAttribute('aria-pressed', 'true');
+  expect(selectionRequests).toBe(2);
+  await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'LAL defense' }).click();
   await expect(page.getByRole('button', { name: 'LAL defense' })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
+  await page.goto('/matchups/0022500584?team=1610612747&player=1630559');
   await expect(page.getByText(/not opposing the viewed Defense Sheet/)).toBeVisible();
   await page.screenshot({
     path: testInfo.outputPath('selection-player-switch-team-toggle.png'),
@@ -1016,25 +1027,27 @@ test('selection clamps on an in-app player switch and leaves the team toggle ope
   });
 });
 
-test('Back from Game Logs reopens the Matchup with its settings and open card', async ({
+test('Back from Game Logs returns to the Matchup settings, and Back again reopens the card', async ({
   authenticatedPage: page,
 }) => {
-  const settingsUrl =
-    '/matchups/0022500584?player=2544&team=1610612747&window=last15&deviation=2&stat=REB';
+  const settingsUrl = '/matchups/0022500584?team=1610612747&window=last15&deviation=2&stat=REB';
   const pressed = (group, name) =>
     expect(page.getByRole('group', { name: group }).getByRole('button', { name })).toHaveAttribute(
       'aria-pressed',
       'true',
     );
   await page.goto('/matchups/0022500584');
-  await page
-    .getByRole('article', { name: 'LeBron James player' })
-    .getByRole('button', { name: 'Open selection card' })
-    .click();
   await page.getByRole('button', { name: 'LAL defense' }).click();
   await page.getByRole('button', { name: 'Last 15', exact: true }).click();
   await page.getByRole('button', { name: 'At least 2 sigma' }).click();
   await page.getByRole('group', { name: 'Market' }).getByRole('button', { name: 'REB' }).click();
+  await expect(page).toHaveURL(settingsUrl);
+  await page
+    .getByRole('article', { name: 'Jayson Tatum player' })
+    .getByRole('button', { name: 'Open selection card' })
+    .click();
+  await expect(page).toHaveURL(`${settingsUrl}&player=1628369`);
+  await page.getByRole('button', { name: 'Close selection card' }).click();
   await expect(page).toHaveURL(settingsUrl);
 
   await page.getByRole('link', { name: 'Jayson Tatum game logs' }).click();
@@ -1042,15 +1055,17 @@ test('Back from Game Logs reopens the Matchup with its settings and open card', 
   await page.goBack();
 
   await expect(page).toHaveURL(settingsUrl);
-  await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
   await pressed('Defense team', 'LAL defense');
   await pressed('Stat window', 'Last 15');
   await pressed('Deviation filter', 'At least 2 sigma');
   await pressed('Market', 'REB');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 
-  // Each setting replaced the card's entry, so one more Back closes the card.
+  // Closing the card was its own entry, so one more Back reopens it.
   await page.goBack();
-  await expect(page).toHaveURL('/matchups/0022500584');
+  await expect(page).toHaveURL(`${settingsUrl}&player=1628369`);
+  await expect(page.getByRole('dialog', { name: 'Jayson Tatum' })).toBeVisible();
+  await pressed('Market', 'REB');
 });
 
 test('selection request failure renders an honest handled error', async ({ page }, testInfo) => {

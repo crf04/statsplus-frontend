@@ -390,7 +390,7 @@ export default function SelectionCard({
       id="matchup-selection-card"
       centered
       scrollable
-      size="lg"
+      size="xl"
       fullscreen="md-down"
       restoreFocus={false}
       className="selection-layer"

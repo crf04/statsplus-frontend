@@ -3311,6 +3311,20 @@ test.each([
   },
 );
 
+test('Escape on an open help note inside the dialog closes the note, not the dialog', async () => {
+  renderMatchup('/matchups/game-1?player=2544');
+  const dialog = await screen.findByRole('dialog', { name: 'LeBron James' });
+  const tip = within(dialog).getByRole('button', { name: 'About Matchup Score' });
+  await userEvent.click(tip);
+  expect(tip).toHaveAttribute('aria-expanded', 'true');
+
+  await userEvent.keyboard('{Escape}');
+
+  expect(tip).toHaveAttribute('aria-expanded', 'false');
+  expect(screen.getByRole('dialog', { name: 'LeBron James' })).toBeVisible();
+  expect(screen.getByTestId('location')).toHaveTextContent('/matchups/game-1?player=2544');
+});
+
 test('the Selection card lists apps then books with line, Over and Under, and stars the best price only where the backend flagged it', async () => {
   await openWithBooks({
     PTS: quote([

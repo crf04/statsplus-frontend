@@ -266,12 +266,14 @@ const readMarket = (player, team, market, windowKey) => {
  */
 const decomposeCombo = (markets, averages, combo) => {
   const stats = COMBO_STATS[combo];
-  const total = stats.reduce((sum, stat) => sum + (averages[stat] ?? 0), 0);
-  // A completed-season Matchup carries no season averages, so there is no weight to split by.
+  // A completed-season Matchup carries no season averages, and a missing one would reweight the
+  // rest away from the backend's score, so the combo is split only with every weight present.
+  if (stats.some((stat) => averages[stat] == null)) return null;
+  const total = stats.reduce((sum, stat) => sum + averages[stat], 0);
   if (total === 0) return null;
   return stats.map((stat) => {
     const single = markets[stat];
-    const weight = (averages[stat] ?? 0) / total;
+    const weight = averages[stat] / total;
     const fed = Object.entries(single?.components ?? {});
     return {
       stat,

@@ -1819,7 +1819,9 @@ test('separates the focal outcome from hindsight context in the historical dossi
   const strip = within(screen.getByRole('group', { name: 'Selection log stat' }));
   expect(strip.getByText('MIN').nextSibling).toHaveTextContent('31.0');
   expect(strip.getByRole('button', { name: 'PTS' })).toHaveTextContent('10.0');
-  expect(strip.getByRole('button', { name: 'PTS' })).toHaveAccessibleDescription('10.0');
+  expect(strip.getByRole('button', { name: 'PTS' })).toHaveAccessibleDescription(
+    /^10\.0 [+−][\d.]+% Season Matchup Score$/,
+  );
   expect(strip.getByRole('button', { name: 'FGA' })).toHaveTextContent('11.0');
   await waitFor(() =>
     expect(screen.getByText('No games vs this opponent data is available.')).toBeVisible(),
@@ -1885,12 +1887,12 @@ test('an upcoming game shows minutes to date and the books posting each market',
   expect(strip.getByText('MIN, last 10').nextSibling).toHaveTextContent('33.7');
   expect(strip.getByRole('button', { name: 'PTS' })).toHaveTextContent('PPUD');
   expect(strip.getByRole('button', { name: 'PTS' })).toHaveAccessibleDescription(
-    'Posted by PrizePicks and Underdog',
+    'Posted by PrizePicks and Underdog +21.0% Season Matchup Score',
   );
   expect(strip.getByRole('button', { name: 'FG3A' })).toHaveTextContent('PP');
   expect(strip.getByRole('button', { name: 'FG3A' })).not.toHaveTextContent('UD');
   expect(strip.getByRole('button', { name: 'FG3A' })).toHaveAccessibleDescription(
-    'Posted by PrizePicks',
+    'Posted by PrizePicks +7.0% Season Matchup Score',
   );
 });
 
@@ -3286,7 +3288,7 @@ test('the Selection card lists each book with its line, Over and Under, and star
     within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
       name: 'PTS',
     }),
-  ).toHaveAccessibleDescription('Posted by PrizePicks and Underdog');
+  ).toHaveAccessibleDescription('Posted by PrizePicks and Underdog +12.0% Season Matchup Score');
 });
 
 test('the sportsbook table follows the selected stat and labels a closing snapshot', async () => {
@@ -3454,7 +3456,7 @@ test('a category only sportsbooks quote is reachable from the strip without beco
   await userEvent.click(within(strip).getByRole('button', { name: 'AST' }));
 
   expect(within(strip).getByRole('button', { name: 'AST' })).toHaveAccessibleDescription(
-    'Quoted by sportsbooks only',
+    'Quoted by sportsbooks only No Season Matchup Score',
   );
   const table = screen.getByRole('table', { name: 'AST sportsbook lines' });
   expect(
@@ -4279,7 +4281,9 @@ describe('categories the Matchup posts but does not score (statsplus#370)', () =
 
     const strip = within(screen.getByRole('group', { name: 'Selection log stat' }));
     expect(strip.getByRole('button', { name: 'PTS' })).toHaveTextContent('+12.0%');
-    expect(strip.getByRole('button', { name: 'Free Throws Attempted' })).toHaveTextContent(/—$/);
+    expect(
+      strip.getByRole('button', { name: 'Free Throws Attempted' }),
+    ).toHaveAccessibleDescription(/No Season Matchup Score$/);
     expect(screen.queryByText(/No score components were computable/)).not.toBeInTheDocument();
 
     await userEvent.click(
@@ -4428,7 +4432,12 @@ describe('Matchup Score coverage from a statsplus#407 backend', () => {
       ['PTS', 'TOV', 'Free Throws Attempted', 'Free Throws Made'].map(
         (name) => score(name).textContent,
       ),
-    ).toEqual(['+7.0%', '+5.0%', '−11.0%', '—']);
+    ).toEqual([
+      '+7.0% Season Matchup Score',
+      '+5.0% Season Matchup Score',
+      '−11.0% Season Matchup Score',
+      '—No Season Matchup Score',
+    ]);
 
     await userEvent.click(strip.getByRole('button', { name: 'Free Throws Attempted' }));
     const traditional = within(screen.getByRole('region', { name: 'Matchup Score' })).getByRole(
@@ -4787,11 +4796,11 @@ describe('markets scored with no line in CourtAI’s books (statsplus#457)', () 
         .getAllByRole('button')
         .map((button) => button.textContent),
     ).toEqual([
-      'PTSPosted by PrizePicks and UnderdogPPUD+12.0%',
-      'BLKNot postedno line+7.0%',
-      'FGAPosted by PrizePicksPP+4.0%',
+      'PTSPosted by PrizePicks and UnderdogPPUD+12.0% Season Matchup Score',
+      'BLKNot postedno line+7.0% Season Matchup Score',
+      'FGAPosted by PrizePicksPP+4.0% Season Matchup Score',
     ]);
-    expect(stripTab('BLK')).toHaveAccessibleDescription('Not posted');
+    expect(stripTab('BLK')).toHaveAccessibleDescription('Not posted +7.0% Season Matchup Score');
   });
 
   test('a sportsbook quote for the unposted market is a line, so its row is not marked', async () => {
@@ -4874,8 +4883,10 @@ describe('the player sheet reads like the Player Profile matchup card (statsplus
         { cwd: process.cwd(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
       ),
     );
-  const openLebron = async () => {
-    fetchMatchup.mockResolvedValueOnce(decodeFetched(browserMatchup()));
+  const openLebron = async (edit = () => {}) => {
+    const payload = browserMatchup();
+    edit(payload.players.find((player) => player.canonical_id === 2544));
+    fetchMatchup.mockResolvedValueOnce(decodeFetched(payload));
     renderMatchup('/matchups/0022500584?player=2544');
     await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
   };
@@ -4898,20 +4909,20 @@ describe('the player sheet reads like the Player Profile matchup card (statsplus
   test('AC2: every tab shows its market’s score for the window, green up and red down', async () => {
     await openLebron();
 
-    const score = (name) => strip().getByRole('button', { name }).querySelector('small');
+    const score = (name) => strip().getByRole('button', { name }).querySelector('small').firstChild;
     expect(
       ['PTS', 'REB', 'AST', '3PM', 'PRA', 'TOV', 'BLK'].map((name) => score(name).textContent),
     ).toEqual(['+12.0%', '+13.0%', '+14.0%', '+15.0%', '+19.0%', '+23.0%', '+25.0%']);
-    expect(score('PTS')).toHaveClass('pmc-up');
+    expect(score('PTS').parentElement).toHaveClass('pmc-up');
 
     await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
 
     expect(
       ['PTS', 'REB', 'AST', '3PM', 'PRA', 'TOV', 'BLK'].map((name) => score(name).textContent),
     ).toEqual(['−2.0%', '−1.0%', '0.0%', '+1.0%', '+5.0%', '+9.0%', '+11.0%']);
-    expect(score('PTS')).toHaveClass('pmc-down');
-    expect(score('AST')).not.toHaveClass('pmc-up');
-    expect(score('AST')).not.toHaveClass('pmc-down');
+    expect(score('PTS').parentElement).toHaveClass('pmc-down');
+    expect(score('AST').parentElement).not.toHaveClass('pmc-up');
+    expect(score('AST').parentElement).not.toHaveClass('pmc-down');
   });
 
   test('AC3: a combo tab shows W3 grouped by stat, a single tab S4', async () => {
@@ -4953,5 +4964,34 @@ describe('the player sheet reads like the Player Profile matchup card (statsplus
 
     await userEvent.click(strip().getByRole('button', { name: 'PTS' }));
     expect(rows('Play types')).toEqual(['Transition19%27th+12%', 'Post up2%25th+10%']);
+  });
+
+  test('each tab names its score and window to assistive tech', async () => {
+    await openLebron();
+
+    expect(strip().getByRole('button', { name: 'PTS' })).toHaveAccessibleDescription(
+      /\+12\.0% Season Matchup Score$/,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+    expect(strip().getByRole('button', { name: 'PTS' })).toHaveAccessibleDescription(
+      /−2\.0% Last 15 Matchup Score$/,
+    );
+  });
+
+  test('a combo missing one of its season averages is not split by stat', async () => {
+    await openLebron((lebron) => {
+      delete lebron.season_averages.REB;
+    });
+
+    await userEvent.click(strip().getByRole('button', { name: 'PRA' }));
+
+    expect(card().getByTitle('PRA Season Matchup Score')).toHaveTextContent('+19.0%');
+    expect(
+      card().getByText(
+        'PRA is not split by stat: this Matchup carries no season averages of PTS, REB, AST to weight them by.',
+      ),
+    ).toBeVisible();
+    expect(card().queryByRole('region', { name: 'Points' })).not.toBeInTheDocument();
+    expect(card().queryByText('Where his PRA come from')).not.toBeInTheDocument();
   });
 });

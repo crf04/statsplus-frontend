@@ -185,16 +185,24 @@ const statChoices = (statCategories, bookLines = {}, scores = {}) =>
     ]),
   ]);
 
-function StripScore({ market }) {
-  if (market?.score == null) return <small className="selection-strip-score">—</small>;
+function StripScore({ id, market, windowName }) {
+  if (market?.score == null) {
+    return (
+      <small className="selection-strip-score" id={id}>
+        <span aria-hidden="true">—</span>
+        <span className="selection-visually-hidden">No {windowName} Matchup Score</span>
+      </small>
+    );
+  }
   return (
-    <small className={`selection-strip-score ${tone(market.score)}`}>
+    <small className={`selection-strip-score ${tone(market.score)}`} id={id}>
       {scoreText(market.score)}
+      <span className="selection-visually-hidden"> {windowName} Matchup Score</span>
     </small>
   );
 }
 
-function StatStrip({ player, categories, reading, activeStat, onPick }) {
+function StatStrip({ player, categories, reading, windowName, activeStat, onPick }) {
   const line = player.focalGameLine;
   const minutes = player.last10Minutes;
   const minutesAverage = minutes.length
@@ -226,7 +234,7 @@ function StatStrip({ player, categories, reading, activeStat, onPick }) {
             key={category}
             className="selection-strip-tile"
             aria-label={categoryLabel(category)}
-            aria-describedby={`selection-strip-${category}`}
+            aria-describedby={`selection-strip-${category} selection-strip-score-${category}`}
             aria-pressed={activeStat === category}
             onClick={() => onPick(category)}
           >
@@ -257,7 +265,11 @@ function StatStrip({ player, categories, reading, activeStat, onPick }) {
                 )}
               </b>
             )}
-            <StripScore market={reading.markets[category]} />
+            <StripScore
+              id={`selection-strip-score-${category}`}
+              market={reading.markets[category]}
+              windowName={windowName}
+            />
           </button>
         );
       })}
@@ -411,6 +423,7 @@ export default function SelectionCard({
         player={player}
         categories={stats}
         reading={reading}
+        windowName={windowName}
         activeStat={activeStat}
         onPick={setActiveStat}
       />

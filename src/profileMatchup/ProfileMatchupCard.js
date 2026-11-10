@@ -407,8 +407,16 @@ export const MarketReading = ({ reading, name, windowName = null }) => {
       </p>
     );
   }
+  if (COMBO_STATS[name] && !market.combo) {
+    return (
+      <p className="pmc-empty">
+        {name} is not split by stat: this Matchup carries no season averages of{' '}
+        {COMBO_STATS[name].join(', ')} to weight them by.
+      </p>
+    );
+  }
   const key = `${reading.player}|${reading.opponent}|${name}`;
-  return market.combo && COMBO_STATS[name] ? (
+  return COMBO_STATS[name] ? (
     <ComboMarket key={key} reading={reading} market={market} />
   ) : (
     <SingleMarket key={key} reading={reading} market={market} />

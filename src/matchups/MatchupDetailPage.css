@@ -774,6 +774,15 @@
   padding: 0;
 }
 
+/* Above the app header, which paints over the page's own layers. */
+.selection-layer {
+  z-index: 2020;
+}
+
+.selection-backdrop {
+  z-index: 2010;
+}
+
 .selection-card-heading {
   display: flex;
   justify-content: space-between;

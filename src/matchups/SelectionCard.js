@@ -393,6 +393,8 @@ export default function SelectionCard({
       size="lg"
       fullscreen="md-down"
       restoreFocus={false}
+      className="selection-layer"
+      backdropClassName="selection-backdrop"
       aria-labelledby="selection-heading"
       contentClassName="selection-card"
     >

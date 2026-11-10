@@ -1014,6 +1014,43 @@ test('selection clamps on an in-app player switch and leaves the team toggle ope
   });
 });
 
+test('Back from Game Logs reopens the Matchup with its settings and open card', async ({
+  authenticatedPage: page,
+}) => {
+  const settingsUrl =
+    '/matchups/0022500584?player=2544&team=1610612747&window=last15&deviation=2&stat=REB';
+  const pressed = (group, name) =>
+    expect(page.getByRole('group', { name: group }).getByRole('button', { name })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  await page.goto('/matchups/0022500584');
+  await page
+    .getByRole('article', { name: 'LeBron James player' })
+    .getByRole('button', { name: 'Open selection card' })
+    .click();
+  await page.getByRole('button', { name: 'LAL defense' }).click();
+  await page.getByRole('button', { name: 'Last 15', exact: true }).click();
+  await page.getByRole('button', { name: 'At least 2 sigma' }).click();
+  await page.getByRole('group', { name: 'Market' }).getByRole('button', { name: 'REB' }).click();
+  await expect(page).toHaveURL(settingsUrl);
+
+  await page.getByRole('link', { name: 'Jayson Tatum game logs' }).click();
+  await expect(page).toHaveURL(/player_name=Jayson\+Tatum/);
+  await page.goBack();
+
+  await expect(page).toHaveURL(settingsUrl);
+  await expect(page.getByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
+  await pressed('Defense team', 'LAL defense');
+  await pressed('Stat window', 'Last 15');
+  await pressed('Deviation filter', 'At least 2 sigma');
+  await pressed('Market', 'REB');
+
+  // Each setting replaced the card's entry, so one more Back closes the card.
+  await page.goBack();
+  await expect(page).toHaveURL('/matchups/0022500584');
+});
+
 test('selection request failure renders an honest handled error', async ({ page }, testInfo) => {
   await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
   await installApiContract(page, {

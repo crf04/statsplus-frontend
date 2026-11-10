@@ -1119,7 +1119,7 @@ function TeamTabs({ matchup, defenseTeam, onSelect }) {
             type="button"
             key={team.teamId}
             aria-pressed={team.teamId === defenseTeam.teamId}
-            onClick={() => onSelect(team.teamId)}
+            onClick={() => onSelect(team)}
           >
             <span className="team-tab-name">
               {team.tricode} <small>defense</small>
@@ -1141,9 +1141,13 @@ function Detail({ matchup, gameId, evidence }) {
   const homeTricode = matchup.game.home.tricode;
   const initialTeam =
     matchup.teams.find((team) => team.tricode === homeTricode) || matchup.teams[0];
-  const [teamId, setTeamId] = useState(initialTeam.teamId);
-  const [windowKey, setWindowKey] = useState('season');
-  const [deviation, setDeviation] = useState(1);
+  const defenseTeam =
+    matchup.teams.find((team) => String(team.teamId) === searchParams.get('team')) || initialTeam;
+  const windowKey =
+    WINDOWS.find((item) => item.key === searchParams.get('window'))?.key ?? 'season';
+  const deviation =
+    DEVIATIONS.find((item) => String(item.value) === searchParams.get('deviation'))?.value ?? 1;
+  const chosenMarket = searchParams.get('stat');
   const selectedId = searchParams.get('player');
   const selectionTriggers = useRef(new Map());
   const previousSelectedId = useRef(null);
@@ -1155,7 +1159,6 @@ function Detail({ matchup, gameId, evidence }) {
     error: null,
   });
   const [capture, setCapture] = useState(null);
-  const defenseTeam = matchup.teams.find((team) => team.teamId === teamId) || initialTeam;
   const opposingTeam = matchup.teams.find((team) => team.teamId !== defenseTeam.teamId);
   const opposingTeamId = opposingTeam?.teamId;
   const experienceMode = matchup.experience.mode;
@@ -1197,7 +1200,6 @@ function Detail({ matchup, gameId, evidence }) {
   // The page opens on points when the players on the sheet's other side have
   // points, and the rail reads the same stat the sheet is filtered to.
   // A chosen stat the other side does not have falls back the same way.
-  const [chosenMarket, setMarket] = useState(null);
   const market = markets.includes(chosenMarket) ? chosenMarket : openingMarket(markets);
   // The decoder drops the score of a category with no Matchup Score.
   const unscoredMarket = opposingPlayers.some(
@@ -1261,6 +1263,18 @@ function Detail({ matchup, gameId, evidence }) {
     else next.delete('player');
     setSearchParams(next, { replace: false });
   };
+  // Settings replace the current entry, so Back from Game Logs returns to them
+  // without stepping back through each change.
+  const updateSetting = (param, value, defaultValue) =>
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (value === defaultValue) next.delete(param);
+        else next.set(param, String(value));
+        return next;
+      },
+      { replace: true },
+    );
   const registerTrigger = (playerId, node) => {
     if (node) selectionTriggers.current.set(playerId, node);
     else selectionTriggers.current.delete(playerId);
@@ -1301,7 +1315,11 @@ function Detail({ matchup, gameId, evidence }) {
         <div className="matchup-sidebar">
           {/* An injury report nobody has is named in the summary sentence. */}
           {injuriesAvailable && <InjuryReport injuries={matchup.injuries} now={now} />}
-          <TeamTabs matchup={matchup} defenseTeam={defenseTeam} onSelect={setTeamId} />
+          <TeamTabs
+            matchup={matchup}
+            defenseTeam={defenseTeam}
+            onSelect={(team) => updateSetting('team', team.teamId, initialTeam.teamId)}
+          />
           <PlayerRail
             players={opposingPlayers}
             teamTricode={opposingTeam?.tricode}
@@ -1345,7 +1363,7 @@ function Detail({ matchup, gameId, evidence }) {
                           : undefined
                       }
                       key={item.key}
-                      onClick={() => setWindowKey(item.key)}
+                      onClick={() => updateSetting('window', item.key, 'season')}
                     >
                       {item.label}
                     </button>
@@ -1363,7 +1381,7 @@ function Detail({ matchup, gameId, evidence }) {
                       type="button"
                       aria-pressed={deviation === item.value}
                       key={item.value}
-                      onClick={() => setDeviation(item.value)}
+                      onClick={() => updateSetting('deviation', item.value, 1)}
                     >
                       {item.label}
                     </button>
@@ -1383,7 +1401,7 @@ function Detail({ matchup, gameId, evidence }) {
                   aria-label={categoryLabel(item)}
                   title={categoryLabel(item)}
                   key={item}
-                  onClick={() => setMarket(item)}
+                  onClick={() => updateSetting('stat', item, openingMarket(markets))}
                 >
                   {item}
                 </button>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Modal } from 'react-bootstrap';
 import { bookMark, bookName, categoryLabel, orderCategories } from './displayConfig';
 import ErrorMessage from '../feedback/ErrorMessage';
 import HelpTip from '../help/HelpTip';
@@ -40,14 +41,48 @@ const asOfTime = (stamp) => {
   });
 };
 
-// Sportsbook quotes for the selected stat. The best price is the backend's
-// call (equal lines only); this table only marks it, with a star as well as
-// weight so colour is not the only signal.
-function BookLines({ market, quote }) {
+// Every app and market that numbers the stat, priced or not, then every
+// sportsbook quoting it. The rail shows one line, so this is where the others
+// are read. The best price is the backend's call (books on equal lines only).
+// This table only marks it, with a star as well as weight so colour is not the
+// only signal.
+const APP_ORDER = ['prizepicks', 'underdog', 'dabble', 'novig', 'kalshi', 'polymarket'];
+const SOURCES = [
+  { source: 'app', label: 'Apps' },
+  { source: 'book', label: 'Sportsbooks' },
+];
+
+const lineRows = (player, market) => [
+  ...Object.keys(player.lines ?? {})
+    .filter((provider) => typeof player.lines[provider]?.[market] === 'number')
+    .sort((a, b) => {
+      const rank = (provider) =>
+        APP_ORDER.includes(provider) ? APP_ORDER.indexOf(provider) : APP_ORDER.length;
+      return rank(a) - rank(b) || a.localeCompare(b);
+    })
+    .map((provider) => ({
+      source: 'app',
+      name: provider,
+      line: player.lines[provider][market],
+      over: player.linePrices?.[provider]?.[market]?.over ?? null,
+      under: player.linePrices?.[provider]?.[market]?.under ?? null,
+      best: { over: false, under: false },
+    })),
+  ...(player.bookLines?.[market]?.books ?? []).map((entry) => ({
+    source: 'book',
+    name: entry.book,
+    line: entry.line,
+    over: entry.over,
+    under: entry.under,
+    best: { over: entry.bestOver, under: entry.bestUnder },
+  })),
+];
+
+function Lines({ market, rows, quote }) {
   const [expanded, setExpanded] = useState(false);
-  const hidden = quote.books.length - BOOKS_SHOWN;
-  const shown = expanded || hidden <= 0 ? quote.books : quote.books.slice(0, BOOKS_SHOWN);
-  const time = asOfTime(quote.asOf);
+  const books = rows.filter((row) => row.source === 'book').length;
+  const hidden = books - BOOKS_SHOWN;
+  const time = books > 0 && asOfTime(quote.asOf);
   const price = (value, best) => (
     <td className={best ? 'book-best' : undefined}>
       {formatPrice(value)}
@@ -60,33 +95,46 @@ function BookLines({ market, quote }) {
     </td>
   );
   return (
-    <section className="selection-panel selection-panel-books" aria-label="Sportsbooks">
+    <section className="selection-panel selection-panel-books" aria-label="Lines">
       <h3>
-        Sportsbooks · {market}
+        Lines · {market}
         <span className="book-stamp">
-          {quote.closing ? 'Closing' : time ? `as of ${time}` : null}
+          {/* The stamp dates the sportsbook quote, so apps alone carry none. */}
+          {books > 0 && (quote.closing ? 'Closing' : time && `as of ${time}`)}
         </span>
       </h3>
       <div className="selection-table-wrap">
-        <table aria-label={`${market} sportsbook lines`} className="selection-books">
+        <table aria-label={`${market} lines`} className="selection-books">
           <thead>
             <tr>
-              <th scope="col">Book</th>
+              <th scope="col">Source</th>
               <th scope="col">Line</th>
               <th scope="col">Over</th>
               <th scope="col">Under</th>
             </tr>
           </thead>
-          <tbody>
-            {shown.map((entry) => (
-              <tr key={entry.book}>
-                <th scope="row">{bookName(entry.book)}</th>
-                <td>{entry.line}</td>
-                {price(entry.over, entry.bestOver)}
-                {price(entry.under, entry.bestUnder)}
-              </tr>
-            ))}
-          </tbody>
+          {SOURCES.map(({ source, label }) => {
+            const group = rows.filter((row) => row.source === source);
+            if (group.length === 0) return null;
+            const visible = source === 'book' && !expanded ? group.slice(0, BOOKS_SHOWN) : group;
+            return (
+              <tbody key={source}>
+                <tr className="selection-books-group">
+                  <th scope="colgroup" colSpan={4}>
+                    {label}
+                  </th>
+                </tr>
+                {visible.map((row) => (
+                  <tr key={row.name}>
+                    <th scope="row">{bookName(row.name)}</th>
+                    <td>{row.line}</td>
+                    {price(row.over, row.best.over)}
+                    {price(row.under, row.best.under)}
+                  </tr>
+                ))}
+              </tbody>
+            );
+          })}
         </table>
       </div>
       {hidden > 0 && (
@@ -99,58 +147,6 @@ function BookLines({ market, quote }) {
           {expanded ? 'Show fewer' : `+${hidden} more`}
         </button>
       )}
-    </section>
-  );
-}
-
-// Every app and market that numbers the stat, priced or not: the rail shows
-// one line, so this is where the others are read.
-const APP_ORDER = ['prizepicks', 'underdog', 'dabble', 'novig', 'kalshi', 'polymarket'];
-
-const appQuotes = (player, market) =>
-  Object.keys(player.lines ?? {})
-    .filter((provider) => typeof player.lines[provider]?.[market] === 'number')
-    .sort((a, b) => {
-      const rank = (provider) =>
-        APP_ORDER.includes(provider) ? APP_ORDER.indexOf(provider) : APP_ORDER.length;
-      return rank(a) - rank(b) || a.localeCompare(b);
-    })
-    .map((provider) => ({
-      provider,
-      line: player.lines[provider][market],
-      over: player.linePrices?.[provider]?.[market]?.over ?? null,
-      under: player.linePrices?.[provider]?.[market]?.under ?? null,
-    }));
-
-// Renders nothing when no app numbers the stat, whatever the books quote.
-function DfsLines({ player, market }) {
-  const quotes = appQuotes(player, market);
-  if (quotes.length === 0) return null;
-  return (
-    <section className="selection-panel selection-panel-books" aria-label="Apps">
-      <h3>Apps · {market}</h3>
-      <div className="selection-table-wrap">
-        <table aria-label={`${market} app lines`} className="selection-books">
-          <thead>
-            <tr>
-              <th scope="col">App</th>
-              <th scope="col">Line</th>
-              <th scope="col">Over</th>
-              <th scope="col">Under</th>
-            </tr>
-          </thead>
-          <tbody>
-            {quotes.map((entry) => (
-              <tr key={entry.provider}>
-                <th scope="row">{bookName(entry.provider)}</th>
-                <td>{entry.line}</td>
-                <td>{formatPrice(entry.over)}</td>
-                <td>{formatPrice(entry.under)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </section>
   );
 }
@@ -174,7 +170,7 @@ function Sparkline({ values }) {
 // The MIN tile is context, not a choice.
 // The strip's choices are the DFS categories, any category only sportsbooks
 // quote, and any market the Matchup scores with no line (statsplus#457). The
-// sportsbook extras feed the Sportsbooks table alone: they are not DFS
+// sportsbook extras feed the lines table alone: they are not DFS
 // provenance and are never Target candidates.
 const statChoices = (statCategories, bookLines = {}, scores = {}) =>
   orderCategories([
@@ -345,7 +341,6 @@ export default function SelectionCard({
   historical,
   onClose,
 }) {
-  const panelRef = useRef(null);
   const previousPlayerId = useRef(player.id);
   const previousSheetMarket = useRef(sheetMarket);
   const categories = orderCategories(player.statCategories);
@@ -365,7 +360,6 @@ export default function SelectionCard({
   const [activeStat, setActiveStat] = useState(
     stats.includes(sheetMarket) ? sheetMarket : stats[0],
   );
-  useEffect(() => panelRef.current?.focus(), [player.id]);
   useEffect(() => {
     const playerChanged = previousPlayerId.current !== player.id;
     const sheetMarketChanged = previousSheetMarket.current !== sheetMarket;
@@ -386,16 +380,21 @@ export default function SelectionCard({
     score: player.scores[market][windowKey],
   }));
   const line = player.focalGameLine;
+  const lines = lineRows(player, activeStat);
+  // The URL owns whether the dialog is open, and the page hands focus back to
+  // the rail when it closes.
   return (
-    <section
-      ref={panelRef}
+    <Modal
+      show
+      onHide={onClose}
       id="matchup-selection-card"
-      className="selection-card"
+      centered
+      scrollable
+      size="lg"
+      fullscreen="md-down"
+      restoreFocus={false}
       aria-labelledby="selection-heading"
-      tabIndex="-1"
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') onClose();
-      }}
+      contentClassName="selection-card"
     >
       <div className="selection-card-heading">
         <div>
@@ -419,15 +418,15 @@ export default function SelectionCard({
           ×
         </button>
       </div>
-      <StatStrip
-        player={player}
-        categories={stats}
-        reading={reading}
-        windowName={windowName}
-        activeStat={activeStat}
-        onPick={setActiveStat}
-      />
-      <div className="selection-panels">
+      <Modal.Body className="selection-card-body">
+        <StatStrip
+          player={player}
+          categories={stats}
+          reading={reading}
+          windowName={windowName}
+          activeStat={activeStat}
+          onPick={setActiveStat}
+        />
         <section className="selection-panel selection-panel-score" aria-label="Matchup Score">
           <div className="selection-score-heading">
             <div className="help-tip-heading">
@@ -470,40 +469,40 @@ export default function SelectionCard({
             />
           )}
         </section>
-      </div>
-      {player.bookLines?.[activeStat]?.books.length > 0 && (
-        // Keyed so a new player or stat starts collapsed again.
-        <BookLines
-          key={`${player.id}:${activeStat}`}
-          market={activeStat}
-          quote={player.bookLines[activeStat]}
-        />
-      )}
-      <DfsLines player={player} market={activeStat} />
-      {rows
-        .filter(({ score }) => Object.keys(score.components).length === 0 && score.blend === null)
-        .map(({ market }) => (
-          <p className="honest-empty" key={`degraded-${market}`}>
-            No score components were computable for {market} in {windowName}.
-          </p>
-        ))}
-      {/* Component evidence can survive a score the contract could not
-          complete, so the card names what that score was missing. */}
-      {rows
-        .filter(({ score }) => score.blend === null && score.missingInputs.length > 0)
-        .map(({ market, score }) => (
-          <p className="honest-empty" key={`withheld-${market}`}>
-            {market} Matchup Score unavailable in {windowName}: missing{' '}
-            {score.missingInputs.join(', ')}.
-          </p>
-        ))}
-      <p className="selection-explainer">
-        {whyRelevant
-          ? 'Highlighted Defense Sheet rows show displayed Season Diet Share inputs.'
-          : 'This player is not opposing the viewed Defense Sheet, so no why rows are highlighted.'}{' '}
-        Scores and deltas are delivered by the API.
-        {historical ? ' Matchup Scores reflect completed-season context.' : ''}
-      </p>
-    </section>
+        {lines.length > 0 && (
+          // Keyed so a new player or stat starts collapsed again.
+          <Lines
+            key={`${player.id}:${activeStat}`}
+            market={activeStat}
+            rows={lines}
+            quote={player.bookLines?.[activeStat]}
+          />
+        )}
+        {rows
+          .filter(({ score }) => Object.keys(score.components).length === 0 && score.blend === null)
+          .map(({ market }) => (
+            <p className="honest-empty" key={`degraded-${market}`}>
+              No score components were computable for {market} in {windowName}.
+            </p>
+          ))}
+        {/* Component evidence can survive a score the contract could not
+            complete, so the card names what that score was missing. */}
+        {rows
+          .filter(({ score }) => score.blend === null && score.missingInputs.length > 0)
+          .map(({ market, score }) => (
+            <p className="honest-empty" key={`withheld-${market}`}>
+              {market} Matchup Score unavailable in {windowName}: missing{' '}
+              {score.missingInputs.join(', ')}.
+            </p>
+          ))}
+        <p className="selection-explainer">
+          {whyRelevant
+            ? 'Highlighted Defense Sheet rows show displayed Season Diet Share inputs.'
+            : 'This player is not opposing the viewed Defense Sheet, so no why rows are highlighted.'}{' '}
+          Scores and deltas are delivered by the API.
+          {historical ? ' Matchup Scores reflect completed-season context.' : ''}
+        </p>
+      </Modal.Body>
+    </Modal>
   );
 }

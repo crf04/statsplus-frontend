@@ -3259,8 +3259,59 @@ const openWithBooks = async (bookLines, path = '/matchups/game-1?player=2544') =
   renderMatchup(path);
   await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
 };
+const linesTable = (market) => screen.getByRole('table', { name: `${market} lines` });
+const tableRows = (table) =>
+  within(table)
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) => row.textContent.replace(/\s+/g, ' ').trim());
 
-test('the Selection card lists each book with its line, Over and Under, and stars the best price only where the backend flagged it', async () => {
+test('the Selection card opens as a dialog over the Defense Sheet, in reading order', async () => {
+  await openWithBooks({ PTS: quote([bookRow('fanduel', 26.5, -135, 110)]) });
+
+  const dialog = screen.getByRole('dialog', { name: 'LeBron James' });
+  expect(screen.getByRole('heading', { name: 'What BOS allows' })).toBeInTheDocument();
+  expect(dialog).not.toContainElement(screen.getByRole('heading', { name: 'What BOS allows' }));
+  expect(
+    within(dialog)
+      .getAllByRole('region')
+      .map((region) => region.getAttribute('aria-label')),
+  ).toEqual(['Matchup Score', 'Games vs this opponent', 'Lines']);
+  const strip = within(dialog).getByRole('group', { name: 'Selection log stat' });
+  expect(
+    strip.compareDocumentPosition(within(dialog).getByRole('region', { name: 'Matchup Score' })),
+  ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+});
+
+test.each([
+  ['×', () => userEvent.click(screen.getByRole('button', { name: 'Close selection card' }))],
+  ['Escape', () => userEvent.keyboard('{Escape}')],
+  ['the backdrop', () => userEvent.click(screen.getByRole('dialog', { name: 'Austin Reaves' }))],
+])(
+  'closing the dialog by %s drops ?player= and hands focus to the rail button',
+  async (_how, close) => {
+    renderMatchup('/matchups/game-1?stat=PTS');
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    const austin = screen.getByRole('article', { name: 'Austin Reaves player' });
+    await userEvent.click(within(austin).getByRole('button', { name: 'Open selection card' }));
+    expect(await screen.findByRole('dialog', { name: 'Austin Reaves' })).toBeVisible();
+    expect(screen.getByTestId('location')).toHaveTextContent(
+      '/matchups/game-1?stat=PTS&player=1630559',
+    );
+
+    await close();
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Austin Reaves' })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByTestId('location')).toHaveTextContent(/^\/matchups\/game-1\?stat=PTS$/);
+    await waitFor(() =>
+      expect(within(austin).getByRole('button', { name: 'Open selection card' })).toHaveFocus(),
+    );
+  },
+);
+
+test('the Selection card lists apps then books with line, Over and Under, and stars the best price only where the backend flagged it', async () => {
   await openWithBooks({
     PTS: quote([
       bookRow('fanduel', 26.5, -135, 110),
@@ -3270,15 +3321,14 @@ test('the Selection card lists each book with its line, Over and Under, and star
     ]),
   });
 
-  const panel = screen.getByRole('region', { name: 'Sportsbooks' });
-  expect(within(panel).getByText('as of 06:04')).toBeVisible();
-  const table = within(panel).getByRole('table', { name: 'PTS sportsbook lines' });
-  expect(
-    within(table)
-      .getAllByRole('row')
-      .slice(1)
-      .map((row) => row.textContent.replace(/\s+/g, ' ').trim()),
-  ).toEqual([
+  const panel = screen.getByRole('region', { name: 'Lines' });
+  expect(within(panel).getByRole('heading', { name: 'Lines · PTS as of 06:04' })).toBeVisible();
+  const table = within(panel).getByRole('table', { name: 'PTS lines' });
+  expect(tableRows(table)).toEqual([
+    'Apps',
+    'PrizePicks27.5——',
+    'Underdog26.5——',
+    'Sportsbooks',
     'FanDuel26.5-135+110',
     'BetMGM27.5-110 ★-120',
     'DraftKings27.5-110 ★-115',
@@ -3288,6 +3338,12 @@ test('the Selection card lists each book with its line, Over and Under, and star
   expect(within(table).getAllByRole('img', { name: 'best price' })).toHaveLength(3);
   const fanduel = within(table).getByRole('row', { name: /FanDuel/ });
   expect(within(fanduel).queryByRole('img', { name: 'best price' })).not.toBeInTheDocument();
+  const betmgm = within(table).getByRole('row', { name: /BetMGM/ });
+  expect(
+    within(betmgm)
+      .getAllByRole('cell')
+      .map((cell) => cell.textContent),
+  ).toEqual(['27.5', '-110 ★', '-120']);
   // The strip tile still names only the DFS providers that post PTS.
   expect(
     within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
@@ -3296,12 +3352,12 @@ test('the Selection card lists each book with its line, Over and Under, and star
   ).toHaveAccessibleDescription('Posted by PrizePicks and Underdog +12.0% Season Matchup Score');
 });
 
-test('the sportsbook table follows the selected stat and labels a closing snapshot', async () => {
+test('the lines table follows the selected stat and labels a closing snapshot', async () => {
   await openWithBooks({
     PTS: quote([bookRow('fanduel', 26.5, -135, 110)]),
     REB: quote([bookRow('draftkings', 9.5, 100, null)], { closing: true }),
   });
-  expect(screen.getByRole('table', { name: 'PTS sportsbook lines' })).toBeVisible();
+  expect(linesTable('PTS')).toBeVisible();
 
   await userEvent.click(
     within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
@@ -3309,12 +3365,9 @@ test('the sportsbook table follows the selected stat and labels a closing snapsh
     }),
   );
 
-  const table = screen.getByRole('table', { name: 'REB sportsbook lines' });
-  expect(screen.queryByRole('table', { name: 'PTS sportsbook lines' })).not.toBeInTheDocument();
-  expect(within(table).getByRole('row', { name: /DraftKings/ }).textContent).toBe(
-    'DraftKings9.5+100—',
-  );
-  const panel = screen.getByRole('region', { name: 'Sportsbooks' });
+  expect(tableRows(linesTable('REB'))).toEqual(['Sportsbooks', 'DraftKings9.5+100—']);
+  expect(screen.queryByRole('table', { name: 'PTS lines' })).not.toBeInTheDocument();
+  const panel = screen.getByRole('region', { name: 'Lines' });
   expect(within(panel).getByText('Closing')).toBeVisible();
   expect(within(panel).queryByText(/as of/)).not.toBeInTheDocument();
 });
@@ -3322,17 +3375,26 @@ test('the sportsbook table follows the selected stat and labels a closing snapsh
 test('shows four books and puts the rest behind a +N expander', async () => {
   const names = ['betmgm', 'betrivers', 'draftkings', 'fanatics', 'fanduel', 'williamhill_us'];
   await openWithBooks({ PTS: quote(names.map((name) => bookRow(name, 27.5, -110, -110))) });
-  const table = screen.getByRole('table', { name: 'PTS sportsbook lines' });
-  expect(within(table).getAllByRole('row')).toHaveLength(5);
+  const table = linesTable('PTS');
+  const collapsed = [
+    'Apps',
+    'PrizePicks27.5——',
+    'Underdog26.5——',
+    'Sportsbooks',
+    'BetMGM27.5-110-110',
+    'BetRivers27.5-110-110',
+    'DraftKings27.5-110-110',
+    'Fanatics27.5-110-110',
+  ];
+  expect(tableRows(table)).toEqual(collapsed);
 
   await userEvent.click(screen.getByRole('button', { name: '+2 more' }));
 
-  expect(within(table).getAllByRole('row')).toHaveLength(7);
-  expect(within(table).getByText('Caesars')).toBeVisible();
+  expect(tableRows(table)).toEqual([...collapsed, 'FanDuel27.5-110-110', 'Caesars27.5-110-110']);
 
   await userEvent.click(screen.getByRole('button', { name: 'Show fewer' }));
 
-  expect(within(table).getAllByRole('row')).toHaveLength(5);
+  expect(tableRows(table)).toEqual(collapsed);
   expect(within(table).queryByText('Caesars')).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: '+2 more' })).toHaveAttribute('aria-expanded', 'false');
 });
@@ -3346,10 +3408,9 @@ test('another player opens with his books collapsed again', async () => {
   renderMatchup('/matchups/game-1?player=2544');
   await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
   await userEvent.click(screen.getByRole('button', { name: '+1 more' }));
-  expect(
-    within(screen.getByRole('table', { name: 'PTS sportsbook lines' })).getAllByRole('row'),
-  ).toHaveLength(6);
+  expect(within(linesTable('PTS')).getAllByRole('rowheader')).toHaveLength(7);
 
+  await userEvent.click(screen.getByRole('button', { name: 'Close selection card' }));
   await userEvent.click(
     within(screen.getByRole('article', { name: 'Austin Reaves player' })).getByRole('button', {
       name: 'Open selection card',
@@ -3357,9 +3418,8 @@ test('another player opens with his books collapsed again', async () => {
   );
   await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
 
-  expect(
-    within(screen.getByRole('table', { name: 'PTS sportsbook lines' })).getAllByRole('row'),
-  ).toHaveLength(5);
+  // Underdog's line, then four of the five books.
+  expect(within(linesTable('PTS')).getAllByRole('rowheader')).toHaveLength(5);
   expect(screen.getByRole('button', { name: '+1 more' })).toHaveAttribute('aria-expanded', 'false');
 });
 
@@ -3368,11 +3428,11 @@ test.each([
   ['book_lines for another stat only', { REB: quote([bookRow('fanduel', 8.5, -110, -110)]) }],
   ['a market with no books', { PTS: quote([]) }],
   ['the field absent', undefined],
-])('renders no sportsbook panel for %s', async (_name, bookLines) => {
+])('lists only the apps for %s', async (_name, bookLines) => {
   await openWithBooks(bookLines);
 
-  expect(screen.queryByRole('region', { name: 'Sportsbooks' })).not.toBeInTheDocument();
-  expect(screen.queryByRole('table', { name: /sportsbook lines/ })).not.toBeInTheDocument();
+  expect(tableRows(linesTable('PTS'))).toEqual(['Apps', 'PrizePicks27.5——', 'Underdog26.5——']);
+  expect(screen.getByRole('heading', { name: 'Lines · PTS' })).toBeVisible();
   expect(screen.queryByText('Show fewer')).not.toBeInTheDocument();
 });
 
@@ -3387,11 +3447,6 @@ describe('Selection card DFS prices', () => {
     renderMatchup('/matchups/game-1?player=2544');
     await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
   };
-  const rows = (table) =>
-    within(table)
-      .getAllByRole('row')
-      .slice(1)
-      .map((row) => row.textContent.replace(/\s+/g, ' ').trim());
 
   test('lists every app and market that numbers him, priced or not, with no sportsbook quoting him', async () => {
     await openWithDfs({
@@ -3408,28 +3463,40 @@ describe('Selection card DFS prices', () => {
       },
     });
 
-    const panel = screen.getByRole('region', { name: 'Apps' });
-    expect(within(panel).getByRole('heading', { name: 'Apps · PTS' })).toBeVisible();
+    const panel = screen.getByRole('region', { name: 'Lines' });
+    expect(within(panel).getByRole('heading', { name: 'Lines · PTS' })).toBeVisible();
     // The rail shows one line, so every other number is read here, in a fixed order.
-    expect(rows(within(panel).getByRole('table', { name: 'PTS app lines' }))).toEqual([
+    expect(tableRows(within(panel).getByRole('table', { name: 'PTS lines' }))).toEqual([
+      'Apps',
       'PrizePicks25.5——',
       'Underdog26.5-112—',
       'Dabble27.5-122-122',
       'Novig27.5-106-102',
     ]);
-    expect(screen.queryByRole('region', { name: 'Sportsbooks' })).not.toBeInTheDocument();
   });
 
-  test('sits beside the sportsbook panel and follows the selected stat', async () => {
+  test('a stat no app or book numbers shows no lines panel', async () => {
+    await openWithDfs({ lines: {}, linePrices: {} });
+
+    expect(screen.getByRole('region', { name: 'Matchup Score' })).toBeVisible();
+    expect(screen.queryByRole('region', { name: 'Lines' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: /lines$/ })).not.toBeInTheDocument();
+  });
+
+  test('shares one table with the sportsbooks and follows the selected stat', async () => {
     await openWithDfs({
       lines: { dabble: { PTS: 27.5, FGA: 8.5 } },
       linePrices: { dabble: { FGA: { over: -122, under: -122 } } },
       bookLines: { PTS: quote([bookRow('fanduel', 26.5, -135, 110)]) },
     });
 
-    expect(screen.getByRole('table', { name: 'PTS sportsbook lines' })).toBeVisible();
     // Dabble prices only FGA, but its PTS line is still listed, unpriced.
-    expect(rows(screen.getByRole('table', { name: 'PTS app lines' }))).toEqual(['Dabble27.5——']);
+    expect(tableRows(linesTable('PTS'))).toEqual([
+      'Apps',
+      'Dabble27.5——',
+      'Sportsbooks',
+      'FanDuel26.5-135+110',
+    ]);
 
     await userEvent.click(
       within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
@@ -3437,9 +3504,7 @@ describe('Selection card DFS prices', () => {
       }),
     );
 
-    expect(rows(screen.getByRole('table', { name: 'FGA app lines' }))).toEqual([
-      'Dabble8.5-122-122',
-    ]);
+    expect(tableRows(linesTable('FGA'))).toEqual(['Apps', 'Dabble8.5-122-122']);
   });
 });
 
@@ -3456,20 +3521,18 @@ test('a category only sportsbooks quote is reachable from the strip without beco
       .getAllByRole('button')
       .map((button) => button.getAttribute('aria-label')),
   ).toEqual(['PTS', 'AST', 'FGA']);
-  expect(screen.queryByRole('table', { name: 'AST sportsbook lines' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('table', { name: 'AST lines' })).not.toBeInTheDocument();
 
   await userEvent.click(within(strip).getByRole('button', { name: 'AST' }));
 
   expect(within(strip).getByRole('button', { name: 'AST' })).toHaveAccessibleDescription(
     'Quoted by sportsbooks only No Season Matchup Score',
   );
-  const table = screen.getByRole('table', { name: 'AST sportsbook lines' });
-  expect(
-    within(table)
-      .getAllByRole('row')
-      .slice(1)
-      .map((row) => row.textContent.replace(/\s+/g, ' ').trim()),
-  ).toEqual(['BetMGM6.5+120 ★-150', 'FanDuel6.5+110-140']);
+  expect(tableRows(linesTable('AST'))).toEqual([
+    'Sportsbooks',
+    'BetMGM6.5+120 ★-150',
+    'FanDuel6.5+110-140',
+  ]);
   // Still DFS-only: the posted-by line, no Matchup Score and the Target path.
   expect(screen.getByText(/Markets posted by PrizePicks and Underdog\./)).toBeVisible();
   expect(screen.getByRole('region', { name: 'Matchup Score' })).toHaveTextContent(
@@ -3487,12 +3550,20 @@ test('names every allowlisted sportsbook', async () => {
   await openWithBooks({ PTS: quote(keys.map((key) => bookRow(key, 27.5, -110, -110))) });
   await userEvent.click(screen.getByRole('button', { name: '+2 more' }));
 
-  const table = screen.getByRole('table', { name: 'PTS sportsbook lines' });
   expect(
-    within(table)
+    within(linesTable('PTS'))
       .getAllByRole('rowheader')
       .map((cell) => cell.textContent),
-  ).toEqual(['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'BetRivers', 'Fanatics']);
+  ).toEqual([
+    'PrizePicks',
+    'Underdog',
+    'DraftKings',
+    'FanDuel',
+    'BetMGM',
+    'Caesars',
+    'BetRivers',
+    'Fanatics',
+  ]);
 });
 
 describe('rail price line', () => {
@@ -4311,11 +4382,11 @@ describe('categories the Matchup posts but does not score (statsplus#370)', () =
       }),
     );
     expect(
-      within(screen.getByRole('table', { name: 'FTA app lines' }))
+      within(screen.getByRole('table', { name: 'FTA lines' }))
         .getAllByRole('row')
         .slice(1)
         .map((tableRow) => tableRow.textContent),
-    ).toEqual(['Dabble6.5-118-104']);
+    ).toEqual(['Apps', 'Dabble6.5-118-104']);
   });
 
   test('says a player posted only in unscored categories has no Matchup Score', async () => {

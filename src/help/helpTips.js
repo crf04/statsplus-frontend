@@ -36,11 +36,12 @@ export const HELP_TIPS = {
       'The track is its rank from 1 to 30, where 30 allows the most.',
     ],
   },
-  scoreMatrix: {
-    title: 'Score Matrix',
+  matchupScore: {
+    title: 'Matchup Score',
     body: [
-      'Each cell crosses how this player gets the stat with how much this defense allows of it, against the league average. Positive is more of the stat than usual.',
-      'Blend combines the columns. Thin marks a cell with too few games or too little volume to lean on.',
+      'Crosses how this player gets the stat with how much this defense allows of it, against the league average. Positive is more of the stat than usual. Each stat tab shows its score for the window.',
+      'A single stat lists where his volume comes from: his share of each slice, the opponent’s rank (30th allows the most) and its % vs league. Slices read the season; scores follow the window.',
+      'A combo splits its score into each stat and Base. Low confidence marks a score with too few games or too little volume to lean on.',
       'No line marks a market with no line in CourtAI’s books. CourtAI does not carry every book, so the market may still be offered.',
     ],
   },

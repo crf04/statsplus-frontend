@@ -1,48 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  bookMark,
-  bookName,
-  categoryLabel,
-  formatScorePercent as formatPercent,
-  orderCategories,
-} from './displayConfig';
+import { bookMark, bookName, categoryLabel, orderCategories } from './displayConfig';
 import ErrorMessage from '../feedback/ErrorMessage';
 import HelpTip from '../help/HelpTip';
+import { MarketReading, ScorePill, tone } from '../profileMatchup/ProfileMatchupCard';
+import { readMatchup, scoreText } from '../profileMatchup/matchupReading';
 
-const BASE_ORDER = [
-  'shotTypes',
-  'shotZones',
-  'playTypes',
-  'assistLocations',
-  'traditional',
-  'reboundTypes',
-];
-const BASE_LABELS = {
-  playTypes: 'Play types',
-  shotZones: 'Shot zones',
-  shotTypes: 'Shot types',
-  assistLocations: 'Assist locations',
-  traditional: 'Traditional',
-  reboundTypes: 'Rebound types',
-};
 const BOOKS_SHOWN = 4;
 const WINDOW_LABELS = { season: 'Season', last15: 'Last 15' };
+const RESPONSE_WINDOWS = { season: 'season', last15: 'last_15' };
 
 const formatDelta = (value) => `${value > 0 ? '+' : ''}${value.toFixed(3)}`;
 const signClass = (value) => {
   if (value > 0) return 'delta-up';
   if (value < 0) return 'delta-down';
   return 'delta-flat';
-};
-// A cell's wash is the score: greener up, redder down, nothing for a flat or
-// absent score. Alpha is capped so a large score stays legible.
-const washStyle = (component) => {
-  if (!component || Math.round(component.value * 100) === 0) return undefined;
-  const alpha = Math.min(0.55, Math.abs(component.value) * 3);
-  const family = component.value > 0 ? 'hit' : 'miss';
-  return {
-    background: `rgb(var(--ct-${family}-bg-rgb) / calc(${alpha.toFixed(2)} * var(--ct-k-accent-bg)))`,
-  };
 };
 
 // The tip time is the schedule's own time in the reader's zone.
@@ -184,16 +155,6 @@ function DfsLines({ player, market }) {
   );
 }
 
-function Cell({ component }) {
-  if (!component) return <span className="score-none">—</span>;
-  return (
-    <>
-      {formatPercent(component.value)}
-      {component.thin && <span className="thin-flag">thin</span>}
-    </>
-  );
-}
-
 function Sparkline({ values }) {
   if (values.length < 2) return null;
   const max = Math.max(...values, 1);
@@ -207,21 +168,33 @@ function Sparkline({ values }) {
   );
 }
 
-// The strip is the stat selector. A completed game shows its box score; an
-// upcoming game has none yet, so it shows minutes to date and which books post
-// each market. The MIN tile is context, not a choice.
-// The strip's choices are the DFS categories plus any category only sportsbooks
-// quote. The extras feed the Sportsbooks table alone: they are not DFS
-// provenance, have no score row and are never Target candidates.
-const statChoices = (statCategories, bookLines = {}) =>
+// The strip is the stat selector, and each tab carries its market's Matchup
+// Score for the window. A completed game shows its box score; an upcoming game
+// has none yet, so it shows minutes to date and which books post each market.
+// The MIN tile is context, not a choice.
+// The strip's choices are the DFS categories, any category only sportsbooks
+// quote, and any market the Matchup scores with no line (statsplus#457). The
+// sportsbook extras feed the Sportsbooks table alone: they are not DFS
+// provenance and are never Target candidates.
+const statChoices = (statCategories, bookLines = {}, scores = {}) =>
   orderCategories([
     ...new Set([
       ...statCategories,
       ...Object.keys(bookLines).filter((m) => bookLines[m].books.length),
+      ...Object.keys(scores),
     ]),
   ]);
 
-function StatStrip({ player, categories, activeStat, onPick }) {
+function StripScore({ market }) {
+  if (market?.score == null) return <small className="selection-strip-score">—</small>;
+  return (
+    <small className={`selection-strip-score ${tone(market.score)}`}>
+      {scoreText(market.score)}
+    </small>
+  );
+}
+
+function StatStrip({ player, categories, reading, activeStat, onPick }) {
   const line = player.focalGameLine;
   const minutes = player.last10Minutes;
   const minutesAverage = minutes.length
@@ -259,7 +232,7 @@ function StatStrip({ player, categories, activeStat, onPick }) {
           >
             <span aria-hidden="true">{category}</span>
             {line ? (
-              <b id={`selection-strip-${category}`}>{line.stats[category].toFixed(1)}</b>
+              <b id={`selection-strip-${category}`}>{line.stats[category]?.toFixed(1) ?? '—'}</b>
             ) : (
               <b className="selection-strip-books">
                 <span className="selection-visually-hidden" id={`selection-strip-${category}`}>
@@ -277,8 +250,14 @@ function StatStrip({ player, categories, activeStat, onPick }) {
                     {mark}
                   </i>
                 ))}
+                {!books.length && !player.bookLines?.[category] && (
+                  <em className="selection-strip-no-line" aria-hidden="true">
+                    no line
+                  </em>
+                )}
               </b>
             )}
+            <StripScore market={reading.markets[category]} />
           </button>
         );
       })}
@@ -348,6 +327,7 @@ export default function SelectionCard({
   error,
   windowKey,
   windowName = WINDOW_LABELS[windowKey],
+  response,
   sheetMarket,
   whyRelevant,
   historical,
@@ -358,15 +338,20 @@ export default function SelectionCard({
   const previousSheetMarket = useRef(sheetMarket);
   const categories = orderCategories(player.statCategories);
   const stats = useMemo(
-    () => statChoices(player.statCategories, player.bookLines),
-    [player.statCategories, player.bookLines],
+    () => statChoices(player.statCategories, player.bookLines, player.scores),
+    [player.statCategories, player.bookLines, player.scores],
   );
-  // The Matchup scores markets CourtAI has no line for (statsplus#457), and a
-  // Score Matrix row picks one the strip does not offer.
-  const scoredMarkets = useMemo(() => orderCategories(Object.keys(player.scores)), [player.scores]);
-  const pickable = useMemo(() => [...stats, ...scoredMarkets], [stats, scoredMarkets]);
+  const opponent = player.teamId === game.home.teamId ? game.away.tricode : game.home.tricode;
+  const reading = useMemo(
+    () =>
+      readMatchup(response, opponent, {
+        playerId: player.id,
+        window: RESPONSE_WINDOWS[windowKey],
+      }),
+    [response, opponent, player.id, windowKey],
+  );
   const [activeStat, setActiveStat] = useState(
-    pickable.includes(sheetMarket) ? sheetMarket : stats[0],
+    stats.includes(sheetMarket) ? sheetMarket : stats[0],
   );
   useEffect(() => panelRef.current?.focus(), [player.id]);
   useEffect(() => {
@@ -374,33 +359,20 @@ export default function SelectionCard({
     const sheetMarketChanged = previousSheetMarket.current !== sheetMarket;
     setActiveStat((current) => {
       if (playerChanged) {
-        return pickable.includes(sheetMarket) ? sheetMarket : stats[0];
+        return stats.includes(sheetMarket) ? sheetMarket : stats[0];
       }
-      if (sheetMarketChanged && sheetMarket !== 'All' && pickable.includes(sheetMarket)) {
+      if (sheetMarketChanged && sheetMarket !== 'All' && stats.includes(sheetMarket)) {
         return sheetMarket;
       }
-      return pickable.includes(current) ? current : stats[0];
+      return stats.includes(current) ? current : stats[0];
     });
     previousPlayerId.current = player.id;
     previousSheetMarket.current = sheetMarket;
-  }, [player.id, stats, pickable, sheetMarket]);
-  const rows = scoredMarkets.map((market) => ({
+  }, [player.id, stats, sheetMarket]);
+  const rows = orderCategories(Object.keys(player.scores)).map((market) => ({
     market,
     score: player.scores[market][windowKey],
-    noLine:
-      !historical &&
-      !player.postedMarkets.includes(market) &&
-      !player.bookLines?.[market]?.books.length,
   }));
-  const unscored = categories.filter((market) => !Object.hasOwn(player.scores, market));
-  const baseRank = (base) => {
-    const index = BASE_ORDER.indexOf(base);
-    return index === -1 ? BASE_ORDER.length : index;
-  };
-  const bases = [...new Set(rows.flatMap(({ score }) => Object.keys(score.components)))].sort(
-    (a, b) => baseRank(a) - baseRank(b),
-  );
-  const hasBlend = rows.some(({ score }) => score.blend);
   const line = player.focalGameLine;
   return (
     <section
@@ -438,78 +410,27 @@ export default function SelectionCard({
       <StatStrip
         player={player}
         categories={stats}
+        reading={reading}
         activeStat={activeStat}
         onPick={setActiveStat}
       />
       <div className="selection-panels">
-        <section className="selection-panel" aria-label="Score Matrix">
-          <div className="help-tip-heading">
-            <h3>Score Matrix</h3>
-            <HelpTip tip="scoreMatrix" />
-          </div>
-          {rows.length > 0 && (
-            <div className="selection-table-wrap">
-              <table aria-label={`${player.name} Score Matrix`} className="selection-matrix">
-                <thead>
-                  <tr>
-                    <th scope="col">{historical ? 'Category' : 'Market'}</th>
-                    {bases.map((base) => (
-                      <th scope="col" key={base}>
-                        {BASE_LABELS[base] || base}
-                      </th>
-                    ))}
-                    {hasBlend && (
-                      <th scope="col" className="blend-col">
-                        Blend
-                      </th>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map(({ market, score, noLine }) => (
-                    <tr
-                      key={market}
-                      className={market === activeStat ? 'active-market-row' : undefined}
-                      onClick={() => setActiveStat(market)}
-                    >
-                      <th scope="row">
-                        <button
-                          type="button"
-                          className="selection-matrix-pick"
-                          aria-pressed={market === activeStat}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setActiveStat(market);
-                          }}
-                        >
-                          {market}
-                        </button>
-                        {noLine && (
-                          <>
-                            {' '}
-                            <small className="selection-matrix-no-line">no line</small>
-                          </>
-                        )}
-                      </th>
-                      {bases.map((base) => (
-                        <td key={base} style={washStyle(score.components[base])}>
-                          <Cell component={score.components[base]} />
-                        </td>
-                      ))}
-                      {hasBlend && (
-                        <td className="blend-col" style={washStyle(score.blend)}>
-                          <Cell component={score.blend} />
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <section className="selection-panel selection-panel-score" aria-label="Matchup Score">
+          <div className="selection-score-heading">
+            <div className="help-tip-heading">
+              <h3>{activeStat} Matchup Score</h3>
+              <HelpTip tip="matchupScore" />
             </div>
-          )}
-          {unscored.length > 0 && (
-            <p className="honest-empty">No Matchup Score is computed for {unscored.join(', ')}.</p>
-          )}
+            <span className="selection-score-pill">
+              <ScorePill
+                market={reading.markets[activeStat]}
+                title={`${activeStat} ${windowName} Matchup Score`}
+              />
+            </span>
+          </div>
+          <div className="pmc">
+            <MarketReading reading={reading} name={activeStat} windowName={windowName} />
+          </div>
         </section>
         <section
           className="selection-panel selection-panel-log"
@@ -568,7 +489,7 @@ export default function SelectionCard({
           ? 'Highlighted Defense Sheet rows show displayed Season Diet Share inputs.'
           : 'This player is not opposing the viewed Defense Sheet, so no why rows are highlighted.'}{' '}
         Scores and deltas are delivered by the API.
-        {historical ? ' The Score Matrix reflects completed-season context.' : ''}
+        {historical ? ' Matchup Scores reflect completed-season context.' : ''}
       </p>
     </section>
   );

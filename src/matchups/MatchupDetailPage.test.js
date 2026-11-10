@@ -267,11 +267,44 @@ const matchup = {
   },
 };
 
+// `fetchMatchup` resolves the decoded Matchup with the response it decoded,
+// which the player sheet's matchup card reads. A hand-built Matchup has no
+// response, so its scores are restated in the response's shape.
+const snakeKey = (key) => key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+const responseWindow = (window) => ({
+  components: Object.fromEntries(
+    Object.entries(window.components).map(([base, cell]) => [snakeKey(base), cell]),
+  ),
+  blend: window.blend,
+  missing_inputs: window.missingInputs ?? [],
+});
+const fetched = (decoded) => ({
+  ...decoded,
+  response: decoded.response ?? {
+    players: decoded.players.map((player) => ({
+      canonical_id: player.id,
+      name: player.name,
+      scores: Object.fromEntries(
+        Object.entries(player.scores).map(([market, windows]) => [
+          market,
+          { season: responseWindow(windows.season), last_15: responseWindow(windows.last15) },
+        ]),
+      ),
+      season_averages: player.seasonAverages ?? {},
+    })),
+    teams: decoded.teams.map((team) => ({ tricode: team.tricode })),
+  },
+});
+const decodeFetched = (raw) => ({
+  ...jest.requireActual('./matchupApi').decodeMatchup(raw),
+  response: raw,
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   useAuth.mockReturnValue({ isAuthenticated: true, loading: false });
   fetchSeasons.mockResolvedValue(legacySeasons);
-  fetchMatchup.mockResolvedValue(matchup);
+  fetchMatchup.mockResolvedValue(fetched(matchup));
   fetchTargetPreview.mockResolvedValue(capturePreview);
   fetchDietBaselines.mockResolvedValue({ shares: {} });
   fetchMatchupSelection.mockResolvedValue({
@@ -334,10 +367,12 @@ test('shows the matchup-detail preseason caveat only for preseason games', async
   expect(screen.queryByRole('note', { name: 'Preseason matchup caveat' })).not.toBeInTheDocument();
   regular.unmount();
 
-  fetchMatchup.mockResolvedValueOnce({
-    ...matchup,
-    game: { ...matchup.game, preseason: true },
-  });
+  fetchMatchup.mockResolvedValueOnce(
+    fetched({
+      ...matchup,
+      game: { ...matchup.game, preseason: true },
+    }),
+  );
   render(
     <MemoryRouter initialEntries={['/matchups/game-1']}>
       <Routes>
@@ -399,7 +434,7 @@ test('lists who leans on a slice above league, most first, and leaves off those 
       },
     ];
   });
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const leans = await screen.findByRole('list', { name: 'Players leaning on Transition' });
@@ -430,7 +465,7 @@ test('lists who leans on a slice in a market they are scored in with no line (st
       },
     ];
   });
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const leans = await screen.findByRole('list', { name: 'Players leaning on Transition' });
@@ -447,7 +482,7 @@ test('a selection highlights only the slices his delivered Season Diet Share lea
     share: 0.02,
     volumePerGame: 5,
   };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   render(
     <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
       <Routes>
@@ -492,7 +527,7 @@ test('names an unavailable surface window while leaving available surfaces usabl
       last15: value(10, 9, 1.1, 24),
     },
   ];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
   await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
@@ -553,7 +588,7 @@ test('renders one relevant traditional unavailability notice for All and specifi
     },
   };
   lebron.scores.AST = score(0.05);
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
   await userEvent.click(screen.getByRole('button', { name: 'All' }));
@@ -575,7 +610,7 @@ test('explains a withheld Last-15 window in a sentence instead of a raw reason',
     status: 'unavailable',
     unavailableReason: 'insufficient_governed_games',
   };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   render(
     <MemoryRouter initialEntries={['/matchups/game-1']}>
       <Routes>
@@ -600,7 +635,7 @@ test('explains a Last-15 window still on the previous season in a sentence', asy
     status: 'unavailable',
     unavailableReason: 'window_not_ready',
   };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   render(
     <MemoryRouter initialEntries={['/matchups/game-1']}>
       <Routes>
@@ -643,7 +678,7 @@ test('names an unavailable OPP_REB window without hiding other traditional marke
   lebron.postedMarkets.push('REB', 'TOV');
   lebron.statCategories.push('REB', 'TOV');
   lebron.provenance.prizepicks.push('REB', 'TOV');
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
   await userEvent.click(screen.getByRole('button', { name: 'All' }));
@@ -685,7 +720,7 @@ test('names every Traditional row a Last 15 window lacks', async () => {
   lebron.postedMarkets.push('AST', 'FTM', 'TOV');
   lebron.statCategories.push('AST', 'FTM', 'TOV');
   lebron.provenance.prizepicks.push('AST', 'FTM', 'TOV');
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
   await userEvent.click(screen.getByRole('button', { name: 'All' }));
@@ -723,7 +758,7 @@ test('renders governed traditional sheet rows without duplicate defensive column
     season: value(allowed, 8 - index, sigma, 22),
     last15: value(allowed - 0.5, 4, sigma, 18),
   }));
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
   await userEvent.click(screen.getByRole('button', { name: 'All' }));
@@ -777,7 +812,7 @@ test('shows the Rebound Types section for REB and not for PTS', async () => {
   austin.dietShares.reboundTypes = reboundShare(0.3, 0.6);
   lebron.scores.REB = lebron.scores.PTS;
   lebron.dietShares.reboundTypes = reboundShare(0.38, 2.4);
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
 
@@ -830,7 +865,7 @@ test('an unavailable Rebound Types base explains itself for REB and stays silent
   lebron.postedMarkets.push('REB');
   lebron.statCategories.push('REB');
   lebron.provenance.prizepicks.push('REB');
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
 
@@ -859,7 +894,7 @@ test('an inactive Rebound Types publication reads as not published yet', async (
   lebron.postedMarkets.push('REB');
   lebron.statCategories.push('REB');
   lebron.provenance.prizepicks.push('REB');
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
 
@@ -882,7 +917,7 @@ test('lists play types by points only, never by possessions', async () => {
     season: value(14.9, 31, 1.6, 28),
     last15: value(13.1, 6, 0.9, 22),
   });
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
   const playTypeRows = () =>
@@ -903,7 +938,7 @@ test('renders a reading with no league comparison without a direction or a guess
   const candidate = JSON.parse(JSON.stringify(matchup));
   const boston = candidate.teams.find((team) => team.tricode === 'BOS');
   boston.defenseSheet.playTypes[0].season = value(7.5, null, 1.4, 1);
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
   await userEvent.click(screen.getByRole('button', { name: 'All deviations' }));
@@ -922,7 +957,7 @@ test('sorts a player with no season scoring last and explains zero-component off
   const lebron = candidate.players.find((player) => player.id === 2544);
   lebron.seasonScoring = null;
   lebron.scores.FGA.last15 = { components: {}, blend: null, missingInputs: [] };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup('/matchups/game-1?player=2544');
   await screen.findByRole('article', { name: 'LeBron James player' });
   expect(railNames()).toEqual(['Austin Reaves', 'LeBron James']);
@@ -1047,7 +1082,7 @@ test('team tabs follow team ids when both teams share a tricode', async () => {
   candidate.game.away = { ...candidate.game.away, teamId: 1, tricode: 'LAL' };
   candidate.game.home = { ...candidate.game.home, teamId: 2, tricode: 'LAL' };
   candidate.teams = candidate.teams.map((team) => ({ ...team, tricode: 'LAL' }));
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   render(
     <MemoryRouter initialEntries={['/matchups/game-1']}>
       <Routes>
@@ -1125,8 +1160,8 @@ test('opens and deep-links the selection card while market flips reuse delivered
     </MemoryRouter>,
   );
   expect(await screen.findByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
-  expect(screen.getByRole('table', { name: 'LeBron James Score Matrix' })).toHaveTextContent(
-    '+12%',
+  expect(screen.getByRole('region', { name: 'Matchup Score' })).toHaveTextContent(
+    'PTS Matchup Score+12.0%',
   );
   expect((await screen.findAllByText('+0.083')).length).toBeGreaterThan(0);
   expect(screen.queryByText('Archetype sample')).not.toBeInTheDocument();
@@ -1140,25 +1175,20 @@ test('opens and deep-links the selection card while market flips reuse delivered
   expect(fetchMatchupSelection).toHaveBeenCalledTimes(1);
 });
 
-test('the Score Matrix washes each cell green up and red down, as a tint behind the number', async () => {
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
-  const matrix = await screen.findByRole('table', { name: 'LeBron James Score Matrix' });
-  const washes = [...matrix.querySelectorAll('tbody td')].map((cell) => [
-    cell.textContent,
-    cell.style.background,
-  ]);
-  expect(washes).toEqual([
-    ['+12%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.36 * var(--ct-k-accent-bg)))'],
-    ['+12%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.36 * var(--ct-k-accent-bg)))'],
-    ['+4%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.12 * var(--ct-k-accent-bg)))'],
-    ['+4%', 'rgb(var(--ct-hit-bg-rgb) / calc(0.12 * var(--ct-k-accent-bg)))'],
-  ]);
+test('each strip tab carries its Matchup Score, green up and red down', async () => {
+  const candidate = JSON.parse(JSON.stringify(matchup));
+  const lebron = candidate.players.find((player) => player.id === 2544);
+  lebron.scores.FGA.season.blend.value = -0.043;
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
+  renderMatchup('/matchups/game-1?player=2544');
+  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+
+  const strip = within(screen.getByRole('group', { name: 'Selection log stat' }));
+  const score = (name) => strip.getByRole('button', { name }).querySelector('small');
+  expect(score('PTS')).toHaveTextContent('+12.0%');
+  expect(score('PTS')).toHaveClass('pmc-up');
+  expect(score('FGA')).toHaveTextContent('−4.3%');
+  expect(score('FGA')).toHaveClass('pmc-down');
 });
 
 test('filtered to a combo market, the Defense Sheet lists the shot make rows that feed its points', async () => {
@@ -1188,7 +1218,7 @@ test('filtered to a combo market, the Defense Sheet lists the shot make rows tha
     last15: value(5, 5, 1, 20),
   }));
   candidate.players.find((player) => player.id === 2544).statCategories.push('PRA', 'PR', 'PA');
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
 
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -1222,7 +1252,7 @@ test('the Defense Sheet leaves out catch-and-shoot 2s and under-10-ft 3s', async
     season: value(9, 5, 1, 20),
     last15: value(9, 5, 1, 20),
   }));
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
 
   renderMatchup();
   const sheet = (await screen.findByRole('heading', { name: 'What BOS allows' })).closest(
@@ -1277,7 +1307,7 @@ test('decoded shot-type Points rows leave the rendered Shot types section unchan
     const candidate = JSON.parse(JSON.stringify(matchup));
     candidate.teams.find((team) => team.tricode === 'BOS').defenseSheet.shotTypes =
       decodeBostonShotTypes(withPoints);
-    fetchMatchup.mockResolvedValueOnce(candidate);
+    fetchMatchup.mockResolvedValueOnce(fetched(candidate));
     const { unmount } = renderMatchup();
     const sheet = (await screen.findByRole('heading', { name: 'What BOS allows' })).closest(
       'section',
@@ -1332,7 +1362,7 @@ test('the Selection card highlights the shot make rows behind a combo market for
   ];
   lebron.statCategories.push('PRA', 'PR', 'PA');
   for (const combo of ['PRA', 'PR', 'PA']) lebron.scores[combo] = score(0.08, 0.02);
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
 
   renderMatchup('/matchups/game-1?player=2544');
   await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
@@ -1372,7 +1402,7 @@ test('pull-up 3s and pull-up 2s each list who leans on that shot, with its own s
   lebron.dietShares.shotTypes = pullUps(lean(0.28, 1.2), lean(0.12, -0.3));
   tatum.dietShares.shotTypes = pullUps(null, null);
   for (const player of [reaves, lebron, tatum]) player.statCategories = ['PTS'];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
 
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -1415,7 +1445,7 @@ test('a shot value row reads the whole shot type floor, not its own attempts', a
     },
   ];
   for (const player of [reaves, lebron]) player.statCategories = ['PTS'];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
 
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -1466,7 +1496,7 @@ test('joins suffixed sheet rows to bare governed Diet slice identities', async (
       },
     },
   ];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup('/matchups/game-1?player=2544');
   await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
   await userEvent.click(
@@ -1646,7 +1676,7 @@ const renderMatchup = (path = '/matchups/game-1') =>
 test('keeps the live Defense Sheet gated on missing legacy stats freshness', async () => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.freshness.stats = { status: 'missing', retrievedAt: null };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   expect(await screen.findByRole('heading', { name: 'What BOS allows' })).toBeVisible();
@@ -1655,7 +1685,7 @@ test('keeps the live Defense Sheet gated on missing legacy stats freshness', asy
 });
 
 test('renders Season defense from its own Surface while legacy stats freshness is missing', async () => {
-  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+  fetchMatchup.mockResolvedValueOnce(fetched(historicalMatchup()));
   renderMatchup();
 
   expect(await screen.findByRole('heading', { name: 'What BOS allows' })).toBeVisible();
@@ -1667,7 +1697,7 @@ test('renders Season defense from its own Surface while legacy stats freshness i
 });
 
 test('labels the historical rail Players in game and switches it with the defense team', async () => {
-  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+  fetchMatchup.mockResolvedValueOnce(fetched(historicalMatchup()));
   renderMatchup();
 
   const rail = await screen.findByRole('complementary', { name: 'Players in game' });
@@ -1713,7 +1743,7 @@ test('refuses to open a dossier for an unavailable participant', async () => {
     null,
     'game_logs_incomplete',
   );
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup('/matchups/game-1?player=2544');
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -1724,36 +1754,23 @@ test('refuses to open a dossier for an unavailable participant', async () => {
 
 test('names the missing inputs of a withheld score in the dossier', async () => {
   fetchMatchup.mockResolvedValueOnce(
-    withDefensiveScores(historicalMatchup(), ['team_defense:traditional']),
+    fetched(withDefensiveScores(historicalMatchup(), ['team_defense:traditional'])),
   );
   renderMatchup('/matchups/game-1?player=1630559');
 
   await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
   // The component evidence survives, so the card must say why the score did not.
-  expect(screen.getByRole('table', { name: 'Austin Reaves Score Matrix' })).toHaveTextContent(
-    '+44%',
+  await userEvent.click(
+    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+      name: 'TOV',
+    }),
+  );
+  expect(screen.getByRole('region', { name: 'Matchup Score' })).toHaveTextContent(
+    'No Matchup Score for TOV in Season.',
   );
   expect(
     screen.getByText('TOV Matchup Score unavailable in Season: missing team_defense:traditional.'),
   ).toBeVisible();
-});
-
-test('drops posted-market vocabulary from the historical dossier', async () => {
-  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
-  renderMatchup('/matchups/game-1?player=2544');
-
-  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
-  const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
-  expect(within(matrix).getByRole('columnheader', { name: 'Category' })).toBeVisible();
-  expect(within(matrix).queryByRole('columnheader', { name: 'Market' })).not.toBeInTheDocument();
-});
-
-test('keeps posted-market vocabulary in the live dossier', async () => {
-  renderMatchup('/matchups/game-1?player=2544');
-
-  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
-  const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
-  expect(within(matrix).getByRole('columnheader', { name: 'Market' })).toBeVisible();
 });
 
 test('names an unavailable participant source while the Defense Sheet stays usable', async () => {
@@ -1764,7 +1781,7 @@ test('names an unavailable participant source while the Defense Sheet stays usab
     null,
     'game_logs_incomplete',
   );
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   expect(await screen.findByRole('heading', { name: 'What BOS allows' })).toBeVisible();
@@ -1774,7 +1791,7 @@ test('names an unavailable participant source while the Defense Sheet stays usab
 });
 
 test('separates the focal outcome from hindsight context in the historical dossier', async () => {
-  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+  fetchMatchup.mockResolvedValueOnce(fetched(historicalMatchup()));
   fetchMatchupSelection.mockResolvedValueOnce({
     playerId: 2544,
     experience: {
@@ -1808,7 +1825,7 @@ test('separates the focal outcome from hindsight context in the historical dossi
   );
   // Hindsight context left with the Archetype sample; the explainer still names it.
   expect(screen.queryByText(/hindsight/)).not.toBeInTheDocument();
-  expect(screen.getByText(/The Score Matrix reflects completed-season context\./)).toBeVisible();
+  expect(screen.getByText(/Matchup Scores reflect completed-season context\./)).toBeVisible();
   // The dossier is requested for governed Stat Categories, not posted markets.
   expect(fetchMatchupSelection.mock.calls.at(-1).slice(0, 3)).toEqual([
     'game-1',
@@ -1817,15 +1834,15 @@ test('separates the focal outcome from hindsight context in the historical dossi
   ]);
 });
 
-test('labels the historical Score Matrix explainer with completed-season context', async () => {
-  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+test('labels the historical explainer with completed-season context', async () => {
+  fetchMatchup.mockResolvedValueOnce(fetched(historicalMatchup()));
   renderMatchup('/matchups/game-1?player=2544');
 
   await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
-  expect(screen.getByText(/The Score Matrix reflects completed-season context\./)).toBeVisible();
+  expect(screen.getByText(/Matchup Scores reflect completed-season context\./)).toBeVisible();
 });
 
-test('does not label the Score Matrix explainer in current mode', async () => {
+test('does not label the explainer in current mode', async () => {
   render(
     <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
       <Routes>
@@ -1893,22 +1910,20 @@ test('the strip and the market tabs read in box-score order', async () => {
     .getAllByRole('button')
     .map((button) => button.getAttribute('aria-label'));
   expect(strip).toEqual(['PTS', 'FGA']);
-  const matrixRows = within(screen.getByRole('table', { name: 'LeBron James Score Matrix' }))
-    .getAllByRole('rowheader')
-    .map((row) => row.textContent);
-  expect(matrixRows).toEqual(['PTS', 'FGA']);
 });
 
 test('an upcoming game names its tip time from the schedule', async () => {
-  fetchMatchup.mockResolvedValueOnce({
-    ...matchup,
-    game: {
-      ...matchup.game,
-      scheduledAt: '2026-01-16T00:30:00.000Z',
-      status: 'scheduled',
-      statusLabel: 'Scheduled',
-    },
-  });
+  fetchMatchup.mockResolvedValueOnce(
+    fetched({
+      ...matchup,
+      game: {
+        ...matchup.game,
+        scheduledAt: '2026-01-16T00:30:00.000Z',
+        status: 'scheduled',
+        statusLabel: 'Scheduled',
+      },
+    }),
+  );
   render(
     <MemoryRouter initialEntries={['/matchups/game-1?player=1630559']}>
       <Routes>
@@ -1929,40 +1944,16 @@ test('an upcoming game names its tip time from the schedule', async () => {
   ).toBeVisible();
 });
 
-test('a matrix row picks the stat from the keyboard too', async () => {
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
+test('a strip tab picks the stat from the keyboard too', async () => {
+  renderMatchup('/matchups/game-1?player=2544');
   await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
-  const matrix = within(screen.getByRole('table', { name: 'LeBron James Score Matrix' }));
-  matrix.getByRole('button', { name: 'FGA' }).focus();
+  const strip = within(screen.getByRole('group', { name: 'Selection log stat' }));
+  strip.getByRole('button', { name: 'FGA' }).focus();
   await userEvent.keyboard('{Enter}');
-  expect(
-    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
-      name: 'FGA',
-    }),
-  ).toHaveAttribute('aria-pressed', 'true');
-});
-
-test('a matrix row picks the stat like the strip does', async () => {
-  render(
-    <MemoryRouter initialEntries={['/matchups/game-1?player=2544']}>
-      <Routes>
-        <Route path="/matchups/:gameId" element={<MatchupDetailPage />} />
-      </Routes>
-    </MemoryRouter>,
+  expect(strip.getByRole('button', { name: 'FGA' })).toHaveAttribute('aria-pressed', 'true');
+  expect(screen.getByRole('region', { name: 'Matchup Score' })).toHaveTextContent(
+    'FGA Matchup Score+4.0%',
   );
-  await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
-  await userEvent.click(screen.getByRole('rowheader', { name: 'FGA' }));
-  expect(
-    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
-      name: 'FGA',
-    }),
-  ).toHaveAttribute('aria-pressed', 'true');
 });
 
 /*
@@ -2178,7 +2169,9 @@ test.each([
       { season: '2025-26', mode: 'retained', families: {}, teamGames: null },
     ],
   });
-  fetchMatchup.mockResolvedValue({ ...matchup, asOfSeason: '2026-27', seasonContext: context });
+  fetchMatchup.mockResolvedValue(
+    fetched({ ...matchup, asOfSeason: '2026-27', seasonContext: context }),
+  );
   fetchTargetPreview.mockImplementation(async (request) => ({
     ...capturePreview,
     season: request.season,
@@ -2201,11 +2194,13 @@ test.each([
   ['?season=2026-27', 'linked'],
 ])('a capture from %s (%s) reads a picked 2024-25', async (query) => {
   fetchSeasons.mockResolvedValue(unpublishedSeasons);
-  fetchMatchup.mockResolvedValue({
-    ...matchup,
-    asOfSeason: '2026-27',
-    seasonContext: { selectedSeason: '2026-27', publishedSeason: '2025-26' },
-  });
+  fetchMatchup.mockResolvedValue(
+    fetched({
+      ...matchup,
+      asOfSeason: '2026-27',
+      seasonContext: { selectedSeason: '2026-27', publishedSeason: '2025-26' },
+    }),
+  );
   fetchTargetPreview.mockImplementation(async (request) => ({
     ...capturePreview,
     season: request.season,
@@ -2265,11 +2260,13 @@ const capturePreviewSeasons = () =>
 
 test('a refused 2026-27 capture from an unlinked Matchup reads 2025-26 and says so', async () => {
   fetchSeasons.mockResolvedValue(unpublishedSeasons);
-  fetchMatchup.mockResolvedValue({
-    ...matchup,
-    asOfSeason: '2025-26',
-    seasonContext: { selectedSeason: '2026-27', publishedSeason: '2025-26' },
-  });
+  fetchMatchup.mockResolvedValue(
+    fetched({
+      ...matchup,
+      asOfSeason: '2025-26',
+      seasonContext: { selectedSeason: '2026-27', publishedSeason: '2025-26' },
+    }),
+  );
   refuseCapture2627();
   renderMatchup('/matchups/0022600003');
 
@@ -2287,11 +2284,13 @@ test('a refused 2026-27 capture from an unlinked Matchup reads 2025-26 and says 
 
 test('a refused 2026-27 capture from a linked Matchup shows 2025-26 on request', async () => {
   fetchSeasons.mockResolvedValue(unpublishedSeasons);
-  fetchMatchup.mockResolvedValue({
-    ...matchup,
-    asOfSeason: '2026-27',
-    seasonContext: { selectedSeason: '2026-27', publishedSeason: '2025-26' },
-  });
+  fetchMatchup.mockResolvedValue(
+    fetched({
+      ...matchup,
+      asOfSeason: '2026-27',
+      seasonContext: { selectedSeason: '2026-27', publishedSeason: '2025-26' },
+    }),
+  );
   refuseCapture2627();
   renderMatchup('/matchups/0022600003?season=2026-27');
 
@@ -2461,7 +2460,7 @@ afterEach(() => jest.restoreAllMocks());
 test('AC1: a finished game says when, what the sheet is built on and what is missing in one sentence', async () => {
   const candidate = historicalMatchup();
   candidate.game = { ...candidate.game, status: 'final', statusLabel: 'Final' };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
@@ -2479,7 +2478,7 @@ test('AC1: an upcoming game names its tip-off and the books and time its lines w
     { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
     { name: 'draftkings', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
   ];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
@@ -2505,7 +2504,7 @@ test('AC1: a live header names only the books with lines and leaves other gaps u
       { name: 'kalshi', status: 'fresh', retrievedAt: '2026-01-15T11:54:00Z' },
     ],
   };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
@@ -2521,7 +2520,7 @@ test('AC1: the live header warns once, in the warning colour, when its lines are
   candidate.injuries = { ...candidate.injuries, status: 'unavailable', teams: [] };
   candidate.injuries.unavailableReason = 'permission_required';
   candidate.freshness.injuries = { status: 'unavailable', retrievedAt: null };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
@@ -2542,7 +2541,7 @@ test('AC1: the live header holds a prizepicks line to a 90m bar and every other 
     { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
     { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T12:11:00Z' },
   ];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
@@ -2560,7 +2559,7 @@ test('AC1: the live header calls a prizepicks line stale once it is older than 9
     { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
     { name: 'underdog', status: 'fresh', retrievedAt: '2026-01-15T13:15:00Z' },
   ];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
@@ -2574,7 +2573,7 @@ test('AC1: the live header holds a pool that only prizepicks has read to its 90m
   candidate.freshness.pool.providers = [
     { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
   ];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
@@ -2588,7 +2587,7 @@ test('AC1: the live header calls a pool that only prizepicks has read stale once
   candidate.freshness.pool.providers = [
     { name: 'prizepicks', status: 'fresh', retrievedAt: '2026-01-15T11:50:00Z' },
   ];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
@@ -2609,7 +2608,7 @@ test('a closing pool shows its closing lines with a neutral note, however old', 
       { name: 'prizepicks', status: 'missing', retrievedAt: null },
     ],
   };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const summary = await screen.findByRole('region', { name: 'Matchup summary' });
@@ -2621,7 +2620,7 @@ test('a closing pool shows its closing lines with a neutral note, however old', 
 });
 
 test('AC2: provenance lines, the window note, the instruction and the injury box are gone', async () => {
-  fetchMatchup.mockResolvedValueOnce(historicalMatchup());
+  fetchMatchup.mockResolvedValueOnce(fetched(historicalMatchup()));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -2661,7 +2660,7 @@ test('AC3: the page opens on All when the other side has no points', async () =>
       player.statCategories = player.statCategories.filter((stat) => stat !== 'PTS');
       delete player.scores.PTS;
     });
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -2673,7 +2672,7 @@ test('AC3: the page opens on All when the other side has no points', async () =>
 test('AC4: after the game each row shows minutes and what he did, against his average for PTS', async () => {
   const candidate = historicalMatchup();
   candidate.players.find((player) => player.id === 1630559).focalGameLine.stats.PTS = 24;
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const austin = await screen.findByRole('article', { name: 'Austin Reaves player' });
@@ -2698,7 +2697,7 @@ test('AC5: before the game the row shows his line and season average; the books 
   const lebronFixture = candidate.players.find((player) => player.id === 2544);
   lebronFixture.provenance = { underdog: ['PTS'], prizepicks: ['PTS', 'FGA'] };
   lebronFixture.lines = { underdog: { PTS: 26.5 }, prizepicks: { PTS: 27.5 } };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   const lebron = await screen.findByRole('article', { name: 'LeBron James player' });
@@ -2724,7 +2723,7 @@ describe('#212, statsplus#338: the rail leads with the line most sources post', 
     lebron.provenance = provenance;
     lebron.lines = lines;
     lebron.bookLines = bookLines;
-    fetchMatchup.mockResolvedValueOnce(candidate);
+    fetchMatchup.mockResolvedValueOnce(fetched(candidate));
     renderMatchup();
     const row = await screen.findByRole('article', { name: 'LeBron James player' });
     return row.querySelector('.rail-row-value b').textContent;
@@ -2819,7 +2818,7 @@ test('AC6, statsplus#395 AC3: with no line the row leads with his season average
   austin.seasonAverages = { PTS: 20.1, FG3A: 6.2 };
   const lebron = candidate.players.find((player) => player.id === 2544);
   lebron.scores.FGA.last15 = { components: {}, blend: null, missingInputs: [] };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -2924,7 +2923,7 @@ test('AC8: the sheet is headed by what the team allows and how to read it', asyn
 });
 
 test('AC9: each category is a label with one header row naming its columns', async () => {
-  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  fetchMatchup.mockResolvedValueOnce(fetched(fullSheet()));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -2948,7 +2947,7 @@ test('AC9: each category is a label with one header row naming its columns', asy
 });
 
 test('AC10: one row per slice with its measures side by side, shot types split into 2s and 3s', async () => {
-  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  fetchMatchup.mockResolvedValueOnce(fetched(fullSheet()));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -2974,7 +2973,7 @@ test('AC10: one row per slice with its measures side by side, shot types split i
 });
 
 test('AC11: slices read in plain English, never as wire keys', async () => {
-  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  fetchMatchup.mockResolvedValueOnce(fetched(fullSheet()));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -2995,7 +2994,7 @@ test('AC11: slices read in plain English, never as wire keys', async () => {
 });
 
 test('AC12: each measure shows one % vs league and its rank on a fewest-to-most track', async () => {
-  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  fetchMatchup.mockResolvedValueOnce(fetched(fullSheet()));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -3022,7 +3021,7 @@ test('AC12: each measure shows one % vs league and its rank on a fewest-to-most 
 });
 
 test('AC13: slices sort by their in-market measure, and both measures read at full strength', async () => {
-  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  fetchMatchup.mockResolvedValueOnce(fetched(fullSheet()));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -3054,7 +3053,7 @@ test('AC14: only players over league who pass the display threshold are listed u
   ];
   candidate.players[0].dietShares.playTypes = share(0.4, 5); // Austin: above league, under 0.5σ
   candidate.players[1].dietShares.playTypes = share(1.3, 0.5); // LeBron: under the volume floor
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -3090,7 +3089,7 @@ test("the volume floor reads the player's whole Base, not the one slice he leans
     slice('Less Than 10 ft', 0.7, 2.5, 2),
     slice('Pullups', 0.3, 1, -0.5),
   ];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -3122,7 +3121,7 @@ test('closing a deep-linked card whose row the open stat hides hands focus to th
   austin.provenance = { prizepicks: ['FG3A'] };
   austin.lines = {};
   delete austin.scores.PTS;
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup('/matchups/game-1?player=1630559');
 
   await screen.findByRole('heading', { name: 'Austin Reaves', level: 2 });
@@ -3161,7 +3160,7 @@ test('AC6: a withheld score is no headline, and a defensive-only score is one', 
     },
     last15: { components: {}, blend: null, missingInputs: [] },
   };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -3194,7 +3193,7 @@ test('AC10: one shot type reads as a 2s row and a 3s row, each with its attempts
     row('FG3A', ['FGA', 'FG3A'], value(7, 15, 1.5, 28)),
     row('FG3M', ['3PM', 'PTS'], value(2.5, 9, 1.3, 25)),
   ];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -3216,7 +3215,7 @@ test('AC10: one shot type reads as a 2s row and a 3s row, each with its attempts
 });
 
 test('AC12: the rank marker sits from fewest at the left to most at the right', async () => {
-  fetchMatchup.mockResolvedValueOnce(fullSheet());
+  fetchMatchup.mockResolvedValueOnce(fetched(fullSheet()));
   renderMatchup();
 
   await screen.findByRole('heading', { name: 'What BOS allows' });
@@ -3248,7 +3247,7 @@ const bookRow = (book, line, over, under, best = {}) => ({
 const openWithBooks = async (bookLines, path = '/matchups/game-1?player=2544') => {
   const candidate = JSON.parse(JSON.stringify(matchup));
   candidate.players.find((player) => player.id === 2544).bookLines = bookLines;
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup(path);
   await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
 };
@@ -3335,7 +3334,7 @@ test('another player opens with his books collapsed again', async () => {
   const books = { PTS: quote(names.map((name) => bookRow(name, 27.5, -110, -110))) };
   const candidate = JSON.parse(JSON.stringify(matchup));
   for (const player of candidate.players) player.bookLines = books;
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup('/matchups/game-1?player=2544');
   await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
   await userEvent.click(screen.getByRole('button', { name: '+1 more' }));
@@ -3376,7 +3375,7 @@ describe('Selection card DFS prices', () => {
     lebron.lines = lines;
     lebron.linePrices = linePrices;
     lebron.bookLines = bookLines;
-    fetchMatchup.mockResolvedValueOnce(candidate);
+    fetchMatchup.mockResolvedValueOnce(fetched(candidate));
     renderMatchup('/matchups/game-1?player=2544');
     await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
   };
@@ -3463,10 +3462,11 @@ test('a category only sportsbooks quote is reachable from the strip without beco
       .slice(1)
       .map((row) => row.textContent.replace(/\s+/g, ' ').trim()),
   ).toEqual(['BetMGM6.5+120 ★-150', 'FanDuel6.5+110-140']);
-  // Still DFS-only: the posted-by line, the score matrix and the Target path.
+  // Still DFS-only: the posted-by line, no Matchup Score and the Target path.
   expect(screen.getByText(/Markets posted by PrizePicks and Underdog\./)).toBeVisible();
-  const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
-  expect(within(matrix).queryByRole('button', { name: 'AST' })).not.toBeInTheDocument();
+  expect(screen.getByRole('region', { name: 'Matchup Score' })).toHaveTextContent(
+    'No Matchup Score for AST in Season.',
+  );
   expect(
     await screen.findByText(
       'Games vs this opponent covers the markets with a line in CourtAI’s books, so it has no AST log.',
@@ -3495,7 +3495,7 @@ describe('rail price line', () => {
     lebron.linePrices = linePrices;
     lebron.lines = { ...lebron.lines, ...lines };
     lebron.provenance = { ...lebron.provenance, ...provenance };
-    fetchMatchup.mockResolvedValueOnce(candidate);
+    fetchMatchup.mockResolvedValueOnce(fetched(candidate));
     renderMatchup();
     return screen.findByRole('article', { name: 'LeBron James player' });
   };
@@ -3638,7 +3638,7 @@ describe('rail price line', () => {
       player.lines = { novig: { PTS: 27.5 } };
       player.linePrices = { novig: { PTS: { over: -106, under: -102 } } };
     }
-    fetchMatchup.mockResolvedValueOnce(candidate);
+    fetchMatchup.mockResolvedValueOnce(fetched(candidate));
     renderMatchup();
     await screen.findByRole('complementary', { name: 'Players in game' });
 
@@ -3742,7 +3742,7 @@ const openFullSheet = async () => {
 };
 
 test('badges only the trailing section with its season and names a short Last 15 by its games', async () => {
-  fetchMatchup.mockResolvedValueOnce(mixedSeasonMatchup());
+  fetchMatchup.mockResolvedValueOnce(fetched(mixedSeasonMatchup()));
   await openFullSheet();
 
   expect(screen.getAllByText('2025-26 season')).toHaveLength(1);
@@ -3777,7 +3777,7 @@ test.each([
     Object.values(candidate.league.surfaceAvailability).forEach((windows) => {
       windows.season.season = gameSeason;
     });
-    fetchMatchup.mockResolvedValueOnce(candidate);
+    fetchMatchup.mockResolvedValueOnce(fetched(candidate));
     await openFullSheet();
 
     expect(screen.queryAllByText(/\d{4}-\d{2} season/)).toHaveLength(0);
@@ -3804,7 +3804,7 @@ test('reads a section season from its experience section when the Surface does n
   candidate.trailing = [
     { family: 'team_defense', servingSeason: '2025-26', rule: 'every team has played 10 games' },
   ];
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   await openFullSheet();
 
   expect(screen.getAllByText('2025-26 season')).toHaveLength(3);
@@ -3818,7 +3818,7 @@ test('explains a withheld Season window in its own words, not the Last 15 senten
     status: 'missing',
     unavailableReason: 'window_not_ready',
   };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   await openFullSheet();
 
   expect(
@@ -3829,7 +3829,7 @@ test('explains a withheld Season window in its own words, not the Last 15 senten
 });
 
 test('a Matchup without serving seasons reads Last 15 and carries no season badge', async () => {
-  fetchMatchup.mockResolvedValueOnce(matchup);
+  fetchMatchup.mockResolvedValueOnce(fetched(matchup));
   await openFullSheet();
 
   expect(screen.queryByText(/\d{4}-\d{2} season/)).not.toBeInTheDocument();
@@ -3840,7 +3840,7 @@ test('names the shortest Last 15 on the toggle and badges a section that covers 
   const candidate = mixedSeasonMatchup();
   candidate.league.surfaceAvailability.shotZones.last15.windowGames = 10;
   candidate.league.surfaceAvailability.traditional.last15.windowGames = null;
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   await openFullSheet();
 
   await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
@@ -3864,7 +3864,7 @@ test('reads the Last 15 game count from its experience section when the Surfaces
     last15Defense: { status: 'available', unavailableReason: null, windowGames: 4 },
     injuries: { status: 'available', unavailableReason: null },
   };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   await openFullSheet();
 
   expect(screen.getByRole('button', { name: 'Last 4' })).toBeEnabled();
@@ -3877,7 +3877,7 @@ test('explains a Season window short of governed games in its own words', async 
     status: 'unavailable',
     unavailableReason: 'insufficient_governed_games',
   };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   await openFullSheet();
 
   expect(
@@ -3897,7 +3897,7 @@ test('a section’s own Last 15 count, null included, wins over its experience s
   };
   candidate.league.surfaceAvailability.shotZones.last15.windowGames = 10;
   candidate.league.surfaceAvailability.traditional.last15.windowGames = null;
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   await openFullSheet();
 
   await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
@@ -3918,7 +3918,7 @@ test('an unavailable Last 15 section names its reason, not a game count', async 
     status: 'unavailable',
     unavailableReason: 'provider_unsupported',
   };
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   await openFullSheet();
 
   await userEvent.click(screen.getByRole('button', { name: 'Last 6' }));
@@ -4139,7 +4139,7 @@ describe('Evidence season', () => {
 
   test('without season choices, a Matchup links its game logs to the season it answered for', async () => {
     fetchSeasons.mockRejectedValue(new Error('seasons down'));
-    fetchMatchup.mockResolvedValue({ ...matchup, asOfSeason: '2025-26' });
+    fetchMatchup.mockResolvedValue(fetched({ ...matchup, asOfSeason: '2025-26' }));
     renderMatchup();
     await screen.findByRole('heading', { name: 'What BOS allows' });
     expect(fetchMatchup.mock.calls).toEqual([['game-1', { signal: expect.any(AbortSignal) }]]);
@@ -4184,7 +4184,7 @@ describe('Evidence season', () => {
         teamGames: { min: 80, max: 82 },
       },
     ];
-    fetchMatchup.mockResolvedValue(selected);
+    fetchMatchup.mockResolvedValue(fetched(selected));
     renderMatchup('/matchups/game-1?season=2026-27');
     await screen.findByRole('heading', { name: 'What BOS allows' });
     await userEvent.click(screen.getByRole('button', { name: 'All' }));
@@ -4213,7 +4213,7 @@ describe('Evidence season', () => {
     selected.trailing = [
       { family: 'synergy', servingSeason: '2025-26', rule: 'NBA publishes 2026-27 play types' },
     ];
-    fetchMatchup.mockResolvedValue(selected);
+    fetchMatchup.mockResolvedValue(fetched(selected));
     renderMatchup('/matchups/game-1?season=2026-27');
     await screen.findByRole('heading', { name: 'What BOS allows' });
     await userEvent.click(screen.getByRole('button', { name: 'All' }));
@@ -4242,7 +4242,7 @@ describe('categories the Matchup posts but does not score (statsplus#370)', () =
         market === 'PTS' ? lebron.scores.PTS : { season: unscored, last_15: unscored },
       ]),
     );
-    fetchMatchup.mockResolvedValueOnce(jest.requireActual('./matchupApi').decodeMatchup(raw));
+    fetchMatchup.mockResolvedValueOnce(decodeFetched(raw));
     renderMatchup('/matchups/0022500584?player=2544');
     await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
   };
@@ -4276,13 +4276,9 @@ describe('categories the Matchup posts but does not score (statsplus#370)', () =
   test('shows the posted Dabble line and prices with no Matchup Score', async () => {
     await openShootingLines();
 
-    const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
-    expect(
-      within(matrix)
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) => within(row).getByRole('rowheader').textContent),
-    ).toEqual(['PTS']);
+    const strip = within(screen.getByRole('group', { name: 'Selection log stat' }));
+    expect(strip.getByRole('button', { name: 'PTS' })).toHaveTextContent('+12.0%');
+    expect(strip.getByRole('button', { name: 'Free Throws Attempted' })).toHaveTextContent(/—$/);
     expect(screen.queryByText(/No score components were computable/)).not.toBeInTheDocument();
 
     await userEvent.click(
@@ -4315,17 +4311,14 @@ describe('categories the Matchup posts but does not score (statsplus#370)', () =
   test('says a player posted only in unscored categories has no Matchup Score', async () => {
     await openShootingLines(['FTA', 'FTM']);
 
-    const panel = screen.getByRole('region', { name: 'Score Matrix' });
-    expect(within(panel).queryByRole('table')).not.toBeInTheDocument();
-    expect(panel).toHaveTextContent('No Matchup Score is computed for FTA, FTM.');
-  });
-
-  test('names the categories the Score Matrix leaves out', async () => {
-    await openShootingLines();
-
-    expect(screen.getByRole('region', { name: 'Score Matrix' })).toHaveTextContent(
-      'No Matchup Score is computed for FGM, FG2M, FTA, FTM.',
+    const panel = screen.getByRole('region', { name: 'Matchup Score' });
+    expect(panel).toHaveTextContent('FTA Matchup Score—No Matchup Score for FTA in Season.');
+    await userEvent.click(
+      within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+        name: 'Free Throws Made',
+      }),
     );
+    expect(panel).toHaveTextContent('No Matchup Score for FTM in Season.');
   });
 
   test('says an unscored tab has no Defense Sheet rows, whatever the controls', async () => {
@@ -4368,7 +4361,7 @@ describe('categories the Matchup posts but does not score (statsplus#370)', () =
   });
 });
 
-describe('Score Matrix coverage from a statsplus#407 backend', () => {
+describe('Matchup Score coverage from a statsplus#407 backend', () => {
   const cell = (value) => ({ value, thin: false });
   const scored = (components, blend) => ({ components, blend });
   const empty = { components: {}, blend: null, missing_inputs: [] };
@@ -4420,32 +4413,28 @@ describe('Score Matrix coverage from a statsplus#407 backend', () => {
         },
       },
     ];
-    fetchMatchup.mockResolvedValueOnce(jest.requireActual('./matchupApi').decodeMatchup(raw));
+    fetchMatchup.mockResolvedValueOnce(decodeFetched(raw));
     renderMatchup('/matchups/0022500584?player=2544');
     await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
   };
 
-  test('scores PTS with a Traditional cell, TOV with a Blend and FTA from Traditional', async () => {
+  test('scores PTS from its Blend, TOV with a Blend and FTA from its Traditional row', async () => {
     await openCoverage();
 
-    const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
+    const strip = within(screen.getByRole('group', { name: 'Selection log stat' }));
+    const score = (name) => strip.getByRole('button', { name }).querySelector('small');
     expect(
-      within(matrix)
-        .getAllByRole('row')
-        .map((row) =>
-          within(row)
-            .getAllByRole(/^(columnheader|rowheader|cell)$/)
-            .map((entry) => entry.textContent),
-        ),
-    ).toEqual([
-      ['Market', 'Play types', 'Traditional', 'Blend'],
-      ['PTS', '+8%', '+6%', '+7%'],
-      ['TOV', '—', '+5%', '+5%'],
-      ['FTA', '—', '-11%', '-11%'],
-    ]);
-    expect(screen.getByRole('region', { name: 'Score Matrix' })).toHaveTextContent(
-      'No Matchup Score is computed for FTM.',
+      ['PTS', 'TOV', 'Free Throws Attempted', 'Free Throws Made'].map(
+        (name) => score(name).textContent,
+      ),
+    ).toEqual(['+7.0%', '+5.0%', '−11.0%', '—']);
+
+    await userEvent.click(strip.getByRole('button', { name: 'Free Throws Attempted' }));
+    const traditional = within(screen.getByRole('region', { name: 'Matchup Score' })).getByRole(
+      'list',
+      { name: 'Traditional' },
     );
+    expect(traditional).toHaveTextContent('BOS: free throw attempts allowed per 483rd−11%');
   });
 
   test('lists the FT attempts row on the FTA Defense Sheet', async () => {
@@ -4504,7 +4493,7 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
     );
 
   test('AC1-AC3: the name, then his signed score; the line beside his season average', async () => {
-    fetchMatchup.mockResolvedValueOnce(served());
+    fetchMatchup.mockResolvedValueOnce(fetched(served()));
     renderMatchup();
     await screen.findByRole('heading', { name: 'What BOS allows' });
 
@@ -4538,7 +4527,7 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
   test('AC1: a score that rounds to zero is dim', async () => {
     const candidate = served();
     candidate.players.find((player) => player.id === 2544).scores.PTS = score(0.004);
-    fetchMatchup.mockResolvedValueOnce(candidate);
+    fetchMatchup.mockResolvedValueOnce(fetched(candidate));
     renderMatchup();
     await screen.findByRole('heading', { name: 'What BOS allows' });
     expect(within(row('LeBron James')).getByRole('img', { name: 'Matchup Score +0%' })).toHaveClass(
@@ -4547,7 +4536,7 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
   });
 
   test('AC4-AC6: the Last 5 pill charts five slots against the line and opens his game logs', async () => {
-    fetchMatchup.mockResolvedValueOnce(served());
+    fetchMatchup.mockResolvedValueOnce(fetched(served()));
     renderMatchup();
     await screen.findByRole('heading', { name: 'What BOS allows' });
 
@@ -4595,7 +4584,7 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
     const austin = candidate.players.find((player) => player.id === 1630559);
     austin.statCategories = ['PTS', '3PM'];
     austin.lastFiveGames = null;
-    fetchMatchup.mockResolvedValueOnce(candidate);
+    fetchMatchup.mockResolvedValueOnce(fetched(candidate));
     renderMatchup();
     await screen.findByRole('heading', { name: 'What BOS allows' });
 
@@ -4617,7 +4606,7 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
   });
 
   test('AC3, AC5: with no line the bars measure against his season average', async () => {
-    fetchMatchup.mockResolvedValueOnce(served());
+    fetchMatchup.mockResolvedValueOnce(fetched(served()));
     renderMatchup();
     await screen.findByRole('heading', { name: 'What BOS allows' });
     await userEvent.click(screen.getByRole('button', { name: 'FG3A' }));
@@ -4636,7 +4625,7 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
   test('AC5: no games in the Evidence season is five stubs', async () => {
     const candidate = served();
     candidate.players.find((player) => player.id === 2544).lastFiveGames = [];
-    fetchMatchup.mockResolvedValueOnce(candidate);
+    fetchMatchup.mockResolvedValueOnce(fetched(candidate));
     renderMatchup();
     await screen.findByRole('heading', { name: 'What BOS allows' });
     const pill = within(row('LeBron James')).getByRole('link', {
@@ -4646,7 +4635,7 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
   });
 
   test('AC7: the pill and name navigate; the rest of the row, score included, opens the card', async () => {
-    fetchMatchup.mockResolvedValueOnce(served());
+    fetchMatchup.mockResolvedValueOnce(fetched(served()));
     renderMatchup();
     await screen.findByRole('heading', { name: 'What BOS allows' });
     const location = () => screen.getByTestId('location');
@@ -4692,7 +4681,7 @@ describe('statsplus#395: the rail shows his Matchup Score and a Last 5 that lead
       player.seasonAverages = {};
     });
     candidate.players.find((player) => player.id === 1630559).focalGameLine.stats.PTS = 24;
-    fetchMatchup.mockResolvedValueOnce(candidate);
+    fetchMatchup.mockResolvedValueOnce(fetched(candidate));
     renderMatchup();
 
     const austin = await screen.findByRole('article', { name: 'Austin Reaves player' });
@@ -4727,7 +4716,7 @@ test('reads play-type turnovers forced and FT trips allowed under their own mark
   lebron.postedMarkets.push('TOV', 'FTA');
   lebron.statCategories.push('TOV', 'FTA');
   lebron.provenance.prizepicks.push('TOV', 'FTA');
-  fetchMatchup.mockResolvedValueOnce(candidate);
+  fetchMatchup.mockResolvedValueOnce(fetched(candidate));
   renderMatchup();
   await screen.findByRole('heading', { name: 'What BOS allows' });
   const playTypes = () => screen.getByRole('region', { name: 'Play types' });
@@ -4780,26 +4769,28 @@ describe('markets scored with no line in CourtAI’s books (statsplus#457)', () 
       season: { components: { traditional: { value: 0.07, thin: false } } },
       last_15: { components: { traditional: { value: 0.05, thin: false } } },
     };
-    fetchMatchup.mockResolvedValueOnce(jest.requireActual('./matchupApi').decodeMatchup(raw));
+    fetchMatchup.mockResolvedValueOnce(decodeFetched(raw));
     renderMatchup(path);
     await screen.findByRole('heading', { name: 'What BOS allows' });
   };
-  const matrixRow = (market) =>
-    within(screen.getByRole('table', { name: 'LeBron James Score Matrix' }))
-      .getByRole('button', { name: market })
-      .closest('tr');
+  const stripTab = (market) =>
+    within(screen.getByRole('group', { name: 'Selection log stat' })).getByRole('button', {
+      name: market,
+    });
 
-  test('lists the unposted market in the Score Matrix, marked no line', async () => {
+  test('the strip offers the unposted market with its score, marked no line', async () => {
     await openUnpostedBlocks();
 
-    const matrix = screen.getByRole('table', { name: 'LeBron James Score Matrix' });
     expect(
-      within(matrix)
-        .getAllByRole('row')
-        .slice(1)
-        .map((row) => row.textContent),
-    ).toEqual(['PTS+8%—+12%', 'BLK no line—+7%—', 'FGA+4%—+4%']);
-    expect(within(matrixRow('PTS')).queryByText('no line')).not.toBeInTheDocument();
+      within(screen.getByRole('group', { name: 'Selection log stat' }))
+        .getAllByRole('button')
+        .map((button) => button.textContent),
+    ).toEqual([
+      'PTSPosted by PrizePicks and UnderdogPPUD+12.0%',
+      'BLKNot postedno line+7.0%',
+      'FGAPosted by PrizePicksPP+4.0%',
+    ]);
+    expect(stripTab('BLK')).toHaveAccessibleDescription('Not posted');
   });
 
   test('a sportsbook quote for the unposted market is a line, so its row is not marked', async () => {
@@ -4808,29 +4799,22 @@ describe('markets scored with no line in CourtAI’s books (statsplus#457)', () 
       season: { components: { traditional: { value: 0.07, thin: false } } },
       last_15: { components: { traditional: { value: 0.05, thin: false } } },
     };
-    const decoded = jest.requireActual('./matchupApi').decodeMatchup(raw);
+    const decoded = decodeFetched(raw);
     decoded.players[0].bookLines = { BLK: quote([bookRow('fanduel', 0.5, 120, -150)]) };
     fetchMatchup.mockResolvedValueOnce(decoded);
     renderMatchup('/matchups/0022500584?player=2544');
     await screen.findByRole('heading', { name: 'What BOS allows' });
 
-    expect(matrixRow('BLK').textContent).toBe('BLK—+7%—');
+    expect(stripTab('BLK')).not.toHaveTextContent('no line');
+    expect(stripTab('BLK')).toHaveTextContent('+7.0%');
   });
 
-  test('picking the unposted row keeps the card and says what the opponent log covers', async () => {
+  test('picking the unposted tab keeps the card and says what the opponent log covers', async () => {
     await openUnpostedBlocks();
 
-    await userEvent.click(
-      within(screen.getByRole('table', { name: 'LeBron James Score Matrix' })).getByRole('button', {
-        name: 'BLK',
-      }),
-    );
+    await userEvent.click(stripTab('BLK'));
 
-    expect(
-      within(screen.getByRole('table', { name: 'LeBron James Score Matrix' })).getByRole('button', {
-        name: 'BLK',
-      }),
-    ).toHaveAttribute('aria-pressed', 'true');
+    expect(stripTab('BLK')).toHaveAttribute('aria-pressed', 'true');
     expect(
       await screen.findByText(
         'Games vs this opponent covers the markets with a line in CourtAI’s books, so it has no BLK log.',
@@ -4868,7 +4852,7 @@ describe('markets scored with no line in CourtAI’s books (statsplus#457)', () 
     );
 
     expect(await screen.findByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
-    expect(matrixRow('BLK')).toHaveClass('active-market-row');
-    expect(matrixRow('PTS')).not.toHaveClass('active-market-row');
+    expect(stripTab('BLK')).toHaveAttribute('aria-pressed', 'true');
+    expect(stripTab('PTS')).toHaveAttribute('aria-pressed', 'false');
   });
 });

@@ -13,11 +13,10 @@ import {
 import './profileMatchup.css';
 
 /*
- * The Player Profile body: the MCP `get_matchup` card for the game logs' Line Type. Single
- * markets read as S4 (where his volume comes from, against what the opponent allows); the
- * combos PRA, PA, PR and RA as W3 (each Base's share of the combo score, grouped by stat).
- * The market is the Line Type: the picker writes it through the same setter as the Line Type
- * select and keeps no copy of its own.
+ * The MCP `get_matchup` card. Single markets read as S4 (where his volume comes from, against
+ * what the opponent allows); the combos PRA, PA, PR and RA as W3 (each Base's share of the combo
+ * score, grouped by stat). The Player Profile shows it for the game logs' Line Type; the Matchup
+ * page's player sheet for its stat strip's pick.
  */
 
 /* A Line Type's Matchup market; FD_PTS and None have none. */
@@ -25,7 +24,7 @@ export const marketFor = (lineType) =>
   lineType === 'FG3M' ? '3PM' : lineType === 'FD_PTS' || lineType === 'None' ? null : lineType;
 
 /* Green or red by sign, as the value reads: one that rounds to 0.0% is neither. */
-const tone = (value) => {
+export const tone = (value) => {
   const text = scoreText(value);
   return text === '0.0%' ? '' : text.startsWith('+') ? 'pmc-up' : 'pmc-down';
 };
@@ -385,6 +384,39 @@ const ComboMarket = ({ reading, market }) => {
   );
 };
 
+/* A market's Matchup Score as a coloured pill, with its low-confidence flag. */
+export const ScorePill = ({ market, title }) => (
+  <>
+    <span className={`pmc-pill ${market?.score == null ? '' : tone(market.score)}`} title={title}>
+      {market?.score == null ? '—' : scoreText(market.score)}
+    </span>
+    {market?.score != null && market.thin && (
+      <LowConfidence reason={thinReason(market.thinBases)} />
+    )}
+  </>
+);
+
+/* One market's body: W3 for a combo, S4 otherwise, or the honest empty state. */
+export const MarketReading = ({ reading, name, windowName = null }) => {
+  const market = reading.markets[name];
+  if (market?.score == null) {
+    return (
+      <p className="pmc-empty">
+        No Matchup Score for {name}
+        {windowName && ` in ${windowName}`}.
+      </p>
+    );
+  }
+  const key = `${reading.player}|${reading.opponent}|${name}`;
+  return market.combo && COMBO_STATS[name] ? (
+    <ComboMarket key={key} reading={reading} market={market} />
+  ) : (
+    <SingleMarket key={key} reading={reading} market={market} />
+  );
+};
+
+/* The Player Profile body. The market is the Line Type: the picker writes it through the same
+   setter as the Line Type select and keeps no copy of its own. */
 const ProfileMatchupCard = ({ reading, lineType, setLineType }) => {
   const scored = (name) => reading.markets[name]?.score != null;
   const wanted = marketFor(lineType);
@@ -412,15 +444,7 @@ const ProfileMatchupCard = ({ reading, lineType, setLineType }) => {
           of {dataDate}
         </div>
         <div className="pmc-score">
-          <span
-            className={`pmc-pill ${market?.score == null ? '' : tone(market.score)}`}
-            title={`${shown} Season Matchup Score`}
-          >
-            {market?.score == null ? '—' : scoreText(market.score)}
-          </span>
-          {market?.score != null && market.thin && (
-            <LowConfidence reason={thinReason(market.thinBases)} />
-          )}
+          <ScorePill market={market} title={`${shown} Season Matchup Score`} />
           <select
             className="pmc-market"
             aria-label="Market"
@@ -440,21 +464,7 @@ const ProfileMatchupCard = ({ reading, lineType, setLineType }) => {
         </div>
       </div>
       {shown !== wanted && <p className="pmc-note">PTS shown; {lineType} has no Matchup Score</p>}
-      {!market ? (
-        <p className="pmc-empty">No Matchup Score for {shown}.</p>
-      ) : market.combo && COMBO_STATS[shown] ? (
-        <ComboMarket
-          key={`${reading.player}|${reading.opponent}|${shown}`}
-          reading={reading}
-          market={market}
-        />
-      ) : (
-        <SingleMarket
-          key={`${reading.player}|${reading.opponent}|${shown}`}
-          reading={reading}
-          market={market}
-        />
-      )}
+      <MarketReading reading={reading} name={shown} />
     </div>
   );
 };

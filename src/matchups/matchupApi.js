@@ -1371,7 +1371,8 @@ export const fetchMatchup = async (gameId, { signal, season } = {}) => {
     .catch((error) => {
       throw seasonRefusalOr(error);
     });
-  return decodeMatchup(response.data);
+  // The player sheet's matchup card reads the response itself, as the Player Profile's does.
+  return { ...decodeMatchup(response.data), response: response.data };
 };
 
 const decodeSelectionStatMap = (value, markets) => {

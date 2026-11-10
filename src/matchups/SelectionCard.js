@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { bookMark, bookName, categoryLabel, orderCategories } from './displayConfig';
 import ErrorMessage from '../feedback/ErrorMessage';
+import { useFeedback } from '../feedback/useFeedback';
 import HelpTip from '../help/HelpTip';
 import { MarketReading, ScorePill, tone } from '../profileMatchup/ProfileMatchupCard';
 import { readMatchup, scoreText } from '../profileMatchup/matchupReading';
@@ -381,6 +382,10 @@ export default function SelectionCard({
   }));
   const line = player.focalGameLine;
   const lines = lineRows(player, activeStat);
+  // Feedback opened from the page before the sheet sits outside it; trapping focus
+  // would keep the reader from typing in it.
+  const feedback = useFeedback();
+  const feedbackOutside = Boolean(feedback?.panel && !feedback.panel.container);
   // The URL owns whether the dialog is open, and the page hands focus back to
   // the rail when it closes.
   return (
@@ -393,6 +398,7 @@ export default function SelectionCard({
       size="xl"
       fullscreen="md-down"
       restoreFocus={false}
+      enforceFocus={!feedbackOutside}
       className="selection-layer"
       backdropClassName="selection-backdrop"
       aria-labelledby="selection-heading"

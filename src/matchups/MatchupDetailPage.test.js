@@ -5207,3 +5207,64 @@ describe('statsplus#479: the Matchup settings live in its URL', () => {
     expect(location()).toBe('/matchups/game-1');
   });
 });
+
+describe('the player sheet as a pop-up over the page (statsplus#481)', () => {
+  let go;
+  const Page = () => {
+    go = useNavigate();
+    return <MatchupDetailPage />;
+  };
+
+  test('browser Back closes the sheet it opened', async () => {
+    render(
+      <MemoryRouter
+        initialEntries={['/matchups/game-1', '/matchups/game-1?player=2544']}
+        initialIndex={1}
+      >
+        <Page />
+      </MemoryRouter>,
+    );
+    await screen.findByRole('dialog', { name: 'LeBron James' });
+
+    await act(async () => {
+      go(-1);
+    });
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'LeBron James' })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole('heading', { name: 'What BOS allows' })).toBeVisible();
+  });
+
+  test('Feedback opened before Back reopens the sheet keeps its focus', async () => {
+    const { FeedbackProvider } = require('../feedback/FeedbackContext');
+    const FeedbackButton = require('../feedback/FeedbackButton').default;
+    render(
+      <MemoryRouter
+        initialEntries={['/matchups/game-1?player=2544', '/matchups/game-1']}
+        initialIndex={1}
+      >
+        <FeedbackProvider>
+          <FeedbackButton />
+          <Page />
+        </FeedbackProvider>
+      </MemoryRouter>,
+    );
+    await screen.findByRole('heading', { name: 'What BOS allows' });
+    await userEvent.click(screen.getByRole('button', { name: 'Feedback' }));
+    const box = screen.getByRole('textbox', { name: 'Your feedback' });
+    await userEvent.type(box, 'Draft feedback');
+
+    await act(async () => {
+      go(-1);
+    });
+    await screen.findByRole('dialog', { name: 'LeBron James' });
+    box.focus();
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    });
+
+    expect(box).toHaveFocus();
+    expect(box).toHaveValue('Draft feedback');
+  });
+});

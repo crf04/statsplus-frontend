@@ -90,16 +90,17 @@ signedInTest(
     await expect(browser).toHaveURL('/matchups/0022500584?context=kept&player=2544');
     await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
     await expect(screen.getByRole('region', 'LeBron James')).toBeFocused();
-    const matrix = screen.getByRole('table', 'LeBron James Score Matrix');
-    await expect(matrix).toContainText('+12%');
-    await expect(matrix.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'true');
+    const scoreCard = screen.getByRole('region', 'Matchup Score');
+    await expect(scoreCard).toContainText('Where his PTS come from');
+    await expect(scoreCard).toContainText('+12.0%');
     const logStats = screen.getByRole('group', 'Selection log stat');
     await expect(logStats.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'true');
+    await expect(logStats.getByRole('button', 'PTS')).toContainText('+12.0%');
     await logStats.getByRole('button', 'PRA').tap();
     await expect(logStats.getByRole('button', 'PRA')).toHaveAttribute('aria-pressed', 'true');
     await expect(logStats.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'false');
-    await expect(matrix.getByRole('button', 'PRA')).toHaveAttribute('aria-pressed', 'true');
-    await expect(matrix.getByRole('button', 'PTS')).toHaveAttribute('aria-pressed', 'false');
+    await expect(scoreCard).toContainText('PRA vs BOS');
+    await expect(scoreCard.getByRole('region', 'Points')).toContainText('62% of his PRA');
     await expect(screen.getByRole('columnheader', 'PRA').first()).toBeVisible();
     await expect(screen.getByText('+0.102').first()).toBeVisible();
     expect(api.sent('/api/games/matchup/selection')).toHaveLength(1);
@@ -165,7 +166,7 @@ signedInTest(
     await expect(screen.getByRole('heading', 'What BOS allows')).toBeVisible();
     await agent.act('open the selection card for LeBron James');
     await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
-    await expect(screen.getByRole('table', 'LeBron James Score Matrix')).toContainText('+12%');
+    await expect(screen.getByRole('region', 'Matchup Score')).toContainText('+12.0%');
   },
 );
 
@@ -212,23 +213,31 @@ signedInTest(
 );
 
 signedInTest(
-  'the Score Matrix scores every posted market a statsplus#407 backend sends',
+  'the stat strip scores every posted market a statsplus#407 backend sends',
   async ({ app, screen, browser, api }) => {
     await api.override({
       '/api/games/matchup': { body: scoreCoverageMatchupPayload },
       '/api/games/matchup/selection': { body: scoreCoverageSelectionPayload },
     });
     await app.open('/matchups/0022500584?player=2544');
-    const matrix = screen.getByRole('table', 'LeBron James Score Matrix');
-    await expect(matrix.getByRole('columnheader', 'Traditional')).toBeVisible();
-    await expect(matrix.getByRole('row', { name: /^PTS / })).toContainText('+3%');
-    await expect(matrix.getByRole('row', { name: /^TOV / })).toHaveText('TOV — — — +23% +23%');
-    await expect(matrix.getByRole('row', { name: /^FTA / })).toHaveText('FTA — — — -11% -11%');
-    await expect(matrix.getByRole('row', { name: /^FGM / })).toContainText('+4%');
-    await expect(screen.getByText('No Matchup Score is computed for FTM.')).toBeVisible();
+    const strip = screen.getByRole('group', 'Selection log stat');
+    await expect(strip.getByRole('button', 'PTS')).toContainText('+12.0%');
+    await expect(strip.getByRole('button', 'TOV')).toContainText('+23.0%');
+    await expect(strip.getByRole('button', 'Free Throws Attempted')).toContainText('−11.0%');
+    await expect(strip.getByRole('button', 'Field Goals Made')).toContainText('+4.0%');
+    const scoreCard = screen.getByRole('region', 'Matchup Score');
+    await expect(scoreCard.getByRole('list', 'Traditional')).toContainText(
+      'BOS: points allowed per 48',
+    );
     await expect(screen.getByRole('region', 'Games vs this opponent')).toContainText('LAL vs. BOS');
+    await strip.getByRole('button', 'Free Throws Made').tap();
+    await expect(scoreCard).toContainText('No Matchup Score for FTM in Season.');
+    await strip.getByRole('button', 'Free Throws Attempted').tap();
+    await expect(scoreCard.getByRole('list', 'Traditional')).toContainText(
+      'BOS: free throw attempts allowed per 48',
+    );
     expect(await overflowsHorizontally(browser)).toBe(false);
-    await matrix.scrollIntoView();
+    await scoreCard.scrollIntoView();
     await app.screenshot('selection-score-coverage');
 
     await screen.getByRole('group', 'Market').getByRole('button', 'Free Throws Attempted').tap();
@@ -245,23 +254,23 @@ signedInTest(
 );
 
 signedInTest(
-  'the Score Matrix scores a market CourtAI holds no line for (statsplus#457)',
+  'the stat strip scores a market CourtAI holds no line for (statsplus#457)',
   async ({ app, screen, browser, api }) => {
     await api.override({
       '/api/games/matchup': { body: everyMarketMatchupPayload },
       '/api/games/matchup/selection': { body: everyMarketSelectionPayload },
     });
     await app.open('/matchups/0022500584?player=2544');
-    const matrix = screen.getByRole('table', 'LeBron James Score Matrix');
-    await expect(matrix.getByRole('row', { name: /^BLK / })).toHaveText(
-      'BLK no line — — — +25% +25%',
-    );
-    await expect(matrix.getByRole('row', { name: /^STL / })).not.toContainText('no line');
+    const strip = screen.getByRole('group', 'Selection log stat');
+    await expect(strip.getByRole('button', 'BLK')).toContainText('no line');
+    await expect(strip.getByRole('button', 'BLK')).toContainText('+25.0%');
+    await expect(strip.getByRole('button', 'STL')).not.toContainText('no line');
+    await strip.getByRole('button', 'BLK').tap();
+    await expect(screen.getByRole('region', 'Matchup Score')).toContainText('BOS: blocks per 48');
     expect(await overflowsHorizontally(browser)).toBe(false);
-    await matrix.scrollIntoView();
+    await strip.scrollIntoView();
     await app.screenshot('selection-unposted-market');
 
-    await matrix.getByRole('button', 'BLK').tap();
     await expect(screen.getByRole('region', 'Games vs this opponent')).toContainText(
       'Games vs this opponent covers the markets with a line in CourtAI’s books, so it has no BLK log.',
     );
@@ -271,21 +280,26 @@ signedInTest(
 );
 
 signedInTest(
-  'the Score Matrix and Defense Sheet read play-type turnovers and FT trips (statsplus#416)',
+  'the matchup card and Defense Sheet read play-type turnovers and FT trips (statsplus#416)',
   async ({ app, screen, browser, api }) => {
     await api.override({
       '/api/games/matchup': { body: playTypeTurnoverMatchupPayload },
       '/api/games/matchup/selection': { body: scoreCoverageSelectionPayload },
     });
     await app.open('/matchups/0022500584?player=2544');
-    const matrix = screen.getByRole('table', 'LeBron James Score Matrix');
-    await expect(matrix.getByRole('columnheader', 'Play types')).toBeVisible();
-    await expect(matrix.getByRole('row', { name: /^TOV / })).toHaveText('TOV — — +9% +23% +16%');
-    await expect(matrix.getByRole('row', { name: /^FTA / })).toHaveText(
-      'FTA — — +5% THIN -11% -3%',
+    const strip = screen.getByRole('group', 'Selection log stat');
+    await expect(strip.getByRole('button', 'TOV')).toContainText('+16.0%');
+    await expect(strip.getByRole('button', 'Free Throws Attempted')).toContainText('−3.0%');
+    const scoreCard = screen.getByRole('region', 'Matchup Score');
+    await strip.getByRole('button', 'TOV').tap();
+    await expect(scoreCard.getByRole('list', 'Play types')).toContainText(
+      'Transition 19% 27th +19%',
     );
+    await strip.getByRole('button', 'Free Throws Attempted').tap();
+    await expect(scoreCard.getByRole('list', 'Play types')).toContainText('Post up 2% 29th +36%');
+    await expect(scoreCard).toContainText('low confidence');
     expect(await overflowsHorizontally(browser)).toBe(false);
-    await matrix.scrollIntoView();
+    await scoreCard.scrollIntoView();
     await app.screenshot('selection-play-type-tov-fta');
 
     const market = screen.getByRole('group', 'Market');

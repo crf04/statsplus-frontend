@@ -6,7 +6,7 @@
  * only arithmetic is the combo decomposition, which reproduces the backend's combo score.
  */
 
-/* The Bases in display order (the Score Matrix's), with the Diet-backed ones first. */
+/* The Bases in display order, with the Diet-backed ones first. */
 export const BASES = [
   ['shot_types', 'Shot types'],
   ['shot_zones', 'Shot zones'],

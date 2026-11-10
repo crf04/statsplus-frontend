@@ -151,10 +151,10 @@ test('@critical a completed-season matchup reads as one sentence, a readable she
   await expect(page.getByText('Thin sample — interpret cautiously.')).toBeVisible();
   await expect(page.getByText(/hindsight/)).toHaveCount(0);
   await expect(page.getByText('Archetype sample')).toHaveCount(0);
-  await expect(page.getByText('The Score Matrix reflects completed-season context.')).toBeVisible();
-  const matrix = page.getByRole('table', { name: 'Kawhi Leonard Score Matrix' });
-  await expect(matrix.getByRole('columnheader', { name: 'Category' })).toBeVisible();
-  await expect(matrix.getByRole('columnheader', { name: 'Market' })).toHaveCount(0);
+  await expect(page.getByText('Matchup Scores reflect completed-season context.')).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Matchup Score' }).getByTitle('PTS Season Matchup Score'),
+  ).toHaveText('+18.0%');
   await expect(page.getByRole('rowheader', { name: '2026-01-12 · LAC vs. MIL' })).toBeVisible();
   await expect(page.getByRole('rowheader', { name: /2026-03-29/ })).toHaveCount(0);
   await page.screenshot({
@@ -862,9 +862,9 @@ test('@critical selection card supports selection, deep links, and tab flips wit
     .getByRole('article', { name: 'LeBron James player' })
     .getByRole('button', { name: 'Selected' })
     .click();
-  const matrix = page.getByRole('table', { name: 'LeBron James Score Matrix' });
-  await expect(matrix).toContainText('+12%');
-  await expect(matrix).toContainText('thin');
+  const scoreCard = page.getByRole('region', { name: 'Matchup Score' });
+  await expect(scoreCard.getByTitle('PTS Season Matchup Score')).toHaveText('+12.0%');
+  await expect(scoreCard).toContainText('Where his PTS come from');
   // Only the Archetype sample was thin here, and it no longer renders.
   await expect(page.getByText('Thin sample — interpret cautiously.')).toHaveCount(0);
   await expect(page.getByText(/PTS avg/)).toBeVisible();

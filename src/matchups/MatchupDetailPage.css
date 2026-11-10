@@ -758,7 +758,7 @@
 }
 
 /* The selection card: name and game on top, the stat strip as the selector,
-   then the Score Matrix and the opponent log side by side in two panels. */
+   then the matchup card and the opponent log side by side in two panels. */
 .selection-card {
   display: flex;
   flex-direction: column;
@@ -915,6 +915,49 @@ button.selection-strip-tile:focus-visible {
   color: var(--ct-gold);
 }
 
+.selection-strip-no-line {
+  color: var(--ct-dim);
+  font-family: var(--ct-sans);
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 500;
+}
+
+/* Each tab's Matchup Score: green up, red down, the dim dash when unscored. */
+.selection-strip-score {
+  color: var(--ct-dim);
+  font-family: var(--ct-mono);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.selection-strip-score.pmc-up {
+  color: var(--ct-hit);
+}
+
+.selection-strip-score.pmc-down {
+  color: var(--ct-miss);
+}
+
+.selection-score-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.selection-score-heading h3 {
+  margin: 0;
+}
+
+.selection-score-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .selection-panels {
   display: grid;
   grid-template-columns: minmax(0, 3fr) minmax(250px, 2fr);
@@ -1007,70 +1050,12 @@ button.selection-strip-tile:focus-visible {
   font-weight: 500;
 }
 
-/* Base names wrap onto two lines so every Base and the Blend fit the panel;
-   the cells below stay on one line. */
-.selection-matrix thead th {
-  white-space: normal;
-  vertical-align: bottom;
-  line-height: 1.2;
-}
-
 .selection-table-wrap tbody th {
   font-weight: 600;
 }
 
-/* Matrix: the wash is the number; rows pick the stat like the strip does. */
-.selection-matrix tbody tr {
-  cursor: pointer;
-}
-
-.selection-matrix tbody tr:hover {
-  background: var(--ct-overlay-bg-3);
-}
-
-.selection-matrix-pick {
-  border: 0;
-  padding: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-.selection-matrix-pick:focus-visible {
-  outline: 2px solid var(--ct-gold);
-  outline-offset: 2px;
-}
-
 .delta-flat {
   color: var(--ct-dim);
-}
-
-.selection-matrix .active-market-row {
-  background: var(--ct-gold-soft);
-  box-shadow: inset 2px 0 var(--ct-gold);
-}
-
-.selection-matrix .blend-col {
-  border-left: 1px solid var(--ct-line-strong);
-  font-weight: 700;
-}
-
-.score-none {
-  color: var(--ct-overlay-fg-14);
-}
-
-/* Dark's near-invisible dash would be faint on white; light gives it the dim text colour. */
-[data-theme='light'] .score-none {
-  color: var(--ct-dim);
-}
-
-.selection-table-wrap .thin-flag,
-.selection-matrix-no-line {
-  margin-left: 4px;
-  color: var(--ct-dim);
-  font-family: var(--ct-sans);
-  font-size: 0.64rem;
 }
 
 /* Opponent log: the average leads, one row per game follows. */

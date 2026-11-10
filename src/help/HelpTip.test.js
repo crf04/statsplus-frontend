@@ -35,10 +35,10 @@ test('Escape closes the note, returns focus to its button and leaves the card ar
         if (event.key === 'Escape') closeCard();
       }}
     >
-      <HelpTip tip="scoreMatrix" />
+      <HelpTip tip="matchupScore" />
     </section>,
   );
-  const button = screen.getByRole('button', { name: 'About Score Matrix' });
+  const button = screen.getByRole('button', { name: 'About Matchup Score' });
   await userEvent.click(button);
   await userEvent.keyboard('{Escape}');
   expect(screen.queryByRole('note')).toBeNull();
@@ -57,12 +57,12 @@ test('moving focus out of the tip closes its note, so Escape then belongs to the
         if (event.key === 'Escape') closeCard();
       }}
     >
-      <HelpTip tip="scoreMatrix" />
+      <HelpTip tip="matchupScore" />
       <button type="button">PTS</button>
     </section>,
   );
-  await userEvent.click(screen.getByRole('button', { name: 'About Score Matrix' }));
-  expect(screen.getByRole('note', { name: 'Score Matrix' })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'About Matchup Score' }));
+  expect(screen.getByRole('note', { name: 'Matchup Score' })).toBeInTheDocument();
   await userEvent.tab();
   expect(screen.getByRole('button', { name: 'PTS' })).toHaveFocus();
   expect(screen.queryByRole('note')).toBeNull();

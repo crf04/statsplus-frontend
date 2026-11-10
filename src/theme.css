@@ -493,7 +493,6 @@
   --ct-overlay-fg-5: rgb(var(--ct-overlay-fg-rgb) / calc(0.05 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-6: rgb(var(--ct-overlay-fg-rgb) / calc(0.06 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-10: rgb(var(--ct-overlay-fg-rgb) / calc(0.1 * var(--ct-k-overlay-fg)));
-  --ct-overlay-fg-14: rgb(var(--ct-overlay-fg-rgb) / calc(0.14 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-20: rgb(var(--ct-overlay-fg-rgb) / calc(0.2 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-30: rgb(var(--ct-overlay-fg-rgb) / calc(0.3 * var(--ct-k-overlay-fg)));
   --ct-overlay-fg-50: rgb(var(--ct-overlay-fg-rgb) / calc(0.5 * var(--ct-k-overlay-fg)));

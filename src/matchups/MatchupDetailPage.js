@@ -1424,6 +1424,7 @@ function Detail({ matchup, gameId, evidence }) {
               error={selectionState.error}
               windowKey={windowKey}
               windowName={windowName}
+              response={matchup.response}
               sheetMarket={market}
               whyRelevant={selectedPlayer.teamId !== defenseTeam.teamId}
               historical={historical}

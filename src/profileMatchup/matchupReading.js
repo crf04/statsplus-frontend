@@ -6,7 +6,7 @@
  * only arithmetic is the combo decomposition, which reproduces the backend's combo score.
  */
 
-/* The Bases in display order (the Score Matrix's), with the Diet-backed ones first. */
+/* The Bases in display order, with the Diet-backed ones first. */
 export const BASES = [
   ['shot_types', 'Shot types'],
   ['shot_zones', 'Shot zones'],
@@ -205,7 +205,7 @@ const traditionalRow = (team, market) => {
 };
 
 /* `season_score`: the Blend, or the single component a one-Base market carries. */
-const seasonScore = (window) => {
+const windowScore = (window) => {
   if (window?.blend?.value != null) return window.blend.value;
   const components = Object.values(window?.components ?? {}).filter((c) => c?.value != null);
   if (components.length === 1 && !(window.missing_inputs ?? []).length) return components[0].value;
@@ -217,7 +217,7 @@ const seasonScore = (window) => {
  * cell's `thin` (the Blend's, or the single component's that stands for it), each component's
  * `thin`, and the Rebound types Diet's `diet_thin`, the one Diet flag MCP states.
  */
-const seasonScoreThin = (window) => {
+const windowScoreThin = (window) => {
   if (window?.blend?.value != null) return Boolean(window.blend.thin);
   const components = Object.values(window?.components ?? {}).filter((c) => c?.value != null);
   return components.length === 1 && !(window.missing_inputs ?? []).length
@@ -231,8 +231,8 @@ const thinBases = (player, window) =>
       (key === 'rebound_types' && Boolean(player.diet_thin?.rebound_types)),
   );
 
-const readMarket = (player, team, market) => {
-  const window = player.scores?.[market]?.season ?? {};
+const readMarket = (player, team, market, windowKey) => {
+  const window = player.scores?.[market]?.[windowKey] ?? {};
   const thin = thinBases(player, window);
   const traditional = window.components?.traditional?.value != null && traditionalRow(team, market);
   const components = Object.fromEntries(
@@ -249,8 +249,8 @@ const readMarket = (player, team, market) => {
   })).filter((base) => base.slices.some((slice) => slice.vsLeague != null));
   return {
     market,
-    score: seasonScore(window),
-    thin: seasonScoreThin(window),
+    score: windowScore(window),
+    thin: windowScoreThin(window),
     thinBases: thin,
     components,
     bases,
@@ -266,10 +266,14 @@ const readMarket = (player, team, market) => {
  */
 const decomposeCombo = (markets, averages, combo) => {
   const stats = COMBO_STATS[combo];
-  const total = stats.reduce((sum, stat) => sum + (averages[stat] ?? 0), 0) || 1;
+  // A completed-season Matchup carries no season averages, and a missing one would reweight the
+  // rest away from the backend's score, so the combo is split only with every weight present.
+  if (stats.some((stat) => averages[stat] == null)) return null;
+  const total = stats.reduce((sum, stat) => sum + averages[stat], 0);
+  if (total === 0) return null;
   return stats.map((stat) => {
     const single = markets[stat];
-    const weight = (averages[stat] ?? 0) / total;
+    const weight = averages[stat] / total;
     const fed = Object.entries(single?.components ?? {});
     return {
       stat,
@@ -289,12 +293,21 @@ const decomposeCombo = (markets, averages, combo) => {
   });
 };
 
-/* Everything the card can show for this player against this opponent, every market. */
-export const readMatchup = (data, opponent) => {
-  const player = data.players[0];
+/*
+ * Everything the card can show for one player against this opponent, every market, in one score
+ * window (`season` or `last_15`). Slices stay season: Diet shares are season-only.
+ */
+export const readMatchup = (data, opponent, { playerId = null, window = 'season' } = {}) => {
+  const player =
+    playerId === null
+      ? data.players[0]
+      : data.players.find((candidate) => candidate.canonical_id === playerId);
   const team = data.teams.find((candidate) => candidate.tricode === opponent) ?? null;
   const markets = Object.fromEntries(
-    Object.keys(player.scores ?? {}).map((market) => [market, readMarket(player, team, market)]),
+    Object.keys(player.scores ?? {}).map((market) => [
+      market,
+      readMarket(player, team, market, window),
+    ]),
   );
   const averages = player.season_averages ?? {};
   Object.keys(COMBO_STATS).forEach((combo) => {

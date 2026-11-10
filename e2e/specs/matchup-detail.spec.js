@@ -200,7 +200,9 @@ test('matchup detail preserves the approved Open Team Sheets hierarchy', async (
   expect(sheetBox.width).toBeGreaterThan(railBox.width * 2);
 
   // On a desktop the categories flow in two columns.
-  await page.getByRole('group', { name: 'Market' }).getByRole('button', { name: 'All' }).click();
+  const all = page.getByRole('group', { name: 'Market' }).getByRole('button', { name: 'All' });
+  await all.click();
+  await expect(all).toHaveAttribute('aria-pressed', 'true');
   const columns = new Set();
   for (const region of await sheet.getByRole('region').all()) {
     columns.add(Math.round((await region.boundingBox()).x));

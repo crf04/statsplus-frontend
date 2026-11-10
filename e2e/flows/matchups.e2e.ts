@@ -89,7 +89,7 @@ signedInTest(
       .tap();
     await expect(browser).toHaveURL('/matchups/0022500584?context=kept&player=2544');
     await expect(screen.getByRole('heading', 'LeBron James')).toBeVisible();
-    await expect(screen.getByRole('region', 'LeBron James')).toBeFocused();
+    await expect(screen.getByRole('dialog', 'LeBron James')).toBeFocused();
     const scoreCard = screen.getByRole('region', 'Matchup Score');
     await expect(scoreCard).toContainText('Where his PTS come from');
     await expect(scoreCard).toContainText('+12.0%');
@@ -111,7 +111,7 @@ signedInTest(
     await expect(screen.getByRole('heading', 'LeBron James')).toHaveCount(0);
     await browser.forward();
     await expect(browser).toHaveURL('/matchups/0022500584?context=kept&player=2544');
-    await expect(screen.getByRole('region', 'LeBron James')).toBeFocused();
+    await expect(screen.getByRole('dialog', 'LeBron James')).toBeFocused();
     await screen.getByRole('button', 'Close selection card').tap();
     await expect(browser).toHaveURL('/matchups/0022500584?context=kept');
     await expect(screen.getByRole('heading', 'LeBron James')).toHaveCount(0);
@@ -119,7 +119,7 @@ signedInTest(
       .getByRole('article', 'LeBron James player')
       .getByRole('button', 'Open selection card')
       .tap();
-    await expect(screen.getByRole('region', 'LeBron James')).toBeFocused();
+    await expect(screen.getByRole('dialog', 'LeBron James')).toBeFocused();
     await browser.keyboard.press('Escape');
     await expect(browser).toHaveURL('/matchups/0022500584?context=kept');
     await expect(screen.getByRole('heading', 'LeBron James')).toHaveCount(0);
@@ -240,6 +240,7 @@ signedInTest(
     await scoreCard.scrollIntoView();
     await app.screenshot('selection-score-coverage');
 
+    await screen.getByRole('button', 'Close selection card').tap();
     await screen.getByRole('group', 'Market').getByRole('button', 'Free Throws Attempted').tap();
     await screen.getByRole('article', 'FT attempts').scrollIntoView();
     await expect(screen.getByRole('article', 'FT attempts')).toBeVisible();
@@ -274,6 +275,7 @@ signedInTest(
     await expect(screen.getByRole('region', 'Games vs this opponent')).toContainText(
       'Games vs this opponent covers the markets with a line in CourtAI’s books, so it has no BLK log.',
     );
+    await screen.getByRole('button', 'Close selection card').tap();
     await screen.getByRole('group', 'Market').getByRole('button', 'BLK').tap();
     await expect(screen.getByRole('article', 'LeBron James player')).toBeVisible();
   },
@@ -302,6 +304,7 @@ signedInTest(
     await scoreCard.scrollIntoView();
     await app.screenshot('selection-play-type-tov-fta');
 
+    await screen.getByRole('button', 'Close selection card').tap();
     const market = screen.getByRole('group', 'Market');
     await market.getByRole('button', 'TOV').tap();
     const playTypes = screen.getByRole('region', 'Play types');

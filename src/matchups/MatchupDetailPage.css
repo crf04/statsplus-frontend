@@ -757,8 +757,9 @@
   font-weight: 600;
 }
 
-/* The selection card: name and game on top, the stat strip as the selector,
-   then the matchup card and the opponent log side by side in two panels. */
+/* The selection card is a dialog: name and game on top, then a scrolling body
+   with the stat strip as the selector, the matchup card, the opponent log and
+   the lines, stacked. */
 .selection-card {
   display: flex;
   flex-direction: column;
@@ -766,6 +767,20 @@
   border-radius: var(--ct-radius-card);
   padding: 16px 18px 14px;
   background: linear-gradient(180deg, var(--ct-x-1a160e) 0%, var(--ct-surface) 140px);
+  color: var(--ct-text-max);
+}
+
+.selection-card-body {
+  padding: 0;
+}
+
+/* Above the app header, which paints over the page's own layers. */
+.selection-layer {
+  z-index: 2020;
+}
+
+.selection-backdrop {
+  z-index: 2010;
 }
 
 .selection-card-heading {
@@ -958,13 +973,6 @@ button.selection-strip-tile:focus-visible {
   gap: 6px;
 }
 
-.selection-panels {
-  display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(250px, 2fr);
-  gap: 12px;
-  align-items: start;
-}
-
 .selection-panel {
   min-width: 0;
   border: 1px solid var(--ct-line);
@@ -986,6 +994,7 @@ button.selection-strip-tile:focus-visible {
   border-color: var(--ct-gold-fg-35);
 }
 
+.selection-panel-log,
 .selection-panel-books {
   margin-top: 12px;
 }
@@ -1000,6 +1009,15 @@ button.selection-strip-tile:focus-visible {
   color: var(--ct-dim);
   font-size: 0.62rem;
   font-weight: 500;
+}
+
+.selection-table-wrap .selection-books-group th {
+  padding-top: 8px;
+  color: var(--ct-dim);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .selection-books .book-best {
@@ -1156,10 +1174,6 @@ button.selection-strip-tile:focus-visible {
   }
 
   .detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .selection-panels {
     grid-template-columns: 1fr;
   }
 

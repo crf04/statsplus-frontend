@@ -82,7 +82,7 @@ function Lines({ market, rows, quote }) {
   const [expanded, setExpanded] = useState(false);
   const books = rows.filter((row) => row.source === 'book').length;
   const hidden = books - BOOKS_SHOWN;
-  const time = books > 0 && asOfTime(quote.asOf);
+  const time = asOfTime(quote?.asOf);
   const price = (value, best) => (
     <td className={best ? 'book-best' : undefined}>
       {formatPrice(value)}

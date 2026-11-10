@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
@@ -4854,5 +4855,103 @@ describe('markets scored with no line in CourtAI’s books (statsplus#457)', () 
     expect(await screen.findByRole('heading', { name: 'LeBron James', level: 2 })).toBeVisible();
     expect(stripTab('BLK')).toHaveAttribute('aria-pressed', 'true');
     expect(stripTab('PTS')).toHaveAttribute('aria-pressed', 'false');
+  });
+});
+
+describe('the player sheet reads like the Player Profile matchup card (statsplus#478)', () => {
+  // The browser fixture is an ES module with a JSON import, which Jest does not
+  // load, so Node reads it and hands back the payload.
+  const browserMatchup = () =>
+    JSON.parse(
+      execFileSync(
+        process.execPath,
+        [
+          '--input-type=module',
+          '-e',
+          `import { matchupPayload } from './e2e/fixtures/courtai-contract.mjs';
+           console.log(JSON.stringify(matchupPayload));`,
+        ],
+        { cwd: process.cwd(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
+      ),
+    );
+  const openLebron = async () => {
+    fetchMatchup.mockResolvedValueOnce(decodeFetched(browserMatchup()));
+    renderMatchup('/matchups/0022500584?player=2544');
+    await screen.findByRole('heading', { name: 'LeBron James', level: 2 });
+  };
+  const strip = () => within(screen.getByRole('group', { name: 'Selection log stat' }));
+  const card = () => within(screen.getByRole('region', { name: 'Matchup Score' }));
+  const rows = (list) =>
+    [...card().getByRole('list', { name: list }).querySelectorAll('li')].map(
+      (row) => row.textContent,
+    );
+
+  test('AC1: the card reads the active stat where his volume comes from, with no Score Matrix', async () => {
+    await openLebron();
+
+    expect(screen.queryByRole('table', { name: /Score Matrix/ })).not.toBeInTheDocument();
+    expect(card().getByText('PTS Matchup Score')).toBeVisible();
+    expect(card().getByText('Where his PTS come from')).toBeVisible();
+    expect(rows('Play types')).toEqual(['Transition19%27th+12%', 'Post up2%25th+10%']);
+  });
+
+  test('AC2: every tab shows its market’s score for the window, green up and red down', async () => {
+    await openLebron();
+
+    const score = (name) => strip().getByRole('button', { name }).querySelector('small');
+    expect(
+      ['PTS', 'REB', 'AST', '3PM', 'PRA', 'TOV', 'BLK'].map((name) => score(name).textContent),
+    ).toEqual(['+12.0%', '+13.0%', '+14.0%', '+15.0%', '+19.0%', '+23.0%', '+25.0%']);
+    expect(score('PTS')).toHaveClass('pmc-up');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+
+    expect(
+      ['PTS', 'REB', 'AST', '3PM', 'PRA', 'TOV', 'BLK'].map((name) => score(name).textContent),
+    ).toEqual(['−2.0%', '−1.0%', '0.0%', '+1.0%', '+5.0%', '+9.0%', '+11.0%']);
+    expect(score('PTS')).toHaveClass('pmc-down');
+    expect(score('AST')).not.toHaveClass('pmc-up');
+    expect(score('AST')).not.toHaveClass('pmc-down');
+  });
+
+  test('AC3: a combo tab shows W3 grouped by stat, a single tab S4', async () => {
+    await openLebron();
+
+    await userEvent.click(strip().getByRole('button', { name: 'PRA' }));
+
+    expect(card().getByText('PRA vs BOS')).toBeVisible();
+    expect(
+      ['Points', 'Assists', 'Rebounds'].map(
+        (stat) =>
+          card().getByRole('region', { name: stat }).querySelector('.pmc-w3-head').textContent,
+      ),
+    ).toEqual([
+      'Points · 62% of his PRA+7.5%',
+      'Assists · 20% of his PRA+2.8%',
+      'Rebounds · 18% of his PRA+2.3%',
+    ]);
+    expect(card().queryByText('Where his PRA come from')).not.toBeInTheDocument();
+
+    await userEvent.click(strip().getByRole('button', { name: 'AST' }));
+
+    expect(card().getByText('Where his AST come from')).toBeVisible();
+    expect(card().getByText('Assist locations')).toBeVisible();
+    expect(card().queryByText('AST vs BOS')).not.toBeInTheDocument();
+  });
+
+  test('AC4: Last 15 moves the scores and contributions; the slices stay season', async () => {
+    await openLebron();
+    await userEvent.click(strip().getByRole('button', { name: 'PRA' }));
+    const points = () => card().getByRole('region', { name: 'Points' });
+    expect(card().getByTitle('PRA Season Matchup Score')).toHaveTextContent('+19.0%');
+    expect(points()).toHaveTextContent('Points · 62% of his PRA+7.5%');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Last 15' }));
+
+    expect(card().getByTitle('PRA Last 15 Matchup Score')).toHaveTextContent('+5.0%');
+    expect(points()).toHaveTextContent('Points · 62% of his PRA−1.2%');
+
+    await userEvent.click(strip().getByRole('button', { name: 'PTS' }));
+    expect(rows('Play types')).toEqual(['Transition19%27th+12%', 'Post up2%25th+10%']);
   });
 });

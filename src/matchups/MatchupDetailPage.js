@@ -1119,7 +1119,7 @@ function TeamTabs({ matchup, defenseTeam, onSelect }) {
             type="button"
             key={team.teamId}
             aria-pressed={team.teamId === defenseTeam.teamId}
-            onClick={() => onSelect(team)}
+            onClick={() => onSelect(team.teamId)}
           >
             <span className="team-tab-name">
               {team.tricode} <small>defense</small>
@@ -1318,7 +1318,7 @@ function Detail({ matchup, gameId, evidence }) {
           <TeamTabs
             matchup={matchup}
             defenseTeam={defenseTeam}
-            onSelect={(team) => updateSetting('team', team.teamId, initialTeam.teamId)}
+            onSelect={(teamId) => updateSetting('team', teamId, initialTeam.teamId)}
           />
           <PlayerRail
             players={opposingPlayers}

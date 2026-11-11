@@ -15,6 +15,20 @@ import { reportRenderError } from './errorReporting';
 import { isReloadingForMissingAsset } from './staleBuild';
 import { filterQueryString, filterSetFromSearchParams } from './filterUtils';
 import './App.css';
+// PROTOTYPE (throwaway, branch prototype/hover-card): the standalone build
+// replays captured data to the Log Workspace with a fake signed-in user.
+import { PROTO_STANDALONE } from './hoverProto/mode';
+import { DEMO_QUERY, installMockApi } from './hoverProto/mock/install';
+
+if (PROTO_STANDALONE) {
+  installMockApi();
+  if (window.location.pathname === '/' && !window.location.search)
+    window.history.replaceState(
+      null,
+      '',
+      `/?${DEMO_QUERY}${window.location.hash || '#proto=hover&v=A'}`,
+    );
+}
 
 const GameLogFilter = lazy(() => import('./GameLogFilter.js'));
 const SlatePage = lazy(() => import('./SlatePage'));

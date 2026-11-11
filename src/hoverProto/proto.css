@@ -1,0 +1,314 @@
+/* PROTOTYPE — throwaway. */
+.hv-proto-switcher {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  z-index: 2000;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 32px);
+  padding: 6px 10px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 999px;
+  background: var(--ct-surface-2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+  color: var(--ct-dim);
+}
+.hv-proto-switcher button {
+  min-width: 30px;
+  height: 28px;
+  border: 1px solid var(--ct-rule);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ct-text-2);
+  font-weight: 700;
+}
+.hv-proto-switcher button.is-on {
+  border-color: var(--ct-gold);
+  background: var(--ct-gold-soft);
+  color: var(--ct-gold);
+}
+.hv-proto-switcher span {
+  padding: 0 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+/* Hover cards */
+.hv-float {
+  position: absolute;
+  z-index: 20;
+  pointer-events: none;
+}
+.hv-card {
+  font-family: ui-monospace, SF Mono, Menlo, monospace;
+  font-size: 11px;
+  color: var(--ct-dim);
+  background: var(--ct-surface-2);
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  padding: 10px 12px;
+}
+.hv-card b,
+.hv-text {
+  color: var(--ct-text);
+  font-weight: 700;
+}
+.hv-dim {
+  color: var(--ct-dim);
+}
+.hv-head {
+  white-space: nowrap;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+.hv-mini {
+  width: 236px;
+}
+.hv-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.hv-big {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ct-text);
+}
+.hv-big.is-over,
+.hv-delta.up {
+  color: var(--ct-hit);
+}
+.hv-big.is-under,
+.hv-delta.down {
+  color: var(--ct-miss);
+}
+.hv-big-stat {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ct-dim);
+}
+.hv-pill {
+  margin-left: auto;
+  align-self: center;
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.hv-pill.is-over {
+  color: var(--ct-hit);
+  background: var(--ct-hit-bg-15);
+}
+.hv-pill.is-under {
+  color: var(--ct-miss);
+  background: var(--ct-miss-bg-15);
+}
+.hv-lines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin: 6px 0 8px;
+}
+.hv-rank {
+  border-top: 1px solid var(--ct-line);
+  padding-top: 7px;
+  margin-bottom: 8px;
+}
+.hv-rank-track {
+  position: relative;
+  height: 4px;
+  margin: 6px 0 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--ct-miss-fill-55), var(--ct-line) 50%, var(--ct-hit-fill-55));
+}
+.hv-rank-track span {
+  position: absolute;
+  top: -3px;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: var(--ct-text);
+  border: 2px solid var(--ct-surface-2);
+}
+.hv-rank-ends {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+}
+.hv-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px 8px;
+  border-top: 1px solid var(--ct-line);
+  padding-top: 7px;
+}
+.hv-grid > div {
+  display: flex;
+  flex-direction: column;
+}
+.hv-k {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.hv-v {
+  color: var(--ct-text);
+  font-weight: 700;
+  font-size: 12px;
+}
+.hv-v small {
+  color: var(--ct-dim);
+  font-weight: 400;
+  font-size: 10px;
+}
+.hv-delta {
+  font-size: 10px;
+  font-weight: 700;
+}
+.hv-foot {
+  margin-top: 7px;
+  font-size: 9px;
+  color: var(--ct-dim);
+}
+.hv-chip {
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-weight: 700;
+  text-transform: none;
+  letter-spacing: 0;
+  background: var(--ct-gold-bg-10);
+  color: var(--ct-text);
+}
+.hv-chip.is-soft {
+  color: var(--ct-hit);
+  background: var(--ct-hit-bg-15);
+}
+.hv-chip.is-tough {
+  color: var(--ct-miss);
+  background: var(--ct-miss-bg-15);
+}
+.hv-versus {
+  width: 280px;
+}
+.hv-versus table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.hv-versus th,
+.hv-versus td {
+  padding: 3px 0;
+  text-align: right;
+  font-weight: 400;
+}
+.hv-versus th:first-child {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.hv-versus thead th {
+  font-size: 9px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--ct-line);
+}
+.hv-versus td:nth-child(2) {
+  color: var(--ct-text);
+  font-weight: 700;
+}
+.hv-versus tr.is-main th,
+.hv-versus tr.is-main td {
+  color: var(--ct-gold);
+  font-weight: 800;
+  font-size: 12px;
+}
+.hv-versus tr.is-line th,
+.hv-versus tr.is-line td {
+  border-top: 1px solid var(--ct-line);
+}
+
+/* D — the strip under the chart */
+.hv-strip {
+  text-align: left;
+  font-family: ui-monospace, SF Mono, Menlo, monospace;
+  font-size: 11px;
+  color: var(--ct-dim);
+  margin-top: 10px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 8px;
+  background: var(--ct-surface-2);
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: minmax(150px, auto) minmax(200px, 1fr) 2fr;
+  gap: 10px 18px;
+  align-items: center;
+}
+.hv-strip-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hv-strip-nav button {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--ct-line-strong);
+  background: transparent;
+  color: var(--ct-text);
+  font-size: 16px;
+  line-height: 1;
+}
+.hv-strip-nav button:disabled {
+  opacity: 0.3;
+}
+.hv-strip-date {
+  color: var(--ct-text);
+  font-weight: 700;
+  font-size: 12px;
+}
+.hv-strip-result {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hv-strip-lines {
+  text-align: left;
+  white-space: nowrap;
+  margin-left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hv-strip-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+.hv-strip-box > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.hv-strip-box > div.is-main .hv-v,
+.hv-strip-box > div.is-main .hv-k {
+  color: var(--ct-gold);
+}
+@media (max-width: 900px) {
+  .hv-strip {
+    grid-template-columns: 1fr;
+  }
+}

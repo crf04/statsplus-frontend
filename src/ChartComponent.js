@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Bar } from 'react-chartjs-2';
 import './chartSetup';
 import MetricsDashboardRow from './MetricsDashboardRow';
@@ -9,6 +10,11 @@ import { bookName } from './matchups/displayConfig';
 import { shortSlateDay } from './home/homeFormat';
 import { useThemeColors } from './theme/useThemeColors';
 import { ordinal } from './profileMatchup/matchupReading';
+// PROTOTYPE (throwaway, branch prototype/hover-card): hover card variants.
+import { useHoverProto } from './hoverProto/mode';
+import { gameFacts, signed } from './hoverProto/gameFacts';
+import { Floating, GameStrip, MiniCard, VersusCard } from './hoverProto/Cards';
+import Switcher from './hoverProto/Switcher';
 
 // Canvas paint, resolved from the theme tokens, each with the role it plays.
 const CHART_COLORS = {
@@ -25,6 +31,8 @@ const CHART_COLORS = {
   tooltipTitle: ['fg', '--ct-text'],
   tooltipBody: ['fg', '--ct-dim'],
   tooltipEdge: ['line', '--ct-line-strong'],
+  hitText: ['fg', '--ct-hit'], // PROTOTYPE
+  missText: ['fg', '--ct-miss'], // PROTOTYPE
   tick: ['fg', '--ct-dim'],
   legend: ['fg', '--ct-dim'],
   grid: ['line', '--ct-overlay-fg-6'],
@@ -128,6 +136,28 @@ const ChartComponent = ({
       ? `Line: ${lineValue}`
       : `Season avg: ${numericLineValue.toFixed(1)}`;
 
+  // PROTOTYPE (throwaway): hover card variants, `#proto=hover&v=O|A|B|C|D`.
+  const proto = useHoverProto(useLocation().search);
+  const variant = proto.variant || 'O';
+  const [tip, setTip] = useState(null);
+  const [picked, setPicked] = useState(null);
+  const logCount = Array.isArray(gameLogs) ? gameLogs.length : 0;
+  const selected = picked !== null && picked < logCount ? picked : logCount - 1;
+  const lineSourceText = posted
+    ? bookName(posted.key)
+    : explicitLineValue !== null
+      ? 'Line'
+      : 'Season avg';
+  const factsAt = (index) =>
+    gameFacts({
+      log: gameLogs?.[index],
+      lineType,
+      line: numericLineValue,
+      lineSource: lineSourceText,
+      opponentRanks,
+      average: averages?.[0],
+    });
+
   // react-chartjs-2 redraws whenever `data` or `options` is a new object, so
   // both are rebuilt only when an input they read changes.
   const chartData = useMemo(() => {
@@ -159,6 +189,10 @@ const ChartComponent = ({
       borderWidth: 0,
       borderRadius: barCornerRadius,
       borderSkipped: 'bottom',
+      ...(variant === 'D' && {
+        borderColor: colors.label,
+        borderWidth: data.map((_, i) => (i === selected ? 2 : 0)),
+      }),
     };
     if (!tracking) return { labels, datasets: [bars] };
 
@@ -180,7 +214,52 @@ const ChartComponent = ({
         },
       ],
     };
-  }, [gameLogs, lineType, numericLineValue, tracking, colors]);
+  }, [gameLogs, lineType, numericLineValue, tracking, colors, variant, selected]);
+
+  // PROTOTYPE A: the same canvas tooltip, in sections — result, lines, opponent, drivers.
+  const sectionedCallbacks = {
+    title: (items) => {
+      const f = factsAt(items[0].dataIndex);
+      return `${f.date} · ${f.where} ${f.opponent}`;
+    },
+    label: (item) => {
+      const f = factsAt(item.dataIndex);
+      const lines = [
+        `${f.stat} ${formatNumber(f.value, 0)}${
+          f.line
+            ? `   ${signed(f.line.margin)} vs ${f.line.source} ${formatNumber(f.line.value, 1)}`
+            : ''
+        }`,
+      ];
+      if (f.closing)
+        lines.push(
+          `Closed ${formatNumber(f.closing.value, 1)} ${f.closing.book} · ${
+            f.closing.over ? 'beat' : 'missed'
+          } by ${formatNumber(Math.abs(f.closing.margin), 1)}`,
+        );
+      return lines;
+    },
+    labelTextColor: (item) => {
+      const f = factsAt(item.dataIndex);
+      const over = f.closing ? f.closing.over : f.line?.over;
+      return over === undefined ? colors.tooltipTitle : over ? colors.hitText : colors.missText;
+    },
+    afterBody: (items) => {
+      const f = factsAt(items[0].dataIndex);
+      const out = [''];
+      if (f.rank) out.push(`${f.opponent} ${f.rank.text} of 30 · ${f.rank.label}`, '');
+      const splits = f.drivers.filter((d) => d.sub);
+      f.drivers
+        .filter((d) => !d.sub)
+        .forEach((d) =>
+          out.push(
+            `${d.label.padEnd(9)}${d.text.padStart(4)}${d.avgText ? `   avg ${d.avgText}` : ''}`,
+          ),
+        );
+      if (splits.length) out.push(splits.map((d) => `${d.label} ${d.text}`).join(' · '));
+      return out;
+    },
+  };
 
   const chartOptions = useMemo(
     () => ({
@@ -188,6 +267,12 @@ const ChartComponent = ({
       // The container sets the height, so phones get as tall a chart as desktops.
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
+      onHover:
+        variant === 'D'
+          ? (_event, elements) => {
+              if (elements.length) setPicked(elements[0].index);
+            }
+          : undefined,
       plugins: {
         legend: {
           display: Boolean(tracking),
@@ -223,6 +308,35 @@ const ChartComponent = ({
           },
         },
         tooltip: {
+          ...(['B', 'C', 'D'].includes(variant) && {
+            enabled: false,
+            external:
+              variant === 'D'
+                ? undefined
+                : ({ chart, tooltip }) => {
+                    const point = tooltip.dataPoints?.[0];
+                    const next =
+                      tooltip.opacity === 0 || !point
+                        ? null
+                        : {
+                            index: point.dataIndex,
+                            x: tooltip.caretX,
+                            y: tooltip.caretY,
+                            width: chart.width,
+                            height: chart.height,
+                          };
+                    setTip((prev) =>
+                      prev === next ||
+                      (prev &&
+                        next &&
+                        prev.index === next.index &&
+                        prev.x === next.x &&
+                        prev.y === next.y)
+                        ? prev
+                        : next,
+                    );
+                  },
+          }),
           displayColors: false, // This removes the colored box
           backgroundColor: colors.tooltipGround,
           titleColor: colors.tooltipTitle,
@@ -234,46 +348,51 @@ const ChartComponent = ({
           bodyFont: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 11 },
           // One entry per game: the ghost bar shares the main bar's tooltip.
           filter: (item) => item.datasetIndex === 0,
-          callbacks: {
-            title: (tooltipItems) => {
-              const index = tooltipItems[0].dataIndex;
-              return `${gameLogs[index]?.GAME_DATE || 'N/A'}`;
-            },
-            label: (tooltipItem) => {
-              const index = tooltipItem.dataIndex;
-              const value = tooltipItem.raw;
-              const matchup = gameLogs[index]?.MATCHUP;
-              const opponent = typeof matchup === 'string' ? matchup.split(' ')[2] || 'N/A' : 'N/A';
-              const ranking = opponentRanks?.[lineType];
-              const rank = ranking?.ranks[opponent];
-              const lines = [
-                `OPP: ${opponent}`,
-                `MIN: ${numericOrZero(gameLogs[index]?.MIN)}`,
-                `${lineType}: ${numericOrZero(value)}`,
-              ];
-              // Points show the shot attempts behind them.
-              if (lineType === 'PTS') {
-                lines.push(
-                  `FGA: ${numericOrZero(gameLogs[index]?.FGA)}`,
-                  `3PA: ${numericOrZero(gameLogs[index]?.FG3A)}`,
-                );
-              }
-              if (tracking) {
-                const chances = toFiniteNumber(gameLogs[index]?.[tracking.chances]);
-                const made = numericOrZero(value);
-                lines[2] =
-                  chances === null
-                    ? `${lineType} ${made} · not tracked`
-                    : `${lineType} ${made} · ${chances} ${tracking.noun}${
-                        chances > 0 ? ` · ${percentText(made / chances)}` : ''
-                      }`;
-              }
-              // The charted stat's code stands in for the label's stat words.
-              const verb = ranking?.label.match(/ (Allowed|Forced)$/)?.[1];
-              if (rank) lines.splice(1, 0, `${ordinal(rank)} ${lineType}${verb ? ` ${verb}` : ''}`);
-              return lines;
-            },
-          },
+          callbacks:
+            variant === 'A'
+              ? sectionedCallbacks
+              : {
+                  title: (tooltipItems) => {
+                    const index = tooltipItems[0].dataIndex;
+                    return `${gameLogs[index]?.GAME_DATE || 'N/A'}`;
+                  },
+                  label: (tooltipItem) => {
+                    const index = tooltipItem.dataIndex;
+                    const value = tooltipItem.raw;
+                    const matchup = gameLogs[index]?.MATCHUP;
+                    const opponent =
+                      typeof matchup === 'string' ? matchup.split(' ')[2] || 'N/A' : 'N/A';
+                    const ranking = opponentRanks?.[lineType];
+                    const rank = ranking?.ranks[opponent];
+                    const lines = [
+                      `OPP: ${opponent}`,
+                      `MIN: ${numericOrZero(gameLogs[index]?.MIN)}`,
+                      `${lineType}: ${numericOrZero(value)}`,
+                    ];
+                    // Points show the shot attempts behind them.
+                    if (lineType === 'PTS') {
+                      lines.push(
+                        `FGA: ${numericOrZero(gameLogs[index]?.FGA)}`,
+                        `3PA: ${numericOrZero(gameLogs[index]?.FG3A)}`,
+                      );
+                    }
+                    if (tracking) {
+                      const chances = toFiniteNumber(gameLogs[index]?.[tracking.chances]);
+                      const made = numericOrZero(value);
+                      lines[2] =
+                        chances === null
+                          ? `${lineType} ${made} · not tracked`
+                          : `${lineType} ${made} · ${chances} ${tracking.noun}${
+                              chances > 0 ? ` · ${percentText(made / chances)}` : ''
+                            }`;
+                    }
+                    // The charted stat's code stands in for the label's stat words.
+                    const verb = ranking?.label.match(/ (Allowed|Forced)$/)?.[1];
+                    if (rank)
+                      lines.splice(1, 0, `${ordinal(rank)} ${lineType}${verb ? ` ${verb}` : ''}`);
+                    return lines;
+                  },
+                },
         },
         datalabels: {
           display: false,
@@ -303,7 +422,8 @@ const ChartComponent = ({
         },
       },
     }),
-    [gameLogs, lineType, lineLabel, numericLineValue, tracking, colors, opponentRanks],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- PROTOTYPE
+    [gameLogs, lineType, lineLabel, numericLineValue, tracking, colors, opponentRanks, variant],
   );
 
   const { player_name: _player, ...withoutPlayer } = appliedFilters || {};
@@ -330,9 +450,29 @@ const ChartComponent = ({
           <div className="chart-filters">
             <AppliedFilters filters={withoutPlayer} />
           </div>
-          <div className="chart-container">
+          <div className="chart-container" onMouseLeave={() => setTip(null)}>
             <Bar data={chartData} options={chartOptions} />
+            {tip && (variant === 'B' || variant === 'C') && (
+              <Floating tip={tip} width={tip.width}>
+                {variant === 'B' ? (
+                  <MiniCard f={factsAt(tip.index)} />
+                ) : (
+                  <VersusCard f={factsAt(tip.index)} />
+                )}
+              </Floating>
+            )}
           </div>
+          {variant === 'D' && selected >= 0 && (
+            <GameStrip
+              f={factsAt(selected)}
+              log={gameLogs[selected]}
+              lineType={lineType}
+              index={selected}
+              total={logCount}
+              onStep={(d) => setPicked(Math.max(0, Math.min(logCount - 1, selected + d)))}
+            />
+          )}
+          {proto.active && <Switcher variant={variant} goTo={proto.goTo} step={proto.step} />}
         </>
       )}
     </>

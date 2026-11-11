@@ -5271,10 +5271,13 @@ describe('the player sheet as a pop-up over the page (statsplus#481)', () => {
 });
 
 describe('a Rotation Player with no line in CourtAI’s books (crf04/statsplus#459)', () => {
-  const rotationMatchup = (raw = JSON.parse(JSON.stringify(rawMatchupPayload))) => {
+  const rotationMatchup = (
+    raw = JSON.parse(JSON.stringify(rawMatchupPayload)),
+    edit = () => {},
+  ) => {
     raw.game.away_team.targetable_player_count = 1;
     const lebron = raw.players.find((player) => player.canonical_id === 2544);
-    raw.players.push({
+    const row = {
       canonical_id: 1001,
       name: 'Rotation Guy',
       team_id: lebron.team_id,
@@ -5303,7 +5306,9 @@ describe('a Rotation Player with no line in CourtAI’s books (crf04/statsplus#4
       injury_badge_ref: null,
       // Scored in a market nobody in the pool is: rebounds.
       scores: { ...lebron.scores, REB: lebron.scores.PTS },
-    });
+    };
+    edit(row);
+    raw.players.push(row);
     return decodeFetched(raw);
   };
   const rotationRow = () => screen.getByRole('article', { name: 'Rotation Guy player' });
@@ -5314,6 +5319,10 @@ describe('a Rotation Player with no line in CourtAI’s books (crf04/statsplus#4
 
     const rail = await screen.findByRole('complementary', { name: 'Players' });
     expect(rail).toHaveTextContent('By season scoring · 1 with a line, 1 without');
+    await userEvent.click(within(rail).getByRole('button', { name: 'About Players' }));
+    expect(within(rail).getByRole('note', { name: 'Players' })).toHaveTextContent(
+      'those with a line in CourtAI’s books for this market, and those marked no line, listed for their recent minutes.',
+    );
     expect(railNames()).toEqual(['LeBron James', 'Rotation Guy']);
     expect(within(rotationRow()).getByText('no line')).toHaveAttribute(
       'title',
@@ -5338,6 +5347,54 @@ describe('a Rotation Player with no line in CourtAI’s books (crf04/statsplus#4
     const rail = await screen.findByRole('complementary', { name: 'Targetable players' });
     expect(rail).toHaveTextContent('By season scoring · 1 targetable returned');
     expect(within(rail).queryByText('no line')).not.toBeInTheDocument();
+    expect(within(rail).getByRole('button', { name: 'About Targetable players' })).toBeVisible();
+  });
+
+  test('the Defense Sheet names him among the players leaning on a slice', async () => {
+    fetchMatchup.mockResolvedValueOnce(rotationMatchup(browserMatchup()));
+    renderMatchup('/matchups/0022500584');
+
+    const leans = await screen.findByRole('list', { name: 'Players leaning on Transition' });
+    expect(
+      within(leans)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toContain('Rotation Guy 19%');
+  });
+
+  test('his card lists the sportsbooks that quote him under the no-line note', async () => {
+    fetchMatchup.mockResolvedValueOnce(
+      rotationMatchup(browserMatchup(), (row) => {
+        row.book_lines = {
+          PTS: {
+            as_of: '2026-01-15T11:50:00Z',
+            closing: false,
+            books: [
+              {
+                book: 'draftkings',
+                line: 5.5,
+                over: -115,
+                under: -105,
+                updated_at: '2026-01-15T11:49:00Z',
+                best_over: true,
+                best_under: true,
+              },
+            ],
+          },
+        };
+      }),
+    );
+    renderMatchup('/matchups/0022500584?player=1001');
+
+    const dialog = await screen.findByRole('dialog', { name: 'Rotation Guy' });
+    const lines = within(dialog).getByRole('region', { name: 'Lines' });
+    expect(within(lines).getByText('No line in CourtAI’s books.')).toBeVisible();
+    expect(
+      within(within(lines).getByRole('table', { name: 'PTS lines' }))
+        .getAllByRole('row')
+        .map((row) => row.textContent),
+    ).toEqual(['SourceLineOverUnder', 'Sportsbooks', `${bookName('draftkings')}5.5-115 ★-105 ★`]);
+    expect(fetchMatchupSelection).not.toHaveBeenCalled();
   });
 
   test.each([
@@ -5371,6 +5428,11 @@ describe('a Rotation Player with no line in CourtAI’s books (crf04/statsplus#4
       expect(score.getByText('PTS Matchup Score')).toBeVisible();
       expect(score.getByText('+12.0%')).toBeVisible();
       expect(score.getByText('Where his PTS come from')).toBeVisible();
+      expect(
+        [...score.getByRole('list', { name: 'Play types' }).querySelectorAll('li')].map(
+          (row) => row.textContent,
+        ),
+      ).toEqual(['Transition19%27th+12%', 'Post up2%25th+10%']);
       expect(within(dialog).getByRole('region', { name: 'Lines' })).toHaveTextContent(
         'Lines · PTSNo line in CourtAI’s books.',
       );

@@ -579,7 +579,7 @@ function PlayerRail({
       <div className="rail-heading">
         <p className="matchup-eyebrow">
           {label}
-          {!historical && <HelpTip tip="matchupRail" />}
+          {!historical && <HelpTip tip={noLineCount ? 'matchupRailRotation' : 'matchupRail'} />}
         </p>
         {/* Focus lands here when a closed card's own row is not on screen. */}
         <h2 ref={headingRef} tabIndex={-1}>

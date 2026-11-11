@@ -3897,6 +3897,20 @@ test.each([
   );
   expect(Object.keys(rotation.scores)).toEqual(['PTS', 'FGA']);
   expect(rotation.scores.PTS.season.blend).toEqual({ value: 0.12, thin: false });
+  expect(rotation.dietShares.playTypes).toEqual([
+    {
+      key: 'Transition',
+      season: {
+        share: 0.19,
+        volume: 102,
+        gamesPlayed: 20,
+        volumeUnit: 'possessions',
+        volumePerGame: 5.1,
+        leagueAverageShare: 0.09,
+        sigmaDeviation: 1.3,
+      },
+    },
+  ]);
 });
 
 test.each([

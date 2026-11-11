@@ -15,7 +15,15 @@ export const HELP_TIPS = {
       'Players on the other team with a posted line for this market, highest scorers first.',
       'The number is the line when one is posted, otherwise his season average. Pick a player to open his card.',
       'The percent beside a name is his Matchup Score, a dotted underline means a thin sample, and the bars are his last five games against the line.',
-      'A player marked no line has no line in CourtAI’s books. He is listed for his recent minutes.',
+    ],
+  },
+  // The rail once it also lists Rotation Players (crf04/statsplus#459).
+  matchupRailRotation: {
+    title: 'Players',
+    body: [
+      'Players on the other team, highest scorers first: those with a line in CourtAI’s books for this market, and those marked no line, listed for their recent minutes.',
+      'The number is the line when one is posted, otherwise his season average. Pick a player to open his card.',
+      'The percent beside a name is his Matchup Score, a dotted underline means a thin sample, and the bars are his last five games against the line.',
     ],
   },
   matchupWindow: {

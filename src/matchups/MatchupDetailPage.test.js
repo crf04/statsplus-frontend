@@ -5347,7 +5347,17 @@ describe('a Rotation Player with no line in CourtAI’s books (crf04/statsplus#4
     const rail = await screen.findByRole('complementary', { name: 'Targetable players' });
     expect(rail).toHaveTextContent('By season scoring · 1 targetable returned');
     expect(within(rail).queryByText('no line')).not.toBeInTheDocument();
-    expect(within(rail).getByRole('button', { name: 'About Targetable players' })).toBeVisible();
+    await userEvent.click(within(rail).getByRole('button', { name: 'About Targetable players' }));
+    expect(
+      [...within(rail).getByRole('note', { name: 'Targetable players' }).children].map(
+        (part) => part.textContent,
+      ),
+    ).toEqual([
+      'Targetable players',
+      'Players on the other team with a posted line for this market, highest scorers first.',
+      'The number is the line when one is posted, otherwise his season average. Pick a player to open his card.',
+      'The percent beside a name is his Matchup Score, a dotted underline means a thin sample, and the bars are his last five games against the line.',
+    ]);
   });
 
   test('the Defense Sheet names him among the players leaning on a slice', async () => {

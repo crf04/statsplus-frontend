@@ -5,13 +5,13 @@ import './PlayerSelector.css'; // Import the CSS file
 import { formatNumber } from './numberUtils';
 import { lineSourceId, lineSourcesFor } from './gameLogsApi';
 import { bookName } from './matchups/displayConfig';
-import { formatPrice } from './matchups/linePrices';
+import { formatPrice, staleLabel } from './matchups/linePrices';
 import { shortSlateDay } from './home/homeFormat';
 
 const hasPrice = (source) => source.over !== null || source.under !== null;
 
 // "DraftKings 26.5, Over −110, Under −115"; a provider with no per-pick price
-// is named with its line alone.
+// is named with its line alone, and a stale book ends with its age.
 const sourceLabel = (source) =>
   [
     `${bookName(source.key)} ${formatNumber(source.line, 1)}`,
@@ -21,6 +21,7 @@ const sourceLabel = (source) =>
           source.under === null ? 'no Under price' : `Under ${formatPrice(source.under)}`,
         ]
       : []),
+    ...(source.stale ? [staleLabel(source.updatedAt)] : []),
   ].join(', ');
 
 function LineSourcePicker({ posted, sources, lineSource, onChoose }) {
@@ -54,6 +55,9 @@ function LineSourcePicker({ posted, sources, lineSource, onChoose }) {
                   <span>o {source.over === null ? '—' : formatPrice(source.over)}</span>
                   <span>u {source.under === null ? '—' : formatPrice(source.under)}</span>
                 </span>
+              )}
+              {source.stale && (
+                <span className="line-source-stale">{staleLabel(source.updatedAt)}</span>
               )}
             </button>
           );

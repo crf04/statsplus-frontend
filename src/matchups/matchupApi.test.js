@@ -1412,6 +1412,7 @@ test('decodes Dabble free-throw and made-field-goal lines beside a scored market
       over: -120,
       under: -110,
       updatedAt: '2026-01-15T21:55:00Z',
+      stale: false,
       bestOver: true,
       bestUnder: true,
     },
@@ -3084,6 +3085,7 @@ describe('book_lines', () => {
           over: -115,
           under: -105,
           updatedAt: '2026-10-21T21:02:40Z',
+          stale: false,
           bestOver: false,
           bestUnder: true,
         },
@@ -3093,6 +3095,7 @@ describe('book_lines', () => {
           over: -110,
           under: null,
           updatedAt: '2026-10-21T21:03:02Z',
+          stale: false,
           bestOver: true,
           bestUnder: false,
         },
@@ -3100,6 +3103,18 @@ describe('book_lines', () => {
     });
     expect(Object.keys(player.bookLines)).toEqual(['PTS', 'PRA']);
     expect(player.provenance).toEqual({ prizepicks: ['PTS', 'FGA'], underdog: ['PTS'] });
+  });
+
+  test('keeps a stale flag, reading an absent one as fresh (crf04/statsplus#496)', () => {
+    const [stale, fresh] = bookQuote.books;
+    const [player] = decodeMatchup(
+      withBookLines({ PTS: { ...bookQuote, books: [{ ...stale, stale: true }, fresh] } }),
+    ).players;
+
+    expect(player.bookLines.PTS.books.map((entry) => [entry.book, entry.stale])).toEqual([
+      ['draftkings', true],
+      ['fanduel', false],
+    ]);
   });
 
   test('decodes the sportsbook combo markets PR, PA and RA', () => {
@@ -3143,6 +3158,8 @@ describe('book_lines', () => {
     ['an undefined price', { PTS: { ...bookQuote, books: [book({ over: undefined })] } }],
     ['a numeric best flag', { PTS: { ...bookQuote, books: [book({ best_over: 1 })] } }],
     ['a missing best flag', { PTS: { ...bookQuote, books: [book({ best_under: undefined })] } }],
+    ['a string stale flag', { PTS: { ...bookQuote, books: [book({ stale: 'true' })] } }],
+    ['a null stale flag', { PTS: { ...bookQuote, books: [book({ stale: null })] } }],
     ['an empty book key', { PTS: { ...bookQuote, books: [book({ book: '' })] } }],
     ['a missing updated_at', { PTS: { ...bookQuote, books: [book({ updated_at: undefined })] } }],
   ])('rejects %s at the response boundary', (_name, bookLines) => {

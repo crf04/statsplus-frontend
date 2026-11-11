@@ -3366,6 +3366,32 @@ test('the Selection card lists apps then books with line, Over and Under, and st
   ).toHaveAccessibleDescription('Posted by PrizePicks and Underdog +12.0% Season Matchup Score');
 });
 
+test('the Selection card marks a stale book with its age and never stars it (crf04/statsplus#496)', async () => {
+  // 19 hours after the quotes' 21:00Z update.
+  const now = jest.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-22T16:00:00Z'));
+  try {
+    await openWithBooks({
+      PTS: quote([
+        bookRow('fanduel', 27.5, 105, -125, { stale: true, bestOver: true, bestUnder: true }),
+        bookRow('draftkings', 27.5, -110, -110, { stale: false, bestOver: true }),
+        bookRow('betmgm', 27.5, -115, -105, { bestUnder: true }),
+      ]),
+    });
+
+    const table = linesTable('PTS');
+    expect(tableRows(table).slice(3)).toEqual([
+      'Sportsbooks',
+      'FanDuel stale, 19h ago27.5+105-125',
+      'DraftKings27.5-110 ★-110',
+      'BetMGM27.5-115-105 ★',
+    ]);
+    const fanduel = within(table).getByRole('row', { name: /FanDuel/ });
+    expect(within(fanduel).queryByRole('img', { name: 'best price' })).not.toBeInTheDocument();
+  } finally {
+    now.mockRestore();
+  }
+});
+
 test('the lines table follows the selected stat and labels a closing snapshot', async () => {
   await openWithBooks({
     PTS: quote([bookRow('fanduel', 26.5, -135, 110)]),
@@ -3807,6 +3833,80 @@ describe('rail price line', () => {
     });
 
     expect(text(priceLine(row))).toBe('o −110 FD u −110 FD');
+  });
+
+  // crf04/statsplus#496: the QA seed, a 90-minute-old FanDuel beside fresh books.
+  const stale = { stale: true };
+  test('a stale book is never the best price, even one flagged best', async () => {
+    const row = await openRail({
+      bookLines: {
+        PTS: quote([
+          bookRow('fanduel', 27.5, 105, -125, { ...stale, bestOver: true }),
+          bookRow('draftkings', 27.5, -110, -110),
+          bookRow('betmgm', 27.5, -115, -105),
+        ]),
+      },
+    });
+
+    expect(text(priceLine(row))).toBe('o −110 DK u −105 MG');
+    expect(priceLine(row)).toHaveAccessibleName(
+      'Best Over −110 at DraftKings, best Under −105 at BetMGM, line 27.5',
+    );
+  });
+
+  test('an equal price goes to the fresh book when the first served is stale', async () => {
+    const row = await openRail({
+      bookLines: {
+        PTS: quote([
+          bookRow('fanduel', 27.5, -110, -110, stale),
+          bookRow('betmgm', 27.5, -110, -110),
+        ]),
+      },
+    });
+
+    expect(text(priceLine(row))).toBe('o −110 MG u −110 MG');
+  });
+
+  test('a stale book does not pick the books line', async () => {
+    const row = await openRail({
+      bookLines: {
+        PTS: quote([
+          bookRow('fanduel', 26.5, 105, -125, stale),
+          bookRow('williamhill_us', 26.5, 100, -120, stale),
+          bookRow('draftkings', 28.5, -110, -110),
+        ]),
+      },
+      ...unpricedHeadline,
+    });
+
+    expect(priceLine(row)).toHaveAccessibleName(
+      'Best Over −110 at DraftKings, best Under −110 at DraftKings, line 28.5',
+    );
+  });
+
+  test('shows no price when every book is stale and no app prices the stat', async () => {
+    const row = await openRail({
+      bookLines: {
+        PTS: quote([
+          bookRow('fanduel', 27.5, 105, -125, { ...stale, bestOver: true, bestUnder: true }),
+          bookRow('draftkings', 27.5, -110, -110, stale),
+        ]),
+      },
+    });
+
+    expect(priceLine(row)).not.toBeInTheDocument();
+  });
+
+  test('an app price is still the best when every book is stale', async () => {
+    const row = await openRail({
+      bookLines: { PTS: quote([bookRow('fanduel', 27.5, 105, -125, stale)]) },
+      lines: { novig: { PTS: 27.5 } },
+      linePrices: { novig: { PTS: { over: -106, under: -130 } } },
+    });
+
+    expect(priceLine(row)).toHaveAccessibleName(
+      'Best Over −106 at Novig, best Under −130 at Novig, line 27.5',
+    );
   });
 });
 

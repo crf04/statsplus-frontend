@@ -844,6 +844,8 @@ function decodeBookLines(bookLines) {
               over: requirePrice(book.over),
               under: requirePrice(book.under),
               updatedAt: requireString(book.updated_at),
+              // Additive (crf04/statsplus#496): an older backend sends no flag.
+              stale: book.stale === undefined ? false : requireBoolean(book.stale),
               bestOver: requireBoolean(book.best_over),
               bestUnder: requireBoolean(book.best_under),
             };

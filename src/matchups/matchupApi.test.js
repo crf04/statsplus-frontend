@@ -3107,13 +3107,20 @@ describe('book_lines', () => {
 
   test('keeps a stale flag, reading an absent one as fresh (crf04/statsplus#496)', () => {
     const [stale, fresh] = bookQuote.books;
+    const unflagged = { ...fresh, book: 'betmgm' };
     const [player] = decodeMatchup(
-      withBookLines({ PTS: { ...bookQuote, books: [{ ...stale, stale: true }, fresh] } }),
+      withBookLines({
+        PTS: {
+          ...bookQuote,
+          books: [{ ...stale, stale: true }, { ...fresh, stale: false }, unflagged],
+        },
+      }),
     ).players;
 
     expect(player.bookLines.PTS.books.map((entry) => [entry.book, entry.stale])).toEqual([
       ['draftkings', true],
       ['fanduel', false],
+      ['betmgm', false],
     ]);
   });
 

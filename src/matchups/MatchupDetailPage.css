@@ -1026,6 +1026,15 @@ button.selection-strip-tile:focus-visible {
   font-weight: 700;
 }
 
+/* A stale quote keeps its row; the age sits under the book's name. */
+.selection-books .book-stale {
+  display: block;
+  color: var(--ct-dim);
+  font-size: 0.62rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 .book-more {
   margin-top: 6px;
   border: 0;

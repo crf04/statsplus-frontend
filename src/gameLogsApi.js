@@ -38,7 +38,9 @@ const price = (value) => (Number.isInteger(value) ? value : null);
  * { kind: 'provider' | 'book', key, line, over, under }, prices American or
  * null. Providers come first, PrizePicks then alphabetical as the backend
  * breaks a tie, then books in the order they are served. A key the app does
- * not know is kept; a posting without a numeric line is dropped.
+ * not know is kept; a posting without a numeric line is dropped. A book the
+ * backend marks stale (crf04/statsplus#496) also carries
+ * { stale: true, updatedAt }.
  */
 const lineSources = (value, market) => {
   const providers = Object.entries(isRecord(value.provider_lines) ? value.provider_lines : {})
@@ -62,6 +64,10 @@ const lineSources = (value, market) => {
         line: book.line,
         over: price(book.over),
         under: price(book.under),
+        ...(book.stale === true && {
+          stale: true,
+          updatedAt: typeof book.updated_at === 'string' ? book.updated_at : null,
+        }),
       })),
   ];
 };

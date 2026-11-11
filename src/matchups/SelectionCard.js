@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { bookMark, bookName, categoryLabel, orderCategories } from './displayConfig';
+import { bestSides, staleLabel } from './linePrices';
 import { ROTATION_SOURCE } from './matchupApi';
 import ErrorMessage from '../feedback/ErrorMessage';
 import { useFeedback } from '../feedback/useFeedback';
@@ -45,9 +46,9 @@ const asOfTime = (stamp) => {
 
 // Every app and market that numbers the stat, priced or not, then every
 // sportsbook quoting it. The rail shows one line, so this is where the others
-// are read. The best price is the backend's call (books on equal lines only).
-// This table only marks it, with a star as well as weight so colour is not the
-// only signal.
+// are read. The best price is the backend's call (books on equal lines only),
+// never a stale book's. This table only marks it, with a star as well as
+// weight so colour is not the only signal.
 const APP_ORDER = ['prizepicks', 'underdog', 'dabble', 'novig', 'kalshi', 'polymarket'];
 const SOURCES = [
   { source: 'app', label: 'Apps' },
@@ -76,7 +77,8 @@ const lineRows = (player, market) => [
     line: entry.line,
     over: entry.over,
     under: entry.under,
-    best: { over: entry.bestOver, under: entry.bestUnder },
+    best: bestSides(entry),
+    stale: entry.stale && staleLabel(entry.updatedAt),
   })),
 ];
 
@@ -130,7 +132,10 @@ function Lines({ market, rows, quote, noLine }) {
                   </tr>
                   {visible.map((row) => (
                     <tr key={row.name}>
-                      <th scope="row">{bookName(row.name)}</th>
+                      <th scope="row">
+                        {bookName(row.name)}
+                        {row.stale && <small className="book-stale"> {row.stale}</small>}
+                      </th>
                       <td>{row.line}</td>
                       {price(row.over, row.best.over)}
                       {price(row.under, row.best.under)}

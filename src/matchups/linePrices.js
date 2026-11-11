@@ -5,6 +5,8 @@
  * line it posts. Prices are American; the highest wins.
  */
 
+import { formatAge } from '../freshness';
+
 // Providers whose price sits on one pick, in the order they win a tie after
 // the sportsbooks.
 export const PRICED_PROVIDERS = Object.freeze([
@@ -17,8 +19,17 @@ export const PRICED_PROVIDERS = Object.freeze([
 
 export const formatPrice = (price) => (price > 0 ? `+${price}` : `−${Math.abs(price)}`);
 
+// A stale sportsbook quote (crf04/statsplus#496) is shown but never the best
+// price, whatever best_over and best_under say.
+export const bestSides = (book) => ({
+  over: !book.stale && book.bestOver,
+  under: !book.stale && book.bestUnder,
+});
+export const staleLabel = (updatedAt) => `stale, ${formatAge(updatedAt)}`;
+
 const sourcesFor = (player, stat) => {
-  const books = (player.bookLines?.[stat]?.books ?? []).map((entry) => ({
+  const fresh = (player.bookLines?.[stat]?.books ?? []).filter((entry) => !entry.stale);
+  const books = fresh.map((entry) => ({
     provider: entry.book,
     line: entry.line,
     over: entry.over,

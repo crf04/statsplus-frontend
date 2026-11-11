@@ -83,6 +83,56 @@ test('sources without prices show their lines and no price cells', () => {
   expect(buttons.map((button) => button.textContent)).toEqual(['Dabble26.5', 'DraftKings26.5']);
 });
 
+// crf04/statsplus#496: a stale sportsbook quote is still offered, marked with its age.
+test('a stale book shows its line and prices, marked stale with its age', () => {
+  const now = jest.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-22T16:00:00Z'));
+  try {
+    renderSelector({
+      postedLine: decodePosted({
+        lines: { PTS: { value: 26.5, provider: 'dabble' } },
+        provider_lines: { dabble: { PTS: 26.5 } },
+        book_lines: {
+          PTS: {
+            books: [
+              {
+                book: 'fanduel',
+                line: 26.5,
+                over: 105,
+                under: -125,
+                updated_at: '2026-10-21T21:00:00Z',
+                stale: true,
+              },
+              {
+                book: 'draftkings',
+                line: 26.5,
+                over: -110,
+                under: -110,
+                updated_at: '2026-10-22T15:55:00Z',
+                stale: false,
+              },
+            ],
+          },
+        },
+      }),
+    });
+    expect(sourceLabels()).toEqual([
+      'Dabble 26.5',
+      'FanDuel 26.5, Over +105, Under −125, stale, 19h ago',
+      'DraftKings 26.5, Over −110, Under −110',
+    ]);
+    const buttons = within(screen.getByRole('group', { name: 'Posted Lines:' })).getAllByRole(
+      'button',
+    );
+    expect(buttons.map((button) => button.textContent)).toEqual([
+      'Dabble26.5',
+      'FanDuel26.5o +105u −125stale, 19h ago',
+      'DraftKings26.5o −110u −110',
+    ]);
+  } finally {
+    now.mockRestore();
+  }
+});
+
 test('a provider or book the app does not know is offered under its own key', () => {
   renderSelector({
     postedLine: decodePosted({

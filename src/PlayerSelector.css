@@ -200,6 +200,12 @@
   white-space: nowrap;
 }
 
+.line-source-stale {
+  color: var(--ct-dim);
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .player-selector-row {

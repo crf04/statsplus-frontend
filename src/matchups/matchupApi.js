@@ -106,6 +106,7 @@ export const DIET_BASE_WIRE_NAMES = Object.fromEntries(
 
 const EXPERIENCE_MODES = ['historical', 'current'];
 const PLAYER_SOURCES = ['game_logs', 'player_pool'];
+export const ROTATION_SOURCE = 'rotation';
 const EXPERIENCE_SECTIONS = [
   'schedule',
   'participants',
@@ -687,23 +688,30 @@ const decodePlayer = (player, experience, game) => {
   const tricode = requireString(player.tricode);
   const focalTeam = [game.away, game.home].find((team) => team.teamId === player.team_id);
   if (!focalTeam || focalTeam.tricode !== tricode) throw invalid();
-  // A participant cannot claim a different source than its own experience.
+  // A participant cannot claim a different source than its own experience,
+  // except a Rotation Player beside a Player Pool (crf04/statsplus#459): listed
+  // for his recent minutes, with no line in CourtAI's books.
   const playerSource = player.player_source ?? experience.playerSource;
-  if (!PLAYER_SOURCES.includes(playerSource) || playerSource !== experience.playerSource)
+  const rotation = playerSource === ROTATION_SOURCE && experience.playerSource === 'player_pool';
+  if (
+    !rotation &&
+    (!PLAYER_SOURCES.includes(playerSource) || playerSource !== experience.playerSource)
+  )
     throw invalid();
   const gameLogSourced = playerSource === 'game_logs';
   const postedMarkets = decodeCategoryList(player.posted_markets);
-  // A game-log participant carries no posted-market claim at all.
-  if (gameLogSourced ? postedMarkets.length !== 0 : postedMarkets.length === 0) throw invalid();
+  // A game-log participant or a Rotation Player carries no posted-market claim at all.
+  const unposted = gameLogSourced || rotation;
+  if (unposted ? postedMarkets.length !== 0 : postedMarkets.length === 0) throw invalid();
   const statCategories =
     player.stat_categories === undefined
       ? postedMarkets
       : decodeCategoryList(player.stat_categories);
-  if (statCategories.length === 0) throw invalid();
+  if (statCategories.length === 0 && !rotation) throw invalid();
   // Current-mode categories are the posted markets. Keeping them identical is
   // what lets the live Player Pool controls and selection stay unchanged.
   if (!gameLogSourced && statCategories.join() !== postedMarkets.join()) throw invalid();
-  if (gameLogSourced && (!isRecord(player.provenance) || Object.keys(player.provenance).length))
+  if (unposted && (!isRecord(player.provenance) || Object.keys(player.provenance).length))
     throw invalid();
   const focalGameLine = decodeFocalGameLine(player.focal_game_line, statCategories);
   // A historical participant always has a focal line; a pool player never does.
@@ -721,7 +729,7 @@ const decodePlayer = (player, experience, game) => {
   ) {
     throw invalid();
   }
-  const provenance = gameLogSourced ? {} : decodeProvenance(player.provenance, postedMarkets);
+  const provenance = unposted ? {} : decodeProvenance(player.provenance, postedMarkets);
   const decodedLines = decodeLines(player.lines, provenance);
   return {
     id: requireInteger(player.canonical_id),

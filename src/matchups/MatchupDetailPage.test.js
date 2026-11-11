@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { createTarget, fetchDietBaselines, fetchTargetPreview } from '../targets/targetsApi';
 import { fetchMatchup, fetchMatchupSelection } from './matchupApi';
 import { payload as rawMatchupPayload } from './matchupPayloadFixture';
-import { bookName } from './displayConfig';
+import { bookName, categoryLabel } from './displayConfig';
 import MatchupDetailPage from './MatchupDetailPage';
 import { fetchSeasons } from '../seasonsApi';
 import { legacySeasons, publishedOnlySeasons, unpublishedSeasons } from '../seasonChoicesFixture';
@@ -4957,22 +4957,23 @@ describe('markets scored with no line in CourtAI’s books (statsplus#457)', () 
   });
 });
 
+// The browser fixture is an ES module with a JSON import, which Jest does not
+// load, so Node reads it and hands back the payload.
+const browserMatchup = () =>
+  JSON.parse(
+    execFileSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `import { matchupPayload } from './e2e/fixtures/courtai-contract.mjs';
+         console.log(JSON.stringify(matchupPayload));`,
+      ],
+      { cwd: process.cwd(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
+    ),
+  );
+
 describe('the player sheet reads like the Player Profile matchup card (statsplus#478)', () => {
-  // The browser fixture is an ES module with a JSON import, which Jest does not
-  // load, so Node reads it and hands back the payload.
-  const browserMatchup = () =>
-    JSON.parse(
-      execFileSync(
-        process.execPath,
-        [
-          '--input-type=module',
-          '-e',
-          `import { matchupPayload } from './e2e/fixtures/courtai-contract.mjs';
-           console.log(JSON.stringify(matchupPayload));`,
-        ],
-        { cwd: process.cwd(), encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
-      ),
-    );
   const openLebron = async (edit = () => {}) => {
     const payload = browserMatchup();
     edit(payload.players.find((player) => player.canonical_id === 2544));
@@ -5267,4 +5268,117 @@ describe('the player sheet as a pop-up over the page (statsplus#481)', () => {
     expect(box).toHaveFocus();
     expect(box).toHaveValue('Draft feedback');
   });
+});
+
+describe('a Rotation Player with no line in CourtAI’s books (crf04/statsplus#459)', () => {
+  const rotationMatchup = (raw = JSON.parse(JSON.stringify(rawMatchupPayload))) => {
+    raw.game.away_team.targetable_player_count = 1;
+    const lebron = raw.players.find((player) => player.canonical_id === 2544);
+    raw.players.push({
+      canonical_id: 1001,
+      name: 'Rotation Guy',
+      team_id: lebron.team_id,
+      tricode: lebron.tricode,
+      player_source: 'rotation',
+      stat_categories: [],
+      focal_game_line: null,
+      posted_markets: [],
+      provenance: {},
+      lines: {},
+      line_prices: {},
+      book_lines: {},
+      season_scoring: 5,
+      last_five_games: [
+        {
+          game_id: '0022500106',
+          game_date: '2026-01-13',
+          matchup: 'LAL @ MIA',
+          minutes: 12,
+          stats: {},
+        },
+      ],
+      season_averages: {},
+      last_10_minutes: [12, 14],
+      diet_shares: lebron.diet_shares,
+      injury_badge_ref: null,
+      // Scored in a market nobody in the pool is: rebounds.
+      scores: { ...lebron.scores, REB: lebron.scores.PTS },
+    });
+    return decodeFetched(raw);
+  };
+  const rotationRow = () => screen.getByRole('article', { name: 'Rotation Guy player' });
+
+  test('the rail lists him under every scored market, marked no line, and counts him apart', async () => {
+    fetchMatchup.mockResolvedValueOnce(rotationMatchup());
+    renderMatchup('/matchups/0022500584');
+
+    const rail = await screen.findByRole('complementary', { name: 'Players' });
+    expect(rail).toHaveTextContent('By season scoring · 1 with a line, 1 without');
+    expect(railNames()).toEqual(['LeBron James', 'Rotation Guy']);
+    expect(within(rotationRow()).getByText('no line')).toHaveAttribute(
+      'title',
+      'No line in CourtAI’s books',
+    );
+    expect(
+      within(screen.getByRole('article', { name: 'LeBron James player' })).queryByText('no line'),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: categoryLabel('REB') }));
+
+    expect(railNames()).toEqual(['Rotation Guy']);
+    expect(within(rotationRow()).getByText('no line')).toBeVisible();
+  });
+
+  test('a Matchup with no Rotation Player keeps the targetable rail', async () => {
+    const raw = JSON.parse(JSON.stringify(rawMatchupPayload));
+    raw.game.away_team.targetable_player_count = 1;
+    fetchMatchup.mockResolvedValueOnce(decodeFetched(raw));
+    renderMatchup('/matchups/0022500584');
+
+    const rail = await screen.findByRole('complementary', { name: 'Targetable players' });
+    expect(rail).toHaveTextContent('By season scoring · 1 targetable returned');
+    expect(within(rail).queryByText('no line')).not.toBeInTheDocument();
+  });
+
+  test.each([
+    ['a deep link', '/matchups/0022500584?player=1001', async () => {}],
+    [
+      'his rail row',
+      '/matchups/0022500584',
+      async () => {
+        await screen.findByRole('complementary', { name: 'Players' });
+        await userEvent.click(
+          within(rotationRow()).getByRole('button', { name: /selection card/ }),
+        );
+      },
+    ],
+  ])(
+    'opened from %s, his card shows scores, Diet and no line, with no Selection request',
+    async (_name, path, open) => {
+      // The browser fixture carries the Defense Sheet his Diet is read against.
+      fetchMatchup.mockResolvedValueOnce(rotationMatchup(browserMatchup()));
+      renderMatchup(path);
+      await open();
+
+      const dialog = await screen.findByRole('dialog', { name: 'Rotation Guy' });
+      expect(fetchMatchupSelection).not.toHaveBeenCalled();
+      expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument();
+      expect(within(dialog).queryByRole('status')).not.toBeInTheDocument();
+      expect(normalized(within(dialog).getByText(/^LAL @ BOS/))).toMatch(
+        /No line in CourtAI’s books\.$/,
+      );
+      const score = within(within(dialog).getByRole('region', { name: 'Matchup Score' }));
+      expect(score.getByText('PTS Matchup Score')).toBeVisible();
+      expect(score.getByText('+12.0%')).toBeVisible();
+      expect(score.getByText('Where his PTS come from')).toBeVisible();
+      expect(within(dialog).getByRole('region', { name: 'Lines' })).toHaveTextContent(
+        'Lines · PTSNo line in CourtAI’s books.',
+      );
+      expect(
+        within(dialog).getByRole('region', { name: 'Games vs this opponent' }),
+      ).toHaveTextContent(
+        'covers the markets with a line in CourtAI’s books, so it has no PTS log',
+      );
+    },
+  );
 });

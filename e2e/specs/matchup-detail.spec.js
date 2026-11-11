@@ -1358,3 +1358,93 @@ test('a rank marker sits along its fewest-to-most track by rank', async ({ page 
     expect(Math.abs(centre - expected)).toBeLessThan(2);
   }
 });
+
+// A Rotation Player (crf04/statsplus#459): listed for his recent minutes with
+// no line in CourtAI's books, so his card loads no Matchup Selection.
+test('a Rotation Player is listed with no line and opens without a Selection request', async ({
+  page,
+}, testInfo) => {
+  await page.clock.setFixedTime(new Date('2026-01-15T12:00:00Z'));
+  await page.addInitScript(() => localStorage.setItem('courtai:e2e-authenticated', 'true'));
+  const candidate = JSON.parse(JSON.stringify(matchupPayload));
+  const lebron = candidate.players.find((player) => player.canonical_id === 2544);
+  candidate.players.push({
+    canonical_id: 1001,
+    name: 'Rotation Guy',
+    team_id: lebron.team_id,
+    tricode: lebron.tricode,
+    player_source: 'rotation',
+    stat_categories: [],
+    focal_game_line: null,
+    posted_markets: [],
+    provenance: {},
+    lines: {},
+    line_prices: {},
+    book_lines: {},
+    season_scoring: 5,
+    last_five_games: [
+      {
+        game_id: '0022500577',
+        game_date: '2026-01-13',
+        matchup: 'LAL vs. UTA',
+        minutes: 12,
+        stats: {},
+      },
+    ],
+    season_averages: {},
+    last_10_minutes: [12, 14],
+    diet_shares: lebron.diet_shares,
+    injury_badge_ref: null,
+    scores: lebron.scores,
+  });
+  let selectionRequests = 0;
+  const consoleErrors = [];
+  const failedResponses = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error') consoleErrors.push(message.text());
+  });
+  page.on('response', (response) => {
+    if (response.status() >= 400) failedResponses.push(`${response.status()} ${response.url()}`);
+  });
+  page.on('request', (request) => {
+    if (new URL(request.url()).pathname === '/api/games/matchup/selection') selectionRequests += 1;
+  });
+  await installApiContract(page, { '/api/games/matchup': candidate });
+
+  await page.goto('/matchups/0022500584');
+  const rail = page.getByRole('complementary', { name: 'Players' });
+  await expect(rail).toContainText('By season scoring · 2 with a line, 1 without');
+  const row = rail.getByRole('article', { name: 'Rotation Guy player' });
+  await expect(row.getByTitle('No line in CourtAI’s books')).toHaveText('no line');
+  await page
+    .getByRole('group', { name: 'Market' })
+    .getByRole('button', { name: 'STL', exact: true })
+    .click();
+  await expect(row.getByTitle('No line in CourtAI’s books')).toBeVisible();
+
+  await row.getByRole('button', { name: 'Open selection card' }).click();
+  const card = page.getByRole('dialog', { name: 'Rotation Guy' });
+  await expect(card.getByRole('region', { name: 'Lines' })).toContainText(
+    'No line in CourtAI’s books.',
+  );
+  await expect(card.getByRole('region', { name: 'Matchup Score' })).toContainText(
+    'STL Matchup Score',
+  );
+  await expect(card.getByRole('alert')).toHaveCount(0);
+  await page.screenshot({ path: testInfo.outputPath('matchup-rotation-player-card.png') });
+  await card.getByRole('button', { name: 'Close selection card' }).click();
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(row.getByTitle('No line in CourtAI’s books')).toBeVisible();
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(overflow).toBe(0);
+  await page.screenshot({
+    path: testInfo.outputPath('matchup-rotation-player-phone.png'),
+    fullPage: true,
+  });
+  expect(selectionRequests).toBe(0);
+  expect(consoleErrors).toEqual([]);
+  expect(failedResponses).toEqual([]);
+});

@@ -15,6 +15,7 @@ export const HELP_TIPS = {
       'Players on the other team with a posted line for this market, highest scorers first.',
       'The number is the line when one is posted, otherwise his season average. Pick a player to open his card.',
       'The percent beside a name is his Matchup Score, a dotted underline means a thin sample, and the bars are his last five games against the line.',
+      'A player marked no line has no line in CourtAI’s books. He is listed for his recent minutes.',
     ],
   },
   matchupWindow: {

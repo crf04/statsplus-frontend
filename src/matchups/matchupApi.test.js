@@ -3808,3 +3808,191 @@ describe('statsplus#416 play-type turnover and free-throw trip rows', () => {
     ).toThrow('invalid response');
   });
 });
+
+// A Rotation Player (crf04/statsplus#459): listed on a scheduled Matchup for
+// his recent minutes, with no line in CourtAI's books.
+const rotationRow = () => ({
+  canonical_id: 1001,
+  name: 'Rotation Guy',
+  team_id: 1,
+  tricode: 'LAL',
+  player_source: 'rotation',
+  stat_categories: [],
+  focal_game_line: null,
+  posted_markets: [],
+  provenance: {},
+  lines: {},
+  line_prices: {},
+  book_lines: {},
+  season_scoring: 5,
+  last_five_games: [
+    {
+      game_id: '0022500106',
+      game_date: '2026-01-13',
+      matchup: 'LAL @ MIA',
+      minutes: 12,
+      stats: {},
+    },
+  ],
+  season_averages: {},
+  last_10_minutes: [12],
+  diet_shares: JSON.parse(JSON.stringify(payload.players[0].diet_shares)),
+  injury_badge_ref: null,
+  scores: JSON.parse(JSON.stringify(payload.players[0].scores)),
+});
+
+const currentPayload = () => {
+  const candidate = JSON.parse(JSON.stringify(payload));
+  candidate.experience = {
+    mode: 'current',
+    player_source: 'player_pool',
+    sections: {
+      schedule: experienceSection('available', 'event_catalog', 'current_season_catalog'),
+      participants: experienceSection('available', 'player_pool', 'posted_markets'),
+      season_defense: experienceSection('available', 'team_matchup_publication', 'pregame'),
+      last_15_defense: experienceSection('available', 'team_matchup_publication', 'pregame'),
+      injuries: experienceSection('unavailable', 'rotowire', 'current', 'disabled'),
+    },
+  };
+  return candidate;
+};
+
+const withRotation = (candidate) => {
+  candidate.players.push(rotationRow());
+  return candidate;
+};
+
+test.each([
+  ['a current experience block', currentPayload],
+  ['no experience block', () => JSON.parse(JSON.stringify(payload))],
+])('reads a Rotation Player after the pool on a Matchup with %s', (_name, build) => {
+  const [pool, rotation] = decodeMatchup(withRotation(build())).players;
+
+  expect(pool.playerSource).toBe('player_pool');
+  expect(rotation).toEqual(
+    expect.objectContaining({
+      id: 1001,
+      name: 'Rotation Guy',
+      playerSource: 'rotation',
+      postedMarkets: [],
+      statCategories: [],
+      provenance: {},
+      lines: {},
+      linePrices: {},
+      bookLines: {},
+      focalGameLine: null,
+      seasonScoring: 5,
+      seasonAverages: {},
+      lastFiveGames: [
+        {
+          gameId: '0022500106',
+          gameDate: '2026-01-13',
+          matchup: 'LAL @ MIA',
+          minutes: 12,
+          stats: {},
+        },
+      ],
+      last10Minutes: [12],
+    }),
+  );
+  expect(Object.keys(rotation.scores)).toEqual(['PTS', 'FGA']);
+  expect(rotation.scores.PTS.season.blend).toEqual({ value: 0.12, thin: false });
+  expect(rotation.dietShares.playTypes).toEqual([
+    {
+      key: 'Transition',
+      season: {
+        share: 0.19,
+        volume: 102,
+        gamesPlayed: 20,
+        volumeUnit: 'possessions',
+        volumePerGame: 5.1,
+        leagueAverageShare: 0.09,
+        sigmaDeviation: 1.3,
+      },
+    },
+  ]);
+});
+
+test.each([
+  [
+    'a pool player with no posted markets',
+    (candidate) => {
+      Object.assign(candidate.players[0], {
+        posted_markets: [],
+        stat_categories: [],
+        provenance: {},
+        lines: {},
+      });
+    },
+  ],
+  [
+    'a Matchup whose experience claims rotation participants',
+    (candidate) => {
+      candidate.experience.player_source = 'rotation';
+    },
+  ],
+  [
+    'an unknown participant source',
+    (candidate) => {
+      candidate.players[1].player_source = 'bench';
+    },
+  ],
+  [
+    'a Rotation Player with a posted market',
+    (candidate) => {
+      Object.assign(candidate.players[1], {
+        posted_markets: ['PTS'],
+        stat_categories: ['PTS'],
+        provenance: { prizepicks: ['PTS'] },
+      });
+    },
+  ],
+  [
+    'a Rotation Player with stat categories',
+    (candidate) => {
+      candidate.players[1].stat_categories = ['PTS'];
+    },
+  ],
+  [
+    'a Rotation Player with provenance',
+    (candidate) => {
+      candidate.players[1].provenance = { prizepicks: ['PTS'] };
+    },
+  ],
+  [
+    'a Rotation Player with a posted line',
+    (candidate) => {
+      candidate.players[1].lines = { prizepicks: { PTS: 5.5 } };
+    },
+  ],
+  [
+    'a Rotation Player with a focal game line',
+    (candidate) => {
+      candidate.players[1].focal_game_line = {
+        game_id: '0022500584',
+        game_date: '2026-01-15',
+        matchup: 'LAL @ BOS',
+        minutes: 12,
+        stats: {},
+      };
+    },
+  ],
+  [
+    'a Rotation Player with a season average',
+    (candidate) => {
+      candidate.players[1].season_averages = { PTS: 4.2 };
+    },
+  ],
+])('rejects %s on a scheduled Matchup', (_name, mutate) => {
+  const candidate = withRotation(currentPayload());
+  expect(() => decodeMatchup(candidate)).not.toThrow();
+  mutate(candidate);
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});
+
+test('rejects a Rotation Player on a historical Matchup', () => {
+  const candidate = historicalPayload();
+  expect(() => decodeMatchup(candidate)).not.toThrow();
+  candidate.players.push(rotationRow());
+  expect(() => decodeMatchup(candidate)).toThrow('invalid response');
+});

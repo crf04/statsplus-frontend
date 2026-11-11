@@ -7,7 +7,12 @@ import { getRequestErrorMessage, isRequestCancelled } from '../gameLogsApi';
 import { formatAge, useMinuteNow } from '../freshness';
 import { filterSetToSearchParams, withLineType } from '../filterUtils';
 import { getStatusPresentation, getSurfaceFreshnessPresentation } from '../slateStatus';
-import { DIET_BASE_WIRE_NAMES, fetchMatchup, fetchMatchupSelection } from './matchupApi';
+import {
+  DIET_BASE_WIRE_NAMES,
+  ROTATION_SOURCE,
+  fetchMatchup,
+  fetchMatchupSelection,
+} from './matchupApi';
 import {
   MARKET_PROVIDERS,
   UNAVAILABLE_RELATIVE_LABEL,
@@ -408,6 +413,11 @@ function RailRow({
   const injuryBadge = injury && (
     <span className="injury-badge">{injury.status || injury.rawStatus}</span>
   );
+  const noLine = player.playerSource === ROTATION_SOURCE && (
+    <span className="rail-no-line" title="No line in CourtAI’s books">
+      no line
+    </span>
+  );
   const openButton = (
     // The whole row opens the selection card; its links sit above it.
     <button
@@ -499,7 +509,12 @@ function RailRow({
           </Link>
         </h3>{' '}
         <RailScore score={scoreFor(player, stat, windowKey)} onClick={() => onSelect(player)} />
-        {injuryBadge && <p>{injuryBadge}</p>}
+        {(injuryBadge || noLine) && (
+          <p>
+            {injuryBadge}
+            {noLine}
+          </p>
+        )}
       </div>
       <div className="rail-row-value">
         <b>{mark === null ? '—' : formatStat(mark)}</b>
@@ -549,13 +564,22 @@ function PlayerRail({
       }
       return (b.seasonScoring ?? 0) - (a.seasonScoring ?? 0) || a.name.localeCompare(b.name);
     });
-  const label = historical ? 'Players in game' : 'Targetable players';
+  // A Rotation Player is listed for his minutes, not his line, so a rail that
+  // holds one is not called targetable (crf04/statsplus#459).
+  const noLineCount = players.filter((player) => player.playerSource === ROTATION_SOURCE).length;
+  const label = historical ? 'Players in game' : noLineCount ? 'Players' : 'Targetable players';
+  const count =
+    targetableCount === null
+      ? ''
+      : noLineCount
+        ? ` · ${targetableCount} with a line, ${noLineCount} without`
+        : ` · ${targetableCount} targetable returned`;
   return (
     <aside className="player-rail" aria-label={label}>
       <div className="rail-heading">
         <p className="matchup-eyebrow">
           {label}
-          {!historical && <HelpTip tip="matchupRail" />}
+          {!historical && <HelpTip tip={noLineCount ? 'matchupRailRotation' : 'matchupRail'} />}
         </p>
         {/* Focus lands here when a closed card's own row is not on screen. */}
         <h2 ref={headingRef} tabIndex={-1}>
@@ -564,7 +588,7 @@ function PlayerRail({
         </h2>
         <p className="rail-count">
           {unscored ? 'By season points' : 'By season scoring'}
-          {targetableCount !== null ? ` · ${targetableCount} targetable returned` : ''}
+          {count}
         </p>
       </div>
       {unavailableMessage ? (
@@ -1173,6 +1197,9 @@ function Detail({ matchup, gameId, evidence }) {
   const selectedPlayer =
     (participantsAvailable && matchup.players.find((player) => String(player.id) === selectedId)) ||
     null;
+  // The Matchup Selection answers only for the Player Pool, so a Rotation
+  // Player's card has no games-vs-opponent log to load.
+  const noSelection = selectedPlayer?.playerSource === ROTATION_SOURCE;
   const opposingPlayers = useMemo(
     () =>
       participantsAvailable
@@ -1216,7 +1243,7 @@ function Detail({ matchup, gameId, evidence }) {
     ? sections.injuries.status === 'available'
     : matchup.injuries.status !== 'unavailable';
   useEffect(() => {
-    if (!selectedPlayer) {
+    if (!selectedPlayer || noSelection) {
       setSelectionState({ status: 'idle', playerId: null, data: null, error: null });
       return undefined;
     }
@@ -1246,7 +1273,7 @@ function Detail({ matchup, gameId, evidence }) {
       current = false;
       controller.abort();
     };
-  }, [experienceMode, gameId, selectedPlayer, season]);
+  }, [experienceMode, gameId, selectedPlayer, noSelection, season]);
   useEffect(() => {
     if (previousSelectedId.current && !selectedId) {
       // The stat in view can hide the row that opened the card (a deep link
@@ -1419,7 +1446,11 @@ function Detail({ matchup, gameId, evidence }) {
               game={matchup.game}
               selection={selectionState.playerId === selectedPlayer.id ? selectionState.data : null}
               status={
-                selectionState.playerId === selectedPlayer.id ? selectionState.status : 'loading'
+                noSelection
+                  ? 'ready'
+                  : selectionState.playerId === selectedPlayer.id
+                    ? selectionState.status
+                    : 'loading'
               }
               error={selectionState.error}
               windowKey={windowKey}

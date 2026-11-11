@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Modal } from 'react-bootstrap';
 import { bookMark, bookName, categoryLabel, orderCategories } from './displayConfig';
+import { ROTATION_SOURCE } from './matchupApi';
 import ErrorMessage from '../feedback/ErrorMessage';
 import { useFeedback } from '../feedback/useFeedback';
 import HelpTip from '../help/HelpTip';
@@ -79,7 +80,7 @@ const lineRows = (player, market) => [
   })),
 ];
 
-function Lines({ market, rows, quote }) {
+function Lines({ market, rows, quote, noLine }) {
   const [expanded, setExpanded] = useState(false);
   const books = rows.filter((row) => row.source === 'book').length;
   const hidden = books - BOOKS_SHOWN;
@@ -104,40 +105,43 @@ function Lines({ market, rows, quote }) {
           {books > 0 && (quote.closing ? 'Closing' : time && `as of ${time}`)}
         </span>
       </h3>
-      <div className="selection-table-wrap">
-        <table aria-label={`${market} lines`} className="selection-books">
-          <thead>
-            <tr>
-              <th scope="col">Source</th>
-              <th scope="col">Line</th>
-              <th scope="col">Over</th>
-              <th scope="col">Under</th>
-            </tr>
-          </thead>
-          {SOURCES.map(({ source, label }) => {
-            const group = rows.filter((row) => row.source === source);
-            if (group.length === 0) return null;
-            const visible = source === 'book' && !expanded ? group.slice(0, BOOKS_SHOWN) : group;
-            return (
-              <tbody key={source}>
-                <tr className="selection-books-group">
-                  <th scope="colgroup" colSpan={4}>
-                    {label}
-                  </th>
-                </tr>
-                {visible.map((row) => (
-                  <tr key={row.name}>
-                    <th scope="row">{bookName(row.name)}</th>
-                    <td>{row.line}</td>
-                    {price(row.over, row.best.over)}
-                    {price(row.under, row.best.under)}
+      {noLine && <p className="honest-empty">No line in CourtAI’s books.</p>}
+      {rows.length > 0 && (
+        <div className="selection-table-wrap">
+          <table aria-label={`${market} lines`} className="selection-books">
+            <thead>
+              <tr>
+                <th scope="col">Source</th>
+                <th scope="col">Line</th>
+                <th scope="col">Over</th>
+                <th scope="col">Under</th>
+              </tr>
+            </thead>
+            {SOURCES.map(({ source, label }) => {
+              const group = rows.filter((row) => row.source === source);
+              if (group.length === 0) return null;
+              const visible = source === 'book' && !expanded ? group.slice(0, BOOKS_SHOWN) : group;
+              return (
+                <tbody key={source}>
+                  <tr className="selection-books-group">
+                    <th scope="colgroup" colSpan={4}>
+                      {label}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            );
-          })}
-        </table>
-      </div>
+                  {visible.map((row) => (
+                    <tr key={row.name}>
+                      <th scope="row">{bookName(row.name)}</th>
+                      <td>{row.line}</td>
+                      {price(row.over, row.best.over)}
+                      {price(row.under, row.best.under)}
+                    </tr>
+                  ))}
+                </tbody>
+              );
+            })}
+          </table>
+        </div>
+      )}
       {hidden > 0 && (
         <button
           type="button"
@@ -382,6 +386,7 @@ export default function SelectionCard({
   }));
   const line = player.focalGameLine;
   const lines = lineRows(player, activeStat);
+  const noLine = player.playerSource === ROTATION_SOURCE;
   // Feedback opened from the page before the sheet sits outside it; trapping focus
   // would keep the reader from typing in it.
   const feedback = useFeedback();
@@ -412,9 +417,13 @@ export default function SelectionCard({
               ? `${line.matchup}, ${line.gameDate}.`
               : `${[`${game.away.tricode} @ ${game.home.tricode}`, gameWhen(game)]
                   .filter(Boolean)
-                  .join(', ')}. Markets posted by ${Object.keys(player.provenance)
-                  .map(bookName)
-                  .join(' and ')}.`}
+                  .join(', ')}. ${
+                  noLine
+                    ? 'No line in CourtAI’s books.'
+                    : `Markets posted by ${Object.keys(player.provenance)
+                        .map(bookName)
+                        .join(' and ')}.`
+                }`}
           </p>
         </div>
         <button
@@ -477,13 +486,14 @@ export default function SelectionCard({
             />
           )}
         </section>
-        {lines.length > 0 && (
+        {(lines.length > 0 || noLine) && (
           // Keyed so a new player or stat starts collapsed again.
           <Lines
             key={`${player.id}:${activeStat}`}
             market={activeStat}
             rows={lines}
             quote={player.bookLines?.[activeStat]}
+            noLine={noLine}
           />
         )}
         {rows

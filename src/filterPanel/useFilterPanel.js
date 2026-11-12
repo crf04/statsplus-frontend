@@ -141,10 +141,8 @@ const useFilterPanel = ({
   const [rankRange, setRankRange] = useState(DEFAULT_RANK_RANGE);
   const [activeFilters, setActiveFilters] = useState([]);
   const [playerInput, setPlayerInput] = useState('');
-  const [playerStatus, setPlayerStatus] = useState('on');
   const [activePlayers, setActivePlayers] = useState([]);
   const [playerSuggestions, setPlayerSuggestions] = useState([]);
-  const [activePlayerSuggestionIndex, setActivePlayerSuggestionIndex] = useState(0);
   const [opponentTricode, setOpponentTricode] = useState('');
   const [locationFilter, setLocationFilter] = useState('Both');
   const [minutesFilter, setMinutesFilter] = useState([0, 48]);
@@ -226,7 +224,6 @@ const useFilterPanel = ({
     setRankRange(DEFAULT_RANK_RANGE);
     setActiveFilters([]);
     setPlayerInput('');
-    setPlayerStatus('on');
     setActivePlayers([]);
     setOpponentTricode('');
     setLocationFilter('Both');
@@ -239,7 +236,6 @@ const useFilterPanel = ({
     setSelfFilterRange(null);
     setActiveSelfFilters([]);
     setPlayerSuggestions([]);
-    setActivePlayerSuggestionIndex(0);
 
     const prepopulatedControls = new Set();
     if (appliedFilters && Object.keys(appliedFilters).length > 0) {
@@ -380,45 +376,18 @@ const useFilterPanel = ({
     } else {
       setPlayerSuggestions([]);
     }
-    setActivePlayerSuggestionIndex(0);
   };
 
-  const addPlayer = (name = playerInput, status = playerStatus) => {
-    const trimmed = String(name).trim();
-    if (!trimmed || activePlayers.some((p) => p.name === trimmed)) return false;
-    setActivePlayers([...activePlayers, { name: trimmed, status }]);
+  const addPlayer = (name, status) => {
+    if (activePlayers.some((p) => p.name === name)) return;
+    setActivePlayers([...activePlayers, { name, status }]);
     markControlTouched('players');
     setPlayerInput('');
     setPlayerSuggestions([]);
-    setActivePlayerSuggestionIndex(0);
-    return true;
   };
 
   const playerSearchKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      setPlayerSuggestions([]);
-      return;
-    }
-    if (playerSuggestions.length === 0) {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        addPlayer();
-      }
-      return;
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setActivePlayerSuggestionIndex((index) => (index + 1) % playerSuggestions.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setActivePlayerSuggestionIndex(
-        (index) => (index - 1 + playerSuggestions.length) % playerSuggestions.length,
-      );
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      // picking a suggestion adds it straight away; no separate Add click.
-      addPlayer(playerSuggestions[activePlayerSuggestionIndex] || playerSuggestions[0]);
-    }
+    if (e.key === 'Escape') setPlayerSuggestions([]);
   };
 
   const removePlayer = (player) => {
@@ -633,11 +602,8 @@ const useFilterPanel = ({
     selectedPlayer,
     // teammates
     playerInput,
-    playerStatus,
-    setPlayerStatus,
     activePlayers,
     playerSuggestions,
-    activePlayerSuggestionIndex,
     changePlayerSearch,
     playerSearchKeyDown,
     addPlayer,

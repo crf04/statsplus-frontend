@@ -53,45 +53,41 @@ export const Segmented = ({ options, value, onChange, name, size }) => (
   </div>
 );
 
-/* Teammate search. Picking a name adds it with the chosen on/off state. */
+/* Teammate search. Each suggestion is added on or off court by its own
+   button, so the state is always chosen together with the name. */
 export const TeammateSearch = ({ panel }) => (
   <div className="fp-teammate">
-    <div className="fp-teammate-row">
-      <input
-        className="fp-input"
-        type="text"
-        value={panel.playerInput}
-        onChange={(e) => panel.changePlayerSearch(e.target.value)}
-        onKeyDown={panel.playerSearchKeyDown}
-        placeholder="Search a teammate…"
-        aria-label="Teammate"
-        role="combobox"
-        aria-expanded={panel.playerSuggestions.length > 0}
-      />
-      <Segmented
-        name="Teammate on or off court"
-        size="sm"
-        value={panel.playerStatus}
-        onChange={panel.setPlayerStatus}
-        options={[
-          { value: 'on', label: 'On' },
-          { value: 'off', label: 'Off' },
-        ]}
-      />
-    </div>
+    <input
+      className="fp-input"
+      type="text"
+      value={panel.playerInput}
+      onChange={(e) => panel.changePlayerSearch(e.target.value)}
+      onKeyDown={panel.playerSearchKeyDown}
+      placeholder="Search a teammate…"
+      aria-label="Teammate"
+      role="combobox"
+      aria-expanded={panel.playerSuggestions.length > 0}
+    />
     {panel.playerSuggestions.length > 0 && (
-      <ul className="fp-suggest" role="listbox">
-        {panel.playerSuggestions.map((name, index) => (
+      <ul className="fp-suggest">
+        {panel.playerSuggestions.map((name) => (
           <li key={name}>
+            <span>{name}</span>
             <button
               type="button"
-              role="option"
-              aria-selected={index === panel.activePlayerSuggestionIndex}
-              className={index === panel.activePlayerSuggestionIndex ? 'is-active' : ''}
-              onClick={() => panel.addPlayer(name)}
+              className="fp-suggest-on"
+              aria-label={`Add ${name} on court`}
+              onClick={() => panel.addPlayer(name, 'on')}
             >
-              <span>{name}</span>
-              <em>+ {panel.playerStatus === 'on' ? 'on court' : 'off court'}</em>
+              On
+            </button>
+            <button
+              type="button"
+              className="fp-suggest-off"
+              aria-label={`Add ${name} off court`}
+              onClick={() => panel.addPlayer(name, 'off')}
+            >
+              Off
             </button>
           </li>
         ))}

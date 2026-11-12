@@ -32,8 +32,8 @@ export const Range = ({ value, min, max, step = 1, onChange, labels, digits = 0 
   />
 );
 
-export const Segmented = ({ options, value, onChange, name, size }) => (
-  <div className={`fp-seg${size ? ` fp-seg-${size}` : ''}`} role="radiogroup" aria-label={name}>
+export const Segmented = ({ options, value, onChange, name }) => (
+  <div className="fp-seg" role="radiogroup" aria-label={name}>
     {options.map((option) => {
       const key = typeof option === 'string' ? option : option.value;
       const label = typeof option === 'string' ? option : option.label;
@@ -65,8 +65,6 @@ export const TeammateSearch = ({ panel }) => (
       onKeyDown={panel.playerSearchKeyDown}
       placeholder="Search a teammate…"
       aria-label="Teammate"
-      role="combobox"
-      aria-expanded={panel.playerSuggestions.length > 0}
     />
     {panel.playerSuggestions.length > 0 && (
       <ul className="fp-suggest">

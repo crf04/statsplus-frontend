@@ -118,11 +118,6 @@
   color: var(--ct-gold-hover);
   box-shadow: inset 0 0 0 1px var(--ct-gold-fg-45);
 }
-.fp-seg-sm button {
-  height: 26px;
-  padding: 0 10px;
-  font-size: 12px;
-}
 
 .fp-chips {
   display: flex;

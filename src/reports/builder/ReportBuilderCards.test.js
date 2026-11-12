@@ -412,7 +412,7 @@ test('a typed line and the panel filters go to the server in the web app’s nam
   fireEvent.click(screen.getByRole('button', { name: 'Add: Points Allowed, ranks 21–30' }));
 
   addFilter('Teammate');
-  fireEvent.change(screen.getByRole('combobox', { name: 'Teammate' }), {
+  fireEvent.change(screen.getByRole('textbox', { name: 'Teammate' }), {
     target: { value: 'Ja' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Add Ja Morant off court' }));

@@ -385,7 +385,7 @@ test('each teammate suggestion is added on or off court by its own button', () =
   renderPanel();
   fireEvent.click(screen.getByRole('button', { name: /\+ Teammate/ }));
   expect(screen.queryByRole('radiogroup', { name: /on or off/i })).toBeNull();
-  fireEvent.change(screen.getByRole('combobox', { name: 'Teammate' }), {
+  fireEvent.change(screen.getByRole('textbox', { name: 'Teammate' }), {
     target: { value: 'Anthony' },
   });
   expect(screen.getByRole('button', { name: 'Add Anthony Davis on court' })).toBeVisible();
@@ -396,6 +396,23 @@ test('each teammate suggestion is added on or off court by its own button', () =
     player_name: 'LeBron James',
     'players_on[]': [],
     'players_off[]': ['Anthony Davis'],
+  });
+});
+
+test('Enter picks no teammate; the On button adds them on court', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Teammate/ }));
+  const search = screen.getByRole('textbox', { name: 'Teammate' });
+  fireEvent.change(search, { target: { value: 'Anthony' } });
+  fireEvent.keyDown(search, { key: 'Enter' });
+  expect(screen.queryByRole('button', { name: /^with Anthony Davis/ })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Add Anthony Davis on court' }));
+  expect(screen.getByRole('button', { name: /with Anthony Davis on court/ })).toBeVisible();
+  apply();
+  expect(patch()).toEqual({
+    player_name: 'LeBron James',
+    'players_on[]': ['Anthony Davis'],
+    'players_off[]': [],
   });
 });
 

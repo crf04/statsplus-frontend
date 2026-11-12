@@ -381,13 +381,32 @@ test('signed-out panel exposes no account saved sets or next opponent block', ()
   expect(screen.getByRole('button', { name: 'last 10 games' })).toBeVisible();
 });
 
-test('picking a teammate suggestion directly adds its row and on-court patch', () => {
+test('each teammate suggestion is added on or off court by its own button', () => {
   renderPanel();
   fireEvent.click(screen.getByRole('button', { name: /\+ Teammate/ }));
-  fireEvent.change(screen.getByRole('combobox', { name: 'Teammate' }), {
+  expect(screen.queryByRole('radiogroup', { name: /on or off/i })).toBeNull();
+  fireEvent.change(screen.getByRole('textbox', { name: 'Teammate' }), {
     target: { value: 'Anthony' },
   });
-  fireEvent.click(screen.getByRole('option', { name: 'Anthony Davis + on court' }));
+  expect(screen.getByRole('button', { name: 'Add Anthony Davis on court' })).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Add Anthony Davis off court' }));
+  expect(screen.getByRole('button', { name: /without Anthony Davis off court/ })).toBeVisible();
+  apply();
+  expect(patch()).toEqual({
+    player_name: 'LeBron James',
+    'players_on[]': [],
+    'players_off[]': ['Anthony Davis'],
+  });
+});
+
+test('Enter picks no teammate; the On button adds them on court', () => {
+  renderPanel();
+  fireEvent.click(screen.getByRole('button', { name: /\+ Teammate/ }));
+  const search = screen.getByRole('textbox', { name: 'Teammate' });
+  fireEvent.change(search, { target: { value: 'Anthony' } });
+  fireEvent.keyDown(search, { key: 'Enter' });
+  expect(screen.queryByRole('button', { name: /^with Anthony Davis/ })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Add Anthony Davis on court' }));
   expect(screen.getByRole('button', { name: /with Anthony Davis on court/ })).toBeVisible();
   apply();
   expect(patch()).toEqual({

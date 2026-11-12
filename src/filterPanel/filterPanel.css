@@ -118,21 +118,6 @@
   color: var(--ct-gold-hover);
   box-shadow: inset 0 0 0 1px var(--ct-gold-fg-45);
 }
-.fp-seg-sm button {
-  height: 26px;
-  padding: 0 10px;
-  font-size: 12px;
-}
-.fp-teammate .fp-seg button:first-child.is-on {
-  background: var(--ct-hit-soft);
-  color: var(--ct-x-8fd6b1);
-  box-shadow: inset 0 0 0 1px var(--ct-hit-fg-50);
-}
-.fp-teammate .fp-seg button:last-child.is-on {
-  background: var(--ct-miss-soft);
-  color: var(--ct-x-ee9d9d);
-  box-shadow: inset 0 0 0 1px var(--ct-miss-fg-55);
-}
 
 .fp-chips {
   display: flex;
@@ -302,17 +287,6 @@
 .fp-teammate {
   position: relative;
 }
-.fp-teammate-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-.fp-teammate-row .fp-input {
-  flex: 1;
-}
-.fp-teammate-row .fp-seg {
-  flex: 0 0 auto;
-}
 .fp-suggest {
   position: absolute;
   z-index: 30;
@@ -327,26 +301,41 @@
   border-radius: 8px;
   box-shadow: 0 12px 28px var(--ct-shadow-50);
 }
-.fp-suggest button {
+.fp-suggest li {
   display: flex;
-  justify-content: space-between;
-  width: 100%;
-  padding: 8px 10px;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px 4px 10px;
+  border-radius: 6px;
+  color: var(--ct-text);
+}
+.fp-suggest li:hover {
+  background: var(--ct-overlay-bg-6);
+}
+.fp-suggest li span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fp-suggest button {
+  height: 26px;
+  padding: 0 12px;
   border: 0;
   border-radius: 6px;
-  background: none;
-  color: var(--ct-text);
   font: inherit;
-  text-align: left;
-}
-.fp-suggest button em {
-  font-style: normal;
   font-size: 12px;
-  color: var(--ct-dim);
 }
-.fp-suggest button.is-active,
-.fp-suggest button:hover {
-  background: var(--ct-overlay-bg-6);
+.fp-suggest-on {
+  background: var(--ct-hit-soft);
+  color: var(--ct-x-8fd6b1);
+  box-shadow: inset 0 0 0 1px var(--ct-hit-fg-50);
+}
+.fp-suggest-off {
+  background: var(--ct-miss-soft);
+  color: var(--ct-x-ee9d9d);
+  box-shadow: inset 0 0 0 1px var(--ct-miss-fg-55);
 }
 
 .fp-defense {

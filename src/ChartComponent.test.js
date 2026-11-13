@@ -302,6 +302,18 @@ describe('the game strip under the chart', () => {
     expect(strip()).toHaveTextContent('game 1 of 3');
   });
 
+  test('a step survives the replay of a hover that came before a click on the same bar', () => {
+    renderStrip();
+    const hover = {};
+    pointAt(0, hover);
+    pointAt(0, {});
+    expect(strip()).toHaveTextContent('game 1 of 3');
+    fireEvent.click(screen.getByRole('button', { name: 'Next game' }));
+    // Chart.js kept the hover, not the click, as the event it replays.
+    pointAt(0, hover);
+    expect(strip()).toHaveTextContent('@ BOS · game 2 of 3');
+  });
+
   test('returning to a game set seen before opens on its most recent game', () => {
     const { rerender } = renderStrip();
     pickBar(0);

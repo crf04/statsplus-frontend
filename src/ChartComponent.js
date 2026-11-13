@@ -136,9 +136,9 @@ const ChartComponent = ({
     : pick !== null && pickedIn === gameLogs
       ? pick
       : gameLogs.length - 1;
-  // Chart.js replays the last pointer event after every update, so a step
-  // with ‹ › would snap back to the hovered bar; only a new event picks.
-  const lastPointer = useRef(null);
+  // Chart.js replays its last pointer event after every update, so a step
+  // with ‹ › would snap back to the hovered bar; only an event never seen picks.
+  const seenPointers = useRef(new WeakSet());
 
   // react-chartjs-2 redraws whenever `data` or `options` is a new object, so
   // both are rebuilt only when an input they read changes.
@@ -205,8 +205,8 @@ const ChartComponent = ({
       // leaving the chart keeps it.
       interaction: { mode: 'index', intersect: false },
       onHover: (event, elements) => {
-        if (event.native === lastPointer.current) return;
-        lastPointer.current = event.native;
+        if (!event.native || seenPointers.current.has(event.native)) return;
+        seenPointers.current.add(event.native);
         if (elements.length) setPick(elements[0].index);
       },
       plugins: {

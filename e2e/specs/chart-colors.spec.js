@@ -78,6 +78,12 @@ test('charts paint the dark theme colours, part by part, and repaint in Chalk wh
       return strip.textContent();
     })
     .toContain('@ DAL · game 1 of 2');
+  // A keyboard step with the pointer still on that bar holds, though Chart.js
+  // replays the pointer's last event after the redraw.
+  await strip.getByRole('button', { name: 'Next game' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(strip).toContainText('vs ATL · game 2 of 2');
+  await expect(strip.getByRole('button', { name: 'Next game' })).toBeDisabled();
   await expect
     .poll(() => gameLogRoles(gameLogChart))
     .toEqual({

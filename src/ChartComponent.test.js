@@ -147,7 +147,10 @@ const boxColumns = () =>
     (column) =>
       `${column.querySelector('dt').textContent} ${column.querySelector('dd').textContent}`,
   );
-const pickBar = (index) => act(() => barProps.options.onHover(null, [{ index }]));
+// Each call is a new pointer event, as Chart.js hands over a new native event.
+const pointAt = (index, native = {}) =>
+  act(() => barProps.options.onHover({ native }, index === null ? [] : [{ index }]));
+const pickBar = (index) => pointAt(index);
 
 describe('the game strip under the chart', () => {
   test('it opens on the most recent game, judged against its sportsbook close', () => {
@@ -218,6 +221,7 @@ describe('the game strip under the chart', () => {
     expect(strip()).toHaveTextContent('@ BOS · game 2 of 3');
     // Points fall back to the single closing line: 22 under a 24.5 close.
     expect(strip().querySelector('.game-strip-close').textContent).toBe('Closed 24.5 FanDuel −2.5');
+    expect(screen.getByText('−2.5')).toHaveClass('is-under');
     expect(stripValue()).toHaveClass('is-under');
     expect(screen.getByText('4th')).toHaveClass('is-tough');
     fireEvent.click(previous);
@@ -249,7 +253,7 @@ describe('the game strip under the chart', () => {
     expect(stripValue().textContent).toBe('18');
     expect(barProps.data.datasets[0].borderWidth).toEqual([2, 0, 0]);
     // The pointer leaving the chart keeps the pick.
-    act(() => barProps.options.onHover(null, []));
+    pointAt(null);
     expect(strip()).toHaveTextContent('game 1 of 3');
   });
 
@@ -265,6 +269,8 @@ describe('the game strip under the chart', () => {
     renderStrip({ lineType: 'REB' });
     pickBar(0);
     expect(strip().querySelector('.game-strip-close').textContent).toBe('Closed 5.0 BetMGM ±0');
+    expect(screen.getByText('±0')).toHaveClass('is-under');
+    expect(strip().querySelector('.is-charted').textContent).toBe('REB5');
     expect(stripValue()).toHaveClass('is-under');
   });
 
@@ -280,6 +286,90 @@ describe('the game strip under the chart', () => {
     );
     expect(strip()).toHaveTextContent('vs CHI · game 2 of 2');
     expect(strip().querySelector('.game-strip-rank').textContent).toBe('CHI 22nd TOV forced');
+  });
+
+  test('a step with ‹ › survives Chart.js replaying the last pointer event', () => {
+    renderStrip();
+    const tap = {};
+    pointAt(0, tap);
+    expect(strip()).toHaveTextContent('game 1 of 3');
+    fireEvent.click(screen.getByRole('button', { name: 'Next game' }));
+    // The chart updates and replays the tap that picked game 1.
+    pointAt(0, tap);
+    expect(strip()).toHaveTextContent('@ BOS · game 2 of 3');
+    // A new pointer event still picks.
+    pickBar(0);
+    expect(strip()).toHaveTextContent('game 1 of 3');
+  });
+
+  test('returning to a game set seen before opens on its most recent game', () => {
+    const { rerender } = renderStrip();
+    pickBar(0);
+    const props = { lineType: 'PTS', lineValue: '', averages };
+    rerender(<ChartComponent gameLogs={stripLogs.gameLogs.slice(1)} {...props} />);
+    expect(strip()).toHaveTextContent('game 2 of 2');
+    rerender(<ChartComponent gameLogs={stripLogs.gameLogs} {...props} />);
+    expect(strip()).toHaveTextContent('vs CHI · game 3 of 3');
+  });
+
+  // One row carrying every supporting stat, so each market shows exactly its own.
+  const everyStat = {
+    GAME_DATE: '2026-11-04',
+    MATCHUP: 'NYK vs. CHI',
+    MIN: 30,
+    PTS: 24,
+    REB: 7,
+    AST: 5,
+    FG3M: 3,
+    STL: 1,
+    BLK: 2,
+    TOV: 4,
+    USG_PCT: 25.6,
+    FGM: 9,
+    FGA: 18,
+    FG2M: 6,
+    FG2A: 10,
+    FG3A: 8,
+    FTM: 3,
+    FTA: 4,
+    REB_CHANCES: 12,
+    POTENTIAL_AST: 11,
+    PRA: 36,
+    PR: 31,
+    PA: 29,
+    RA: 12,
+    STKS: 3,
+  };
+  test.each([
+    ['AST', 'AST', ['Potential 11', 'USG 26%']],
+    ['FG3M', '3PM', ['3P 3/8', 'USG 26%']],
+    ['FG3A', null, ['3P 3/8', 'USG 26%']],
+    ['FGM', null, ['FG 9/18', '2P 6/10', '3P 3/8', 'USG 26%']],
+    ['FGA', null, ['FG 9/18', '2P 6/10', '3P 3/8', 'USG 26%']],
+    ['FG2M', null, ['2P 6/10', '3P 3/8', 'USG 26%']],
+    ['FG2A', null, ['2P 6/10', '3P 3/8', 'USG 26%']],
+    ['FTM', null, ['FT 3/4', 'FG 9/18', 'USG 26%']],
+    ['FTA', null, ['FT 3/4', 'FG 9/18', 'USG 26%']],
+    ['PRA', null, ['USG 26%']],
+    ['PR', null, ['USG 26%']],
+    ['PA', null, ['USG 26%']],
+    ['TOV', 'TOV', ['USG 26%']],
+    ['RA', null, ['Chances 12']],
+    ['STKS', null, []],
+  ])('%s: charted box column %s, supporting columns %j', (lineType, gold, supporting) => {
+    renderStrip({ gameLogs: [everyStat], lineType });
+    expect(boxColumns().slice(0, 8)).toEqual([
+      'MIN 30',
+      'PTS 24',
+      'REB 7',
+      'AST 5',
+      '3PM 3',
+      'STL 1',
+      'BLK 2',
+      'TOV 4',
+    ]);
+    expect(boxColumns().slice(8)).toEqual(supporting);
+    expect(strip().querySelector('.is-charted dt')?.textContent ?? null).toBe(gold);
   });
 
   test('the canvas tooltip no longer opens on hover', () => {

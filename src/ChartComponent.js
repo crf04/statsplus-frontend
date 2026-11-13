@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import './chartSetup';
 import MetricsDashboardRow from './MetricsDashboardRow';
@@ -121,23 +121,24 @@ const ChartComponent = ({
       ? `Line: ${lineValue}`
       : `Season avg: ${numericLineValue.toFixed(1)}`;
 
-  // The game the strip shows, by chart index, kept with the game set it was
-  // picked in: new games (filters, player, season) fall back to the most
-  // recent, the last in chart order. A Line Type change keeps the set.
+  // The game the strip shows, by chart index; null is the most recent, the
+  // last in chart order. New games (filters, player, season, even a set seen
+  // before) drop the pick; a Line Type change keeps the games and the pick.
   const hasGames = Array.isArray(gameLogs) && gameLogs.length > 0 && lineType !== 'None';
   const [pick, setPick] = useState(null);
+  const [pickedIn, setPickedIn] = useState(gameLogs);
+  if (pickedIn !== gameLogs) {
+    setPickedIn(gameLogs);
+    setPick(null);
+  }
   const pickedIndex = !hasGames
     ? -1
-    : pick?.gameLogs === gameLogs
-      ? pick.index
+    : pick !== null && pickedIn === gameLogs
+      ? pick
       : gameLogs.length - 1;
-  const pickGame = useCallback(
-    (index) =>
-      setPick((current) =>
-        current?.gameLogs === gameLogs && current.index === index ? current : { gameLogs, index },
-      ),
-    [gameLogs],
-  );
+  // Chart.js replays the last pointer event after every update, so a step
+  // with ‹ › would snap back to the hovered bar; only a new event picks.
+  const lastPointer = useRef(null);
 
   // react-chartjs-2 redraws whenever `data` or `options` is a new object, so
   // both are rebuilt only when an input they read changes.
@@ -203,8 +204,10 @@ const ChartComponent = ({
       // Hovering (or tapping) picks the game nearest the pointer along x;
       // leaving the chart keeps it.
       interaction: { mode: 'index', intersect: false },
-      onHover: (_event, elements) => {
-        if (elements.length) pickGame(elements[0].index);
+      onHover: (event, elements) => {
+        if (event.native === lastPointer.current) return;
+        lastPointer.current = event.native;
+        if (elements.length) setPick(elements[0].index);
       },
       plugins: {
         legend: {
@@ -270,7 +273,7 @@ const ChartComponent = ({
         },
       },
     }),
-    [lineLabel, numericLineValue, tracking, colors, pickGame],
+    [lineLabel, numericLineValue, tracking, colors],
   );
 
   const { player_name: _player, ...withoutPlayer } = appliedFilters || {};
@@ -305,7 +308,7 @@ const ChartComponent = ({
             index={pickedIndex}
             lineType={lineType}
             opponentRanks={opponentRanks}
-            onPick={pickGame}
+            onPick={setPick}
           />
         </>
       )}

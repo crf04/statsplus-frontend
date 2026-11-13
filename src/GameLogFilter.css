@@ -2340,12 +2340,12 @@ body {
 }
 
 .game-strip-chip.is-soft {
-  background: var(--ct-hit-bg-15);
+  background: var(--ct-hit-soft);
   color: var(--ct-hit);
 }
 
 .game-strip-chip.is-tough {
-  background: var(--ct-miss-bg-15);
+  background: var(--ct-miss-soft);
   color: var(--ct-miss);
 }
 

@@ -156,7 +156,8 @@ const ChartComponent = ({
     gameFacts({
       log: gameLogs?.[index],
       lineType,
-      line: numericLineValue,
+      // Strips judge each game against the sportsbook close only.
+      line: STRIPS.includes(variant) ? null : numericLineValue,
       lineSource: lineSourceText,
       opponentRanks,
       average: averages?.[0],

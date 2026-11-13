@@ -32,9 +32,13 @@ const Nav = ({ f, index, total, onStep, compact }) => (
   </div>
 );
 
+const NoClose = () => <span className="hv-dim">No sportsbook close</span>;
+
 const Hero = ({ f }) => (
   <div className="hv-hero2">
-    <span className={`hv-big ${f.line ? tone(f.line.over) : ''}`}>{formatNumber(f.value, 0)}</span>
+    <span className={`hv-big ${f.closing ? tone(f.closing.over) : ''}`}>
+      {formatNumber(f.value, 0)}
+    </span>
     <span className="hv-big-stat">{f.stat}</span>
   </div>
 );
@@ -55,6 +59,7 @@ export const StripDetail = ({ f, log, lineType, index, total, onStep }) => (
       <div className="hv-e-result">
         <Hero f={f} />
         <div className="hv-e-pills">
+          {!f.closing && <NoClose />}
           {f.closing && (
             <span>
               <Verdict margin={f.closing.margin} over={f.closing.over} against="close" />
@@ -109,6 +114,7 @@ export const StripHeader = ({ f, index, total, onStep }) => (
     <div className="hv-f-body">
       <div className="hv-f-line">
         <Hero f={f} />
+        {!f.closing && <NoClose />}
         {f.closing && (
           <span>
             closed {formatNumber(f.closing.value, 1)}{' '}
@@ -151,6 +157,7 @@ export const StripScoreboard = ({ f, index, total, onStep }) => {
     <div className="hv-g">
       <div className="hv-g-head">
         <Nav f={f} index={index} total={total} onStep={onStep} />
+        {!f.closing && <NoClose />}
         {f.closing && (
           <div className="hv-g-close">
             <span className="hv-k">Closing line</span>
@@ -177,7 +184,7 @@ export const StripScoreboard = ({ f, index, total, onStep }) => {
         {columns.map((c) => (
           <div key={c.label} className={`hv-g-col ${c.main ? 'is-main' : ''}`}>
             <span className="hv-k">{c.label}</span>
-            <span className={`hv-g-val ${c.main && f.line ? tone(f.line.over) : ''}`}>
+            <span className={`hv-g-val ${c.main && f.closing ? tone(f.closing.over) : ''}`}>
               {c.text}
             </span>
             {c.sub && <span className="hv-dim">{c.sub}</span>}

@@ -76,7 +76,7 @@ export const MiniCard = ({ f }) => (
       </span>
     </div>
     <div className="hv-hero">
-      <span className={`hv-big ${f.line ? tone(f.line.over) : ''}`}>
+      <span className={`hv-big ${f.closing ? tone(f.closing.over) : ''}`}>
         {formatNumber(f.value, 0)}
       </span>
       <span className="hv-big-stat">{f.stat}</span>
@@ -216,7 +216,7 @@ export const GameStrip = ({ f, log, lineType, index, total, onStep }) => (
       </button>
     </div>
     <div className="hv-strip-result">
-      <span className={`hv-big ${f.line ? tone(f.line.over) : ''}`}>
+      <span className={`hv-big ${f.closing ? tone(f.closing.over) : ''}`}>
         {formatNumber(f.value, 0)}
       </span>
       <span className="hv-big-stat">{f.stat}</span>

@@ -1,14 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import './chartSetup';
 import MetricsDashboardRow from './MetricsDashboardRow';
 import AppliedFilters from './AppliedFilters';
+import GameStrip from './GameStrip';
 import { formatNumber, numericOrZero, toFiniteNumber } from './numberUtils';
 import { postedLineFor } from './gameLogsApi';
 import { bookName } from './matchups/displayConfig';
 import { shortSlateDay } from './home/homeFormat';
 import { useThemeColors } from './theme/useThemeColors';
-import { ordinal } from './profileMatchup/matchupReading';
 
 // Canvas paint, resolved from the theme tokens, each with the role it plays.
 const CHART_COLORS = {
@@ -21,10 +21,7 @@ const CHART_COLORS = {
   labelGround: ['fill', '--ct-surface-2'],
   label: ['fg', '--ct-gold'],
   labelEdge: ['line', '--ct-gold-fg-40'],
-  tooltipGround: ['fill', '--ct-surface-2'],
-  tooltipTitle: ['fg', '--ct-text'],
-  tooltipBody: ['fg', '--ct-dim'],
-  tooltipEdge: ['line', '--ct-line-strong'],
+  picked: ['line', '--ct-gold'],
   tick: ['fg', '--ct-dim'],
   legend: ['fg', '--ct-dim'],
   grid: ['line', '--ct-overlay-fg-6'],
@@ -70,20 +67,16 @@ const TRACKING = {
   REB: {
     chances: 'REB_CHANCES',
     conversion: 'REB_CONV_PCT',
-    noun: 'chances',
     rowLabel: 'Chances',
     ghostLabel: 'Rebound chances',
   },
   AST: {
     chances: 'POTENTIAL_AST',
     conversion: 'AST_CONV_PCT',
-    noun: 'potential',
     rowLabel: 'Potential',
     ghostLabel: 'Potential assists',
   },
 };
-
-const percentText = (ratio) => `${Math.round(ratio * 100)}%`;
 
 // The average chances, one decimal; null when the backend sends none.
 const trackingAverageText = (average, tracking) => {
@@ -128,6 +121,25 @@ const ChartComponent = ({
       ? `Line: ${lineValue}`
       : `Season avg: ${numericLineValue.toFixed(1)}`;
 
+  // The game the strip shows, by chart index; null is the most recent, the
+  // last in chart order. New games (filters, player, season, even a set seen
+  // before) drop the pick; a Line Type change keeps the games and the pick.
+  const hasGames = Array.isArray(gameLogs) && gameLogs.length > 0 && lineType !== 'None';
+  const [pick, setPick] = useState(null);
+  const [pickedIn, setPickedIn] = useState(gameLogs);
+  if (pickedIn !== gameLogs) {
+    setPickedIn(gameLogs);
+    setPick(null);
+  }
+  const pickedIndex = !hasGames
+    ? -1
+    : pick !== null && pickedIn === gameLogs
+      ? pick
+      : gameLogs.length - 1;
+  // Chart.js replays its last pointer event after every update, so a step
+  // with ‹ › would snap back to the hovered bar; only an event never seen picks.
+  const seenPointers = useRef(new WeakSet());
+
   // react-chartjs-2 redraws whenever `data` or `options` is a new object, so
   // both are rebuilt only when an input they read changes.
   const chartData = useMemo(() => {
@@ -156,7 +168,9 @@ const ChartComponent = ({
       label: lineType,
       data,
       backgroundColor: backgroundColors,
-      borderWidth: 0,
+      // The picked game's bar is outlined.
+      borderColor: colors.picked,
+      borderWidth: data.map((_, index) => (index === pickedIndex ? 2 : 0)),
       borderRadius: barCornerRadius,
       borderSkipped: 'bottom',
     };
@@ -180,14 +194,21 @@ const ChartComponent = ({
         },
       ],
     };
-  }, [gameLogs, lineType, numericLineValue, tracking, colors]);
+  }, [gameLogs, lineType, numericLineValue, tracking, colors, pickedIndex]);
 
   const chartOptions = useMemo(
     () => ({
       responsive: true,
       // The container sets the height, so phones get as tall a chart as desktops.
       maintainAspectRatio: false,
+      // Hovering (or tapping) picks the game nearest the pointer along x;
+      // leaving the chart keeps it.
       interaction: { mode: 'index', intersect: false },
+      onHover: (event, elements) => {
+        if (!event.native || seenPointers.current.has(event.native)) return;
+        seenPointers.current.add(event.native);
+        if (elements.length) setPick(elements[0].index);
+      },
       plugins: {
         legend: {
           display: Boolean(tracking),
@@ -222,59 +243,8 @@ const ChartComponent = ({
             },
           },
         },
-        tooltip: {
-          displayColors: false, // This removes the colored box
-          backgroundColor: colors.tooltipGround,
-          titleColor: colors.tooltipTitle,
-          bodyColor: colors.tooltipBody,
-          borderColor: colors.tooltipEdge,
-          borderWidth: 1,
-          cornerRadius: 6,
-          titleFont: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 11 },
-          bodyFont: { family: 'ui-monospace, SF Mono, Menlo, monospace', size: 11 },
-          // One entry per game: the ghost bar shares the main bar's tooltip.
-          filter: (item) => item.datasetIndex === 0,
-          callbacks: {
-            title: (tooltipItems) => {
-              const index = tooltipItems[0].dataIndex;
-              return `${gameLogs[index]?.GAME_DATE || 'N/A'}`;
-            },
-            label: (tooltipItem) => {
-              const index = tooltipItem.dataIndex;
-              const value = tooltipItem.raw;
-              const matchup = gameLogs[index]?.MATCHUP;
-              const opponent = typeof matchup === 'string' ? matchup.split(' ')[2] || 'N/A' : 'N/A';
-              const ranking = opponentRanks?.[lineType];
-              const rank = ranking?.ranks[opponent];
-              const lines = [
-                `OPP: ${opponent}`,
-                `MIN: ${numericOrZero(gameLogs[index]?.MIN)}`,
-                `${lineType}: ${numericOrZero(value)}`,
-              ];
-              // Points show the shot attempts behind them.
-              if (lineType === 'PTS') {
-                lines.push(
-                  `FGA: ${numericOrZero(gameLogs[index]?.FGA)}`,
-                  `3PA: ${numericOrZero(gameLogs[index]?.FG3A)}`,
-                );
-              }
-              if (tracking) {
-                const chances = toFiniteNumber(gameLogs[index]?.[tracking.chances]);
-                const made = numericOrZero(value);
-                lines[2] =
-                  chances === null
-                    ? `${lineType} ${made} · not tracked`
-                    : `${lineType} ${made} · ${chances} ${tracking.noun}${
-                        chances > 0 ? ` · ${percentText(made / chances)}` : ''
-                      }`;
-              }
-              // The charted stat's code stands in for the label's stat words.
-              const verb = ranking?.label.match(/ (Allowed|Forced)$/)?.[1];
-              if (rank) lines.splice(1, 0, `${ordinal(rank)} ${lineType}${verb ? ` ${verb}` : ''}`);
-              return lines;
-            },
-          },
-        },
+        // The game strip under the chart replaces the tooltip.
+        tooltip: { enabled: false },
         datalabels: {
           display: false,
         },
@@ -303,7 +273,7 @@ const ChartComponent = ({
         },
       },
     }),
-    [gameLogs, lineType, lineLabel, numericLineValue, tracking, colors, opponentRanks],
+    [lineLabel, numericLineValue, tracking, colors],
   );
 
   const { player_name: _player, ...withoutPlayer } = appliedFilters || {};
@@ -313,7 +283,7 @@ const ChartComponent = ({
 
   return (
     <>
-      {Array.isArray(gameLogs) && gameLogs.length > 0 && lineType !== 'None' && (
+      {hasGames && (
         <>
           <MetricsDashboardRow
             lineType={lineType}
@@ -333,6 +303,13 @@ const ChartComponent = ({
           <div className="chart-container">
             <Bar data={chartData} options={chartOptions} />
           </div>
+          <GameStrip
+            gameLogs={gameLogs}
+            index={pickedIndex}
+            lineType={lineType}
+            opponentRanks={opponentRanks}
+            onPick={setPick}
+          />
         </>
       )}
     </>

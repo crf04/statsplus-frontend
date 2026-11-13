@@ -70,7 +70,7 @@ export const gameLogs = [
   },
 ];
 
-// The tooltip's opponent ranks (crf04/statsplus#456): 30 allows the most.
+// The game strip's opponent ranks (crf04/statsplus#456): 30 allows the most.
 export const opponentRanks = {
   PTS: { label: 'Points Allowed', ranks: { ATL: 27, DAL: 3 } },
   REB: { label: 'Rebounds Allowed', ranks: { ATL: 22, DAL: 11 } },

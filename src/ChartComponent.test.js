@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import ChartComponent from './ChartComponent';
 import { decodeGameLogsResponse } from './gameLogsApi';
 
@@ -69,70 +69,222 @@ test('a typed line keeps the plain label, even at the posted value', () => {
   expect(lineLabel('26.5', null)).toEqual(['Line: 26.5']);
 });
 
-test('the points tooltip adds the shot attempts behind the points', () => {
-  const logs = [
-    { GAME_DATE: '2026-01-01', MATCHUP: 'LAL @ BOS', MIN: 34, PTS: 28, FGA: 19, FG3A: 7 },
-  ];
-  const tooltipFor = (lineType) => {
-    render(<ChartComponent gameLogs={logs} lineType={lineType} lineValue="" averages={averages} />);
-    const { callbacks } = barProps.options.plugins.tooltip;
-    return callbacks.label({ dataIndex: 0, raw: barProps.data.datasets[0].data[0] });
-  };
-  expect(tooltipFor('PTS')).toEqual(['OPP: BOS', 'MIN: 34', 'PTS: 28', 'FGA: 19', '3PA: 7']);
-  expect(tooltipFor('FGA')).toEqual(['OPP: BOS', 'MIN: 34', 'FGA: 19']);
+// The backend sends the newest game first; the decoder puts it last, as the
+// chart draws it.
+const stripLogs = decodeGameLogsResponse({
+  game_logs: [
+    {
+      GAME_DATE: '2026-11-04',
+      MATCHUP: 'NYK vs. CHI',
+      MIN: 28,
+      PTS: 33,
+      REB: 2,
+      AST: 4,
+      FG3M: 5,
+      STL: 0,
+      BLK: 0,
+      TOV: 0,
+      USG_PCT: 29.4,
+      FGM: 10,
+      FGA: 17,
+      FG3A: 10,
+      FTM: 8,
+      FTA: 9,
+      closing_lines: { PTS: { book: 'draftkings', value: 26.5 } },
+    },
+    {
+      GAME_DATE: '2026-11-02',
+      MATCHUP: 'NYK @ BOS',
+      MIN: 35,
+      PTS: 22,
+      REB: 9,
+      AST: 3,
+      FG3M: 2,
+      STL: 1,
+      BLK: 1,
+      TOV: 2,
+      FGM: 8,
+      FGA: 15,
+      FG3A: 6,
+      REB_CHANCES: 14,
+      closing_line: { book: 'fanduel', value: 24.5 },
+    },
+    {
+      GAME_DATE: '2026-10-31',
+      MATCHUP: 'NYK @ MIA',
+      MIN: 31,
+      PTS: 18,
+      REB: 5,
+      AST: 6,
+      FG3M: 1,
+      STL: 2,
+      BLK: 0,
+      TOV: 1,
+      closing_lines: { REB: { book: 'betmgm', value: 5 } },
+    },
+  ],
+  opponent_ranks: {
+    PTS: { label: 'Points Allowed', ranks: { CHI: 30, BOS: 4, MIA: 15 } },
+    TOV: { label: 'Turnovers Forced', ranks: { CHI: 22 } },
+  },
 });
 
-describe('the opponent line names its rank in the charted stat', () => {
-  const tooltipFor = (lineType, opponentRanks, MATCHUP = 'LAL vs. BOS') => {
-    const logs = [
-      { GAME_DATE: '2026-01-01', MATCHUP, MIN: 34, PTS: 31, FGA: 20, FG3A: 8, PRA: 45 },
-    ];
-    render(
-      <ChartComponent
-        gameLogs={logs}
-        lineType={lineType}
-        lineValue=""
-        averages={averages}
-        opponentRanks={opponentRanks}
-      />,
+const renderStrip = (props = {}) =>
+  render(
+    <ChartComponent
+      gameLogs={stripLogs.gameLogs}
+      lineType="PTS"
+      lineValue=""
+      averages={averages}
+      opponentRanks={stripLogs.opponentRanks}
+      {...props}
+    />,
+  );
+const strip = () => screen.getByRole('region', { name: 'Picked game' });
+const stripValue = () => strip().querySelector('.game-strip-value');
+const boxColumns = () =>
+  [...strip().querySelectorAll('dl > div')].map(
+    (column) =>
+      `${column.querySelector('dt').textContent} ${column.querySelector('dd').textContent}`,
+  );
+const pickBar = (index) => act(() => barProps.options.onHover(null, [{ index }]));
+
+describe('the game strip under the chart', () => {
+  test('it opens on the most recent game, judged against its sportsbook close', () => {
+    renderStrip();
+    expect(strip()).toHaveTextContent('Wed, Nov 4');
+    expect(strip()).toHaveTextContent('vs CHI · game 3 of 3');
+    expect(stripValue().textContent).toBe('33');
+    expect(stripValue()).toHaveClass('is-over');
+    expect(strip().querySelector('.game-strip-close').textContent).toBe(
+      'Closed 26.5 DraftKings +6.5',
     );
-    const { callbacks } = barProps.options.plugins.tooltip;
-    return callbacks.label({ dataIndex: 0, raw: barProps.data.datasets[0].data[0] });
-  };
-  const ranks = (BOS) => ({ PTS: { label: 'Points Allowed', ranks: { BOS } } });
+    expect(screen.getByText('+6.5')).toHaveClass('is-over');
+    expect(screen.getByText('30th')).toHaveClass('is-soft');
+    expect(strip().querySelector('.game-strip-rank').textContent).toBe('CHI 30th PTS allowed');
+  });
 
-  test("a PTS chart reads the opponent's Points Allowed rank", () => {
-    expect(tooltipFor('PTS', ranks(27))).toEqual([
-      'OPP: BOS',
-      '27th PTS Allowed',
-      'MIN: 34',
-      'PTS: 31',
-      'FGA: 20',
-      '3PA: 8',
+  test('the box line golds the charted stat and adds its supporting columns', () => {
+    renderStrip();
+    expect(boxColumns()).toEqual([
+      'MIN 28',
+      'PTS 33',
+      'REB 2',
+      'AST 4',
+      '3PM 5',
+      'STL 0',
+      'BLK 0',
+      'TOV 0',
+      'USG 29%',
+      'FG 10/17',
+      '3P 5/10',
+      'FT 8/9',
     ]);
+    expect(strip().querySelector('.is-charted').textContent).toBe('PTS33');
   });
 
-  test('ranks read as ordinals', () => {
-    expect(tooltipFor('PTS', ranks(1)).slice(0, 2)).toEqual(['OPP: BOS', '1st PTS Allowed']);
-    expect(tooltipFor('PTS', ranks(22)).slice(0, 2)).toEqual(['OPP: BOS', '22nd PTS Allowed']);
+  test('without a close for the market there is no Closed row and the value is uncoloured; a posted line never shows', () => {
+    const { postedLine } = decodeGameLogsResponse({
+      game_logs: [],
+      posted_line: {
+        game_date: '2026-11-06',
+        matchup: 'NYK vs. ORL',
+        lines: { REB: { value: 7.5, provider: 'prizepicks' } },
+      },
+    });
+    renderStrip({
+      lineType: 'REB',
+      lineValue: '7.5',
+      postedLine,
+      lineSource: 'provider:prizepicks',
+    });
+    expect(stripValue().textContent).toBe('2');
+    expect(stripValue()).not.toHaveClass('is-over');
+    expect(stripValue()).not.toHaveClass('is-under');
+    expect(strip()).not.toHaveTextContent('Closed');
+    expect(strip()).not.toHaveTextContent('PrizePicks');
+    expect(strip()).not.toHaveTextContent('7.5');
+    // REB has no ranking here, so there is no opponent row either.
+    expect(strip().querySelector('.game-strip-rank')).toBeNull();
   });
 
-  test('the rank keeps a Forced verb and drops a label with neither verb', () => {
-    const rankLine = (lineType, label) =>
-      tooltipFor(lineType, { [lineType]: { label, ranks: { BOS: 17 } } })[1];
-    expect(rankLine('TOV', 'Turnovers Forced')).toBe('17th TOV Forced');
-    expect(rankLine('STL', 'Steals')).toBe('17th STL');
+  test('‹ steps to the previous game and stops on the first; › stops on the last', () => {
+    renderStrip();
+    const previous = screen.getByRole('button', { name: 'Previous game' });
+    const next = screen.getByRole('button', { name: 'Next game' });
+    expect(next).toBeDisabled();
+    fireEvent.click(previous);
+    expect(strip()).toHaveTextContent('Mon, Nov 2');
+    expect(strip()).toHaveTextContent('@ BOS · game 2 of 3');
+    // Points fall back to the single closing line: 22 under a 24.5 close.
+    expect(strip().querySelector('.game-strip-close').textContent).toBe('Closed 24.5 FanDuel −2.5');
+    expect(stripValue()).toHaveClass('is-under');
+    expect(screen.getByText('4th')).toHaveClass('is-tough');
+    fireEvent.click(previous);
+    expect(strip()).toHaveTextContent('@ MIA · game 1 of 3');
+    expect(previous).toBeDisabled();
+    // A column the row lacks is left out: this game has no shooting splits.
+    expect(boxColumns()).toEqual([
+      'MIN 31',
+      'PTS 18',
+      'REB 5',
+      'AST 6',
+      '3PM 1',
+      'STL 2',
+      'BLK 0',
+      'TOV 1',
+    ]);
+    expect(screen.getByText('15th')).not.toHaveClass('is-soft');
+    expect(screen.getByText('15th')).not.toHaveClass('is-tough');
+    fireEvent.click(next);
+    expect(strip()).toHaveTextContent('game 2 of 3');
   });
 
-  test('a line type with no ranking keeps the plain opponent', () => {
-    expect(tooltipFor('PRA', ranks(27))).toEqual(['OPP: BOS', 'MIN: 34', 'PRA: 45']);
+  test('hovering a bar picks its game and outlines its bar', () => {
+    renderStrip();
+    expect(barProps.data.datasets[0].borderWidth).toEqual([0, 0, 2]);
+    pickBar(0);
+    expect(strip()).toHaveTextContent('Sat, Oct 31');
+    expect(strip()).toHaveTextContent('@ MIA · game 1 of 3');
+    expect(stripValue().textContent).toBe('18');
+    expect(barProps.data.datasets[0].borderWidth).toEqual([2, 0, 0]);
+    // The pointer leaving the chart keeps the pick.
+    act(() => barProps.options.onHover(null, []));
+    expect(strip()).toHaveTextContent('game 1 of 3');
   });
 
-  test('without rankings, or for an unranked opponent, the opponent stays plain', () => {
-    const plain = (opponent) => [`OPP: ${opponent}`, 'MIN: 34', 'PTS: 31', 'FGA: 20', '3PA: 8'];
-    expect(tooltipFor('PTS', undefined)).toEqual(plain('BOS'));
-    expect(tooltipFor('PTS', {})).toEqual(plain('BOS'));
-    expect(tooltipFor('PTS', ranks(27), 'LAL @ DEN')).toEqual(plain('DEN'));
+  test('the faint chances bar is never outlined; REB shows its chances', () => {
+    renderStrip({ lineType: 'REB' });
+    pickBar(1);
+    expect(barProps.data.datasets[0].borderWidth).toEqual([0, 2, 0]);
+    expect(barProps.data.datasets[1].borderWidth).toBe(0);
+    expect(boxColumns()).toContain('Chances 14');
+  });
+
+  test('a game that lands on its close reads as under', () => {
+    renderStrip({ lineType: 'REB' });
+    pickBar(0);
+    expect(strip().querySelector('.game-strip-close').textContent).toBe('Closed 5.0 BetMGM ±0');
+    expect(stripValue()).toHaveClass('is-under');
+  });
+
+  test('a Line Type change keeps the pick; a new game set goes back to the most recent game', () => {
+    const { rerender } = renderStrip();
+    pickBar(0);
+    const props = { lineValue: '', averages, opponentRanks: stripLogs.opponentRanks };
+    rerender(<ChartComponent gameLogs={stripLogs.gameLogs} lineType="TOV" {...props} />);
+    expect(strip()).toHaveTextContent('@ MIA · game 1 of 3');
+    expect(stripValue().textContent).toBe('1');
+    rerender(
+      <ChartComponent gameLogs={[...stripLogs.gameLogs.slice(1)]} lineType="TOV" {...props} />,
+    );
+    expect(strip()).toHaveTextContent('vs CHI · game 2 of 2');
+    expect(strip().querySelector('.game-strip-rank').textContent).toBe('CHI 22nd TOV forced');
+  });
+
+  test('the canvas tooltip no longer opens on hover', () => {
+    renderStrip();
+    expect(barProps.options.plugins.tooltip.enabled).toBe(false);
   });
 });
 
@@ -171,11 +323,6 @@ describe('tracking ghost bars', () => {
     );
     return barProps;
   };
-  const tooltipLines = (props, index) => {
-    const { callbacks } = props.options.plugins.tooltip;
-    return callbacks.label({ dataIndex: index, raw: props.data.datasets[0].data[index] });
-  };
-
   test('REB and AST add a ghost dataset of the tracked values, null for an untracked game', () => {
     const reb = draw('REB');
     expect(reb.data.datasets.map((d) => d.label)).toEqual(['REB', 'Rebound chances']);
@@ -190,39 +337,6 @@ describe('tracking ghost bars', () => {
     const pts = draw('PTS');
     expect(pts.data.datasets).toHaveLength(1);
     expect(pts.options.plugins.legend.display).toBe(false);
-  });
-
-  test('tooltip names the chances and conversion, or says the game is not tracked', () => {
-    const reb = draw('REB');
-    expect(tooltipLines(reb, 0)[2]).toBe('REB 8 · 15 chances · 53%');
-    expect(tooltipLines(reb, 1)[2]).toBe('REB 8 · not tracked');
-    const ast = draw('AST');
-    expect(tooltipLines(ast, 0)[2]).toBe('AST 7 · 13 potential · 54%');
-    expect(tooltipLines(ast, 1)[2]).toBe('AST 7 · not tracked');
-  });
-
-  test('a REB rank line sits under the opponent and leaves the tracked stat line intact', () => {
-    const reb = draw('REB', {
-      opponentRanks: { REB: { label: 'Rebounds Allowed', ranks: { BOS: 22, DEN: 4 } } },
-    });
-    expect(tooltipLines(reb, 0)).toEqual([
-      'OPP: BOS',
-      '22nd REB Allowed',
-      'MIN: 30',
-      'REB 8 · 15 chances · 53%',
-    ]);
-    expect(tooltipLines(reb, 1)).toEqual([
-      'OPP: DEN',
-      '4th REB Allowed',
-      'MIN: 28',
-      'REB 8 · not tracked',
-    ]);
-  });
-
-  test('the tooltip lists a game once, from the main bar', () => {
-    const { filter } = draw('REB').options.plugins.tooltip;
-    expect(filter({ datasetIndex: 0 })).toBe(true);
-    expect(filter({ datasetIndex: 1 })).toBe(false);
   });
 
   test('the averages row shows the average and the season value, and hides when null', () => {

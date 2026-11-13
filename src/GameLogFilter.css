@@ -2242,6 +2242,152 @@ body {
   margin-top: 16px;
 }
 
+/* The picked game under the chart: header, result with its close and the
+   opponent's rank, then the box line. One row on desktop, stacked on phones. */
+.game-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 22px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 8px;
+  background: var(--ct-surface-2);
+  color: var(--ct-dim);
+  font-family:
+    ui-monospace,
+    SF Mono,
+    Menlo,
+    monospace;
+  font-size: 11px;
+  text-align: left;
+}
+
+.game-strip b {
+  color: var(--ct-text);
+}
+
+.game-strip-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.game-strip-header button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--ct-line-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ct-text);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.game-strip-header button:disabled {
+  opacity: 0.3;
+}
+
+.game-strip-date {
+  color: var(--ct-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.game-strip-result {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.game-strip-value {
+  color: var(--ct-text);
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.game-strip .is-over {
+  color: var(--ct-hit);
+  font-weight: 700;
+}
+
+.game-strip .is-under {
+  color: var(--ct-miss);
+  font-weight: 700;
+}
+
+.game-strip-stat {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.game-strip-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.game-strip-chip {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--ct-overlay-bg-8);
+  color: var(--ct-text);
+  font-weight: 700;
+}
+
+.game-strip-chip.is-soft {
+  background: var(--ct-hit-bg-15);
+  color: var(--ct-hit);
+}
+
+.game-strip-chip.is-tough {
+  background: var(--ct-miss-bg-15);
+  color: var(--ct-miss);
+}
+
+.game-strip-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 0;
+}
+
+.game-strip-box > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.game-strip-box dt {
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.game-strip-box dd {
+  margin: 0;
+  color: var(--ct-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.game-strip-box .is-charted dt,
+.game-strip-box .is-charted dd {
+  color: var(--ct-gold);
+}
+
+@media (max-width: 899.98px) {
+  .game-strip {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
 /* Compact Game Logs Table */
 .game-logs-table-compact {
   width: 100%;

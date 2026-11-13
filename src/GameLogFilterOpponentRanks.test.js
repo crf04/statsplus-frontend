@@ -3,13 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import GameLogFilter from './GameLogFilter';
 import { apiClient } from './config';
 
-let mockBarProps;
-jest.mock('react-chartjs-2', () => ({
-  Bar: (props) => {
-    mockBarProps = props;
-    return null;
-  },
-}));
+jest.mock('react-chartjs-2', () => ({ Bar: () => null }));
 jest.mock('./chartSetup', () => ({}));
 jest.mock('./MetricsDashboardRow', () => ({ __esModule: true, default: () => null }));
 jest.mock('./AppliedFilters', () => ({ __esModule: true, default: () => null }));
@@ -54,11 +48,9 @@ const GAME_LOGS = {
 };
 
 const gameLogReads = () => apiClient.get.mock.calls.filter(([url]) => url === '/api/game_logs');
-const tooltip = () =>
-  mockBarProps.options.plugins.tooltip.callbacks.label({
-    dataIndex: 0,
-    raw: mockBarProps.data.datasets[0].data[0],
-  });
+const rankRow = () =>
+  screen.getByRole('region', { name: 'Picked game' }).querySelector('.game-strip-rank')
+    ?.textContent;
 
 beforeEach(() => {
   apiClient.get.mockImplementation((url) =>
@@ -68,30 +60,19 @@ beforeEach(() => {
 
 afterEach(() => jest.clearAllMocks());
 
-test("the chart tooltip reads the response's opponent rank for the chosen Line Type, without a refetch", async () => {
+test("the game strip reads the response's opponent rank for the chosen Line Type, without a refetch", async () => {
   render(
     <MemoryRouter initialEntries={['/?player_name=Stephen+Curry&game_filter=10']}>
       <GameLogFilter />
     </MemoryRouter>,
   );
 
-  await waitFor(() =>
-    expect(tooltip()).toEqual([
-      'OPP: BOS',
-      '27th PTS Allowed',
-      'MIN: 34',
-      'PTS: 31',
-      'FGA: 20',
-      '3PA: 9',
-    ]),
-  );
+  await waitFor(() => expect(rankRow()).toBe('BOS 27th PTS allowed'));
 
   fireEvent.change(await screen.findByRole('combobox', { name: 'Line Type:' }), {
     target: { value: 'REB' },
   });
 
-  await waitFor(() =>
-    expect(tooltip()).toEqual(['OPP: BOS', '9th REB Allowed', 'MIN: 34', 'REB 6 · not tracked']),
-  );
+  await waitFor(() => expect(rankRow()).toBe('BOS 9th REB allowed'));
   expect(gameLogReads()).toHaveLength(1);
 });

@@ -24,8 +24,8 @@ const paintOf = (canvas, { latestFrame = false } = {}) =>
     return [...new Set(painted.map(({ style }) => style))].sort();
   }, latestFrame);
 
-// The colours of the Game Logs chart's parts in its latest frame. A label or a
-// tooltip draws its ground (fill), then its edge (stroke), then its text.
+// The colours of the Game Logs chart's parts in its latest frame. A label draws
+// its ground (fill), then its edge (stroke), then its text.
 const gameLogRoles = (canvas) =>
   canvas.evaluate((element) => {
     const ops = element.ctOps ?? [];
@@ -41,15 +41,6 @@ const gameLogRoles = (canvas) =>
         labelGround: ops[ground]?.style,
         labelEdge: lastBefore(label, ['stroke'])?.style,
         labelText: ops[label].style,
-      });
-    }
-    const body = lastText(/^OPP: /);
-    if (body !== -1) {
-      Object.assign(roles, {
-        tooltipGround: lastBefore(body - 1, ['fill'])?.style,
-        tooltipEdge: lastBefore(body - 1, ['stroke'])?.style,
-        tooltipTitle: ops[body - 1].style,
-        tooltipBody: ops[body].style,
       });
     }
     // A frame strokes its grid lines first, then each axis's border and labels.
@@ -77,24 +68,32 @@ test('charts paint the dark theme colours, part by part, and repaint in Chalk wh
     .poll(() => paintOf(gameLogChart))
     .toEqual(expect.arrayContaining(['rgba(194, 78, 78, 0.72)', 'rgba(76, 175, 125, 0.78)']));
   const { width, height } = await gameLogChart.boundingBox();
-  // Over the second game's bar once it has grown in, which raises the tooltip.
+  // The game strip under the chart opens on the most recent game, the last bar.
+  const strip = page.getByRole('region', { name: 'Picked game' });
+  await expect(strip).toContainText('vs ATL · game 2 of 2');
+  // Over the first game's bar once it has grown in, which picks that game.
   await expect
     .poll(async () => {
-      await gameLogChart.hover({ position: { x: width * 0.65, y: height * 0.7 } });
-      return gameLogRoles(gameLogChart);
+      await gameLogChart.hover({ position: { x: width * 0.3, y: height * 0.7 } });
+      return strip.textContent();
     })
+    .toContain('@ DAL · game 1 of 2');
+  await expect
+    .poll(() => gameLogRoles(gameLogChart))
     .toEqual({
       line: '#e8a33d',
       labelGround: '#1e1a12',
       labelEdge: 'rgba(232, 163, 61, 0.4)',
       labelText: '#e8a33d',
-      tooltipGround: '#1e1a12',
-      tooltipEdge: 'rgba(255, 255, 255, 0.16)',
-      tooltipTitle: '#efe9dc',
-      tooltipBody: '#9b937f',
       grid: 'rgba(255, 255, 255, 0.06)',
       tick: '#9b937f',
     });
+  // The old tooltip titled itself with the game's ISO date; ticks read 1/8.
+  expect(
+    await gameLogChart.evaluate((element) =>
+      element.ctOps.some(({ text }) => text === '2025-01-08'),
+    ),
+  ).toBe(false);
 
   // A theme is a set of token values under html[data-theme]. This one exists
   // only for the test, and moves every token pair that is equal in dark but
@@ -115,19 +114,12 @@ test('charts paint the dark theme colours, part by part, and repaint in Chalk wh
   });
   await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'e2e-probe'));
   await expect
-    .poll(async () => {
-      await gameLogChart.hover({ position: { x: width * 0.65, y: height * 0.7 } });
-      return gameLogRoles(gameLogChart);
-    })
+    .poll(() => gameLogRoles(gameLogChart))
     .toEqual({
       line: '#123456',
       labelGround: '#234567',
       labelEdge: 'rgba(232, 163, 61, 0.8)',
       labelText: '#123456',
-      tooltipGround: '#234567',
-      tooltipEdge: 'rgba(255, 255, 255, 0.16)',
-      tooltipTitle: '#efe9dc',
-      tooltipBody: '#9b937f',
       grid: 'rgba(255, 255, 255, 0.12)',
       tick: '#9b937f',
     });
@@ -145,19 +137,12 @@ test('charts paint the dark theme colours, part by part, and repaint in Chalk wh
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   expect(await page.evaluate(() => window.localStorage.getItem('courtai:theme'))).toBe('light');
   await expect
-    .poll(async () => {
-      await gameLogChart.hover({ position: { x: width * 0.65, y: height * 0.7 } });
-      return gameLogRoles(gameLogChart);
-    })
+    .poll(() => gameLogRoles(gameLogChart))
     .toEqual({
       line: '#8f5404',
       labelGround: '#f7f8fa',
       labelEdge: 'rgba(143, 84, 4, 0.54)',
       labelText: '#8f5404',
-      tooltipGround: '#f7f8fa',
-      tooltipEdge: 'rgba(21, 24, 29, 0.216)',
-      tooltipTitle: '#15181d',
-      tooltipBody: '#5f6670',
       // 0.06 x 1.35 = 0.081, which the canvas keeps as 21/255.
       grid: 'rgba(21, 24, 29, 0.082)',
       tick: '#5f6670',

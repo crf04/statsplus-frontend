@@ -10,13 +10,13 @@ import { useEffect, useSyncExternalStore } from 'react';
 
 export const VARIANTS = {
   O: 'O · today',
-  A: 'A · sectioned text tooltip',
-  B: 'B · mini card',
-  C: 'C · this game vs his average',
-  D: 'D · game strip under the chart',
+  D: 'D · round 1 strip',
+  E: 'E · strip: result, lines, opponent / drivers vs avg',
+  F: 'F · compact bar above the chart',
+  G: 'G · scoreboard: this game vs his average',
 };
 export const VARIANT_KEYS = Object.keys(VARIANTS);
-const DEFAULT = 'A';
+const DEFAULT = 'E';
 
 // The public no-login build: captured data, a fake signed-in user, always on.
 export const PROTO_STANDALONE = process.env.REACT_APP_PROTOTYPE === 'hover';

@@ -12,7 +12,7 @@ for (const [w, h, tag] of [[1440, 1000, 'desktop'], [390, 844, 'phone']]) {
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(String(e)));
   for (const [name, path] of cases)
-    for (const v of ['O', 'A', 'B', 'C', 'D']) {
+    for (const v of ['O', 'D', 'E', 'F', 'G']) {
       await page.goto(`${base}${path}#proto=hover&v=${v}`);
       const canvas = page.locator('.chart-container canvas').first();
       await canvas.waitFor();
@@ -22,14 +22,16 @@ for (const [w, h, tag] of [[1440, 1000, 'desktop'], [390, 844, 'phone']]) {
       // Hover the third bar from the right.
       await page.mouse.move(box.x + box.width * 0.72, box.y + box.height * 0.6);
       await page.waitForTimeout(500);
-      const target = v === 'D' ? page.locator('.chart-container').first() : canvas;
-      const clip = await target.boundingBox();
       const scrollY = await page.evaluate(() => window.scrollY);
-      const extra = v === 'D' ? (tag === 'phone' ? 330 : 140) : 0;
+      const strip = await page.locator('.hv-strip, .hv-e, .hv-f, .hv-g').first().boundingBox().catch(() => null);
+      const chart = await canvas.boundingBox();
+      const top = Math.min(chart.y, strip?.y ?? chart.y);
+      const bottom = Math.max(chart.y + chart.height, strip ? strip.y + strip.height : 0);
+      const clip = { y: top, height: bottom - top };
       await page.screenshot({
         fullPage: true,
         path: `${out}/${tag}-${name}-${v}.png`,
-        clip: { x: 0, y: Math.max(0, clip.y + scrollY - 10), width: w, height: clip.height + 20 + extra },
+        clip: { x: 0, y: Math.max(0, clip.y + scrollY - 10), width: w, height: clip.height + 20 },
       });
     }
   await page.close();

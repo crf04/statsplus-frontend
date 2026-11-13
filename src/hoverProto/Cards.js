@@ -4,15 +4,15 @@ import { formatNumber } from '../numberUtils';
 import { BOX, signed, statName } from './gameFacts';
 import './proto.css';
 
-const tone = (over) => (over ? 'is-over' : 'is-under');
+export const tone = (over) => (over ? 'is-over' : 'is-under');
 
-const Verdict = ({ margin, over, against }) => (
+export const Verdict = ({ margin, over, against }) => (
   <span className={`hv-pill ${tone(over)}`}>
     {over ? 'Over' : 'Under'} {against} {signed(margin)}
   </span>
 );
 
-const RankMeter = ({ rank, opponent, stat }) => (
+export const RankMeter = ({ rank, opponent, stat }) => (
   <div className={`hv-rank is-${rank.tone}`}>
     <div className="hv-rank-text">
       <b>{opponent}</b> {rank.text} of 30 in {rank.label.toLowerCase()}
@@ -27,7 +27,7 @@ const RankMeter = ({ rank, opponent, stat }) => (
   </div>
 );
 
-const Delta = ({ value, avg, unit }) => {
+export const Delta = ({ value, avg, unit }) => {
   if (avg === null || avg === undefined) return null;
   const d = value - avg;
   if (Math.abs(d) < 0.05) return <span className="hv-delta">=</span>;

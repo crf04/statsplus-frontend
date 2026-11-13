@@ -26,7 +26,7 @@ if (PROTO_STANDALONE) {
     window.history.replaceState(
       null,
       '',
-      `/?${DEMO_QUERY}${window.location.hash || '#proto=hover&v=A'}`,
+      `/?${DEMO_QUERY}${window.location.hash || '#proto=hover&v=E'}`,
     );
 }
 

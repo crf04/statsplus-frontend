@@ -15,6 +15,9 @@ import { useHoverProto } from './hoverProto/mode';
 import { gameFacts, signed } from './hoverProto/gameFacts';
 import { Floating, GameStrip, MiniCard, VersusCard } from './hoverProto/Cards';
 import Switcher from './hoverProto/Switcher';
+import { StripDetail, StripHeader, StripScoreboard } from './hoverProto/Strips';
+
+const STRIPS = ['D', 'E', 'F', 'G'];
 
 // Canvas paint, resolved from the theme tokens, each with the role it plays.
 const CHART_COLORS = {
@@ -143,6 +146,7 @@ const ChartComponent = ({
   const [picked, setPicked] = useState(null);
   const logCount = Array.isArray(gameLogs) ? gameLogs.length : 0;
   const selected = picked !== null && picked < logCount ? picked : logCount - 1;
+  const step = (d) => setPicked(Math.max(0, Math.min(logCount - 1, selected + d)));
   const lineSourceText = posted
     ? bookName(posted.key)
     : explicitLineValue !== null
@@ -189,7 +193,7 @@ const ChartComponent = ({
       borderWidth: 0,
       borderRadius: barCornerRadius,
       borderSkipped: 'bottom',
-      ...(variant === 'D' && {
+      ...(STRIPS.includes(variant) && {
         borderColor: colors.label,
         borderWidth: data.map((_, i) => (i === selected ? 2 : 0)),
       }),
@@ -267,12 +271,11 @@ const ChartComponent = ({
       // The container sets the height, so phones get as tall a chart as desktops.
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
-      onHover:
-        variant === 'D'
-          ? (_event, elements) => {
-              if (elements.length) setPicked(elements[0].index);
-            }
-          : undefined,
+      onHover: STRIPS.includes(variant)
+        ? (_event, elements) => {
+            if (elements.length) setPicked(elements[0].index);
+          }
+        : undefined,
       plugins: {
         legend: {
           display: Boolean(tracking),
@@ -308,34 +311,33 @@ const ChartComponent = ({
           },
         },
         tooltip: {
-          ...(['B', 'C', 'D'].includes(variant) && {
+          ...(['B', 'C', ...STRIPS].includes(variant) && {
             enabled: false,
-            external:
-              variant === 'D'
-                ? undefined
-                : ({ chart, tooltip }) => {
-                    const point = tooltip.dataPoints?.[0];
-                    const next =
-                      tooltip.opacity === 0 || !point
-                        ? null
-                        : {
-                            index: point.dataIndex,
-                            x: tooltip.caretX,
-                            y: tooltip.caretY,
-                            width: chart.width,
-                            height: chart.height,
-                          };
-                    setTip((prev) =>
-                      prev === next ||
-                      (prev &&
-                        next &&
-                        prev.index === next.index &&
-                        prev.x === next.x &&
-                        prev.y === next.y)
-                        ? prev
-                        : next,
-                    );
-                  },
+            external: STRIPS.includes(variant)
+              ? undefined
+              : ({ chart, tooltip }) => {
+                  const point = tooltip.dataPoints?.[0];
+                  const next =
+                    tooltip.opacity === 0 || !point
+                      ? null
+                      : {
+                          index: point.dataIndex,
+                          x: tooltip.caretX,
+                          y: tooltip.caretY,
+                          width: chart.width,
+                          height: chart.height,
+                        };
+                  setTip((prev) =>
+                    prev === next ||
+                    (prev &&
+                      next &&
+                      prev.index === next.index &&
+                      prev.x === next.x &&
+                      prev.y === next.y)
+                      ? prev
+                      : next,
+                  );
+                },
           }),
           displayColors: false, // This removes the colored box
           backgroundColor: colors.tooltipGround,
@@ -450,6 +452,16 @@ const ChartComponent = ({
           <div className="chart-filters">
             <AppliedFilters filters={withoutPlayer} />
           </div>
+          {selected >= 0 && variant === 'F' && (
+            <StripHeader
+              f={factsAt(selected)}
+              log={gameLogs[selected]}
+              lineType={lineType}
+              index={selected}
+              total={logCount}
+              onStep={step}
+            />
+          )}
           <div className="chart-container" onMouseLeave={() => setTip(null)}>
             <Bar data={chartData} options={chartOptions} />
             {tip && (variant === 'B' || variant === 'C') && (
@@ -462,14 +474,34 @@ const ChartComponent = ({
               </Floating>
             )}
           </div>
-          {variant === 'D' && selected >= 0 && (
+          {selected >= 0 && variant === 'D' && (
             <GameStrip
               f={factsAt(selected)}
               log={gameLogs[selected]}
               lineType={lineType}
               index={selected}
               total={logCount}
-              onStep={(d) => setPicked(Math.max(0, Math.min(logCount - 1, selected + d)))}
+              onStep={step}
+            />
+          )}
+          {selected >= 0 && variant === 'E' && (
+            <StripDetail
+              f={factsAt(selected)}
+              log={gameLogs[selected]}
+              lineType={lineType}
+              index={selected}
+              total={logCount}
+              onStep={step}
+            />
+          )}
+          {selected >= 0 && variant === 'G' && (
+            <StripScoreboard
+              f={factsAt(selected)}
+              log={gameLogs[selected]}
+              lineType={lineType}
+              index={selected}
+              total={logCount}
+              onStep={step}
             />
           )}
           {proto.active && <Switcher variant={variant} goTo={proto.goTo} step={proto.step} />}

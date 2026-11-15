@@ -24,7 +24,7 @@ export const decodeNextOpponent = (payload) => {
       stat.most_rank > stat.ranked_teams ||
       typeof stat.group !== 'string' ||
       typeof stat.label !== 'string' ||
-      !['count', 'percent', 'league_ratio'].includes(stat.unit) ||
+      !['count', 'percent', 'league_ratio', 'rating'].includes(stat.unit) ||
       (stat.team_filter !== null && typeof stat.team_filter !== 'string') ||
       (stat.vs_league_pct !== null && !Number.isFinite(stat.vs_league_pct))
     ) {

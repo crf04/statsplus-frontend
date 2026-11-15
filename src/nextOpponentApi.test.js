@@ -68,6 +68,35 @@ test('passes each rank family and markets through', () => {
   ]);
 });
 
+test('decodes Defensive rating, whose unit is a rating', () => {
+  const drtg = {
+    family: 'defensive-rating',
+    group: 'General',
+    label: 'Defensive rating',
+    markets: ['PTS'],
+    most_rank: 20,
+    ranked_teams: 30,
+    team_filter: 'DRTG',
+    unit: 'rating',
+    value: 111.7,
+    vs_league_pct: -1.1,
+  };
+  expect(decodeNextOpponent({ ...response, opponent_ranks: [drtg] }).opponent_ranks).toEqual([
+    {
+      family: 'defensive-rating',
+      group: 'General',
+      label: 'Defensive rating',
+      markets: ['PTS'],
+      most_rank: 20,
+      ranked_teams: 30,
+      team_filter: 'DRTG',
+      unit: 'rating',
+      value: 111.7,
+      vs_league_pct: -1.1,
+    },
+  ]);
+});
+
 test.each([
   { family: 7, markets: 'PTS' },
   { family: null, markets: [1] },

@@ -64,7 +64,7 @@ A few decisions worth calling out:
 - Natural language query box, with a guided ladder on the landing page and a linkable query reference at `/help`
 - The Log Workspace's Filtered vs Season card states its sample against the season: "12 of 71 games", or "0 of 71 games" when the filters leave nothing. Without a valid `season_game_count` from `/api/games/game_logs` (an older backend or a cached response) it reads "12 games". It shows no count while a request is loading or when the season has no games.
 - Player Profile: the player's Matchup against the opponent chosen in the Opposing Team card, with Matchup Scores per market and a market picker tied to the Line Type
-- Matchups: the day's Slate, a per-game Matchup sheet with posted lines, and a DFS odds panel and best-price rail odds when the backend supplies them
+- Matchups: the day's Slate, a per-game Matchup sheet with posted lines, and a DFS odds panel and best-price rail odds when the backend supplies them; a player's pop-up shows his posted lines and the Player Profile's Matchup Score card, and a stale sportsbook quote shows its age and is never the best price
 - Targets: saved, backtested conditions that resolve against the day's games
 - Saved Filter Sets in the filter panel's Saved tab; the Game Logs default to the posted line when one exists, and list every provider and book posting it to pick from
 - Reports and Research: published CourtAI reports, a public Research feed with author pages, and a Report Builder that inserts CourtAI Cards

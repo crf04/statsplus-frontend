@@ -251,12 +251,18 @@ const ComboMarket = ({ reading, market }) => {
       const bases = Number(group.dataset.bases);
       return (bases - 1) * rowHeight - (bases > 1 ? moreHeight.current : 0);
     };
+    // What an open group's rows actually add. Backing out the estimate instead would let rows
+    // taller than the first move the compact sheet with the fit, and the fit would loop.
+    const added = (group) =>
+      [...group.querySelectorAll('.pmc-w3-base')]
+        .slice(1)
+        .reduce((sum, base) => sum + base.getBoundingClientRect().height, 0) - moreHeight.current;
     // The sheet as it would be with every group compact.
     let height =
       sheet.getBoundingClientRect().height -
       groups
         .filter((group) => fitted.has(group.dataset.fitGroup))
-        .reduce((sum, group) => sum + extra(group), 0);
+        .reduce((sum, group) => sum + added(group), 0);
     const budget = sheetBudget(sheet);
     const next = new Set();
     groups.forEach((group) => {

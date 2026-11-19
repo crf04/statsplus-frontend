@@ -435,10 +435,17 @@ test('every W3 bar sits on one scale, the largest contribution reaching the edge
  */
 describe('fit to space', () => {
   let rowHeight;
+  // The height of every Base row after a group's first; null makes them all rowHeight.
+  let laterRowHeight;
   const box = (height) => ({ top: 0, bottom: height, height, left: 0, right: 0, width: 0 });
+  const heightOf = (base) =>
+    base.parentElement.querySelector('.pmc-w3-base') === base
+      ? rowHeight
+      : (laterRowHeight ?? rowHeight);
   beforeEach(() => {
+    laterRowHeight = null;
     jest.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function measure() {
-      if (this.classList.contains('pmc-w3-base')) return box(rowHeight);
+      if (this.classList.contains('pmc-w3-base')) return box(heightOf(this));
       if (this.classList.contains('pmc-w3-more')) return box(20);
       if (this.querySelector(':scope > [data-fit-group]')) {
         const sections = [...this.querySelectorAll(':scope > [data-fit-group]')];
@@ -447,7 +454,10 @@ describe('fit to space', () => {
             (sum, section) =>
               sum +
               30 +
-              section.querySelectorAll('.pmc-w3-base').length * rowHeight +
+              [...section.querySelectorAll('.pmc-w3-base')].reduce(
+                (rows, base) => rows + heightOf(base),
+                0,
+              ) +
               section.querySelectorAll('.pmc-w3-more').length * 20,
             30,
           ),
@@ -498,6 +508,20 @@ describe('fit to space', () => {
     await renderProfile({ lineType: 'PRA' });
     expect(more()).toEqual([
       ['Points', '+3 more'],
+      ['Rebounds', null],
+      ['Assists', null],
+    ]);
+  });
+
+  test('later Base rows taller than the first settle the fit instead of looping', async () => {
+    // Compact sheet 240. Points' later rows are 100 tall, not the 20 the fit expects from its
+    // first, so opening every group overruns the room. The fit settles on what fits the compact
+    // sheet rather than reopening and closing Points forever (Maximum update depth, PRA in prod).
+    rowHeight = 20;
+    laterRowHeight = 100;
+    await renderProfile({ lineType: 'PRA' });
+    expect(more()).toEqual([
+      ['Points', null],
       ['Rebounds', null],
       ['Assists', null],
     ]);

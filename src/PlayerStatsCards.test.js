@@ -77,6 +77,34 @@ describe('PlayerStatsCards season comparison', () => {
     expect(comparison('0.0 vs Season')).not.toHaveClass('is-worse');
   });
 
+  test('shows usage rate, already a percentage, with its point change from the season', () => {
+    render(
+      <PlayerStatsCards
+        averages={[{ USG_PCT: 27.43 }, { USG_PCT: 26.2 }]}
+        selectedPlayer="LeBron James"
+      />,
+    );
+
+    const usage = screen.getByRole('group', { name: 'Usage rate' });
+    expect(within(usage).getByText('USG%')).toBeVisible();
+    expect(within(usage).getByText('27.4%')).toBeVisible();
+    expect(comparison('+1.2% vs Season')).toHaveClass('is-better');
+  });
+
+  // Null when no game has usage; absent from a backend without the stat.
+  test('shows -- for usage rate when the backend sends none', () => {
+    render(
+      <PlayerStatsCards
+        averages={[{ PTS: 29, USG_PCT: null }, { PTS: 27 }]}
+        selectedPlayer="LeBron James"
+      />,
+    );
+
+    const usage = screen.getByRole('group', { name: 'Usage rate' });
+    expect(within(usage).getByText('--')).toBeVisible();
+    expect(usage.querySelector('.stat-comparison')).toHaveTextContent('');
+  });
+
   test('marks fewer turnovers as better and fewer points as worse', () => {
     render(
       <PlayerStatsCards

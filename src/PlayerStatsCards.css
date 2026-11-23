@@ -1,4 +1,4 @@
-/* Avatar and name beside one row of eight stat tiles. Whole-pixel line
+/* Avatar and name beside one row of nine stat tiles. Whole-pixel line
    heights keep the panels below on whole pixels, where the filter panel's
    screenshot baselines were taken. */
 .player-stats-cards {
@@ -58,7 +58,7 @@
 .player-stat-tiles {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -112,7 +112,8 @@
     gap: 8px;
   }
 
+  /* Two rows on a phone, as with eight tiles. */
   .player-stat-tiles {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
